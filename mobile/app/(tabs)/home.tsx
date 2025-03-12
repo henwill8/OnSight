@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ImagePanResponder from '../../components/ui/ImagePanResponder';
 
 const serverAddress = "http://192.168.1.203:5000";
 
@@ -24,18 +25,6 @@ const App: React.FC = () => {
     const [predictions, setPredictions] = useState<Prediction[]>([]);
     const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null);
     const [showPredictions, setShowPredictions] = useState(false);
-
-    // Animated values for transformations
-    const scale = useRef(new Animated.Value(1)).current;
-    const translateX = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(0)).current;
-    const rotation = useRef(new Animated.Value(0)).current;
-
-    // Store previous scale, rotation, and position values
-    const lastDistance = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
-    const lastRotation = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
-    const lastTranslateX = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
-    const lastTranslateY = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
 
     // Screen dimensions
     const screenWidth = Dimensions.get("window").width;
@@ -56,73 +45,6 @@ const App: React.FC = () => {
             return { width, height };
         })()
         : null;
-
-        const panResponder = useRef(
-            PanResponder.create({
-                onStartShouldSetPanResponder: () => true,
-                onMoveShouldSetPanResponder: () => true,
-                onPanResponderGrant: (event) => {
-                    // last distance should be null when gesture starts as there was no previous distance
-                    lastDistance.current = null;
-                    lastRotation.current = null;
-                    lastTranslateX.current = null;
-                    lastTranslateY.current = null;
-                },
-                onPanResponderMove: (event, gesture) => {
-                    const { touches } = event.nativeEvent;
-        
-                    if (touches.length === 2) {
-                        const dx = touches[0].pageX - touches[1].pageX;
-                        const dy = touches[0].pageY - touches[1].pageY;
-                        const currentDistance = Math.sqrt(dx * dx + dy * dy);
-        
-                        // If this is not the first movement, calculate the change in distance
-                        if (lastDistance.current !== null) {
-                            const distanceChange = currentDistance - lastDistance.current;
-        
-                            // Incrementally update scale based on the change in distance
-                            const newScale = distanceChange / 200; // Adjust this value to control sensitivity
-                            scale.setValue(scale.__getValue() * (newScale + 1)); // Apply scaling incrementally
-                        }
-        
-                        // Update the last distance for the next movement
-                        lastDistance.current = currentDistance;
-        
-                        // Calculate the rotation angle change
-                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-        
-                        // If this is not the first rotation, calculate the change in rotation
-                        if (lastRotation.current !== null) {
-                            const rotationChange = angle - lastRotation.current;
-        
-                            // Incrementally update rotation based on the change in angle
-                            rotation.setValue(rotation.__getValue() + rotationChange);
-                        }
-        
-                        // Update the last rotation for the next movement
-                        lastRotation.current = angle;
-        
-                        // Calculate the center position of the two touches
-                        const centerX = (touches[0].pageX + touches[1].pageX) / 2;
-                        const centerY = (touches[0].pageY + touches[1].pageY) / 2;
-        
-                        // If this is not the first translation, calculate the change in position
-                        if (lastTranslateX.current !== null && lastTranslateY.current !== null) {
-                            const translateXChange = centerX - lastTranslateX.current;
-                            const translateYChange = centerY - lastTranslateY.current;
-        
-                            // Incrementally update translation based on the change in position
-                            translateX.setValue(translateX.__getValue() + translateXChange);
-                            translateY.setValue(translateY.__getValue() + translateYChange);
-                        }
-        
-                        // Update the last translate position for the next movement
-                        lastTranslateX.current = centerX;
-                        lastTranslateY.current = centerY;
-                    }
-                }
-            })
-        ).current;
 
     // Handle image selection and capturing
     const handleImagePick = useCallback(async (useCamera: boolean) => {
@@ -215,20 +137,7 @@ const App: React.FC = () => {
     return (
         <View style={styles.container}>
             {imageUri && scaledImageDimensions && (
-                <Animated.View
-                    {...panResponder.panHandlers}
-                    style={[
-                        styles.imageContainer,
-                        {
-                            transform: [
-                                { translateX },
-                                { translateY },
-                                { scale },
-                                { rotate: rotation.interpolate({ inputRange: [-360, 360], outputRange: ["-360deg", "360deg"] }) }
-                            ],
-                        },
-                    ]}
-                >
+                <ImagePanResponder>
                     <Image
                         source={{ uri: imageUri }}
                         style={{
@@ -237,7 +146,7 @@ const App: React.FC = () => {
                         }}
                     />
                     {renderBoundingBoxes()}
-                </Animated.View>
+                </ImagePanResponder>
             )}
 
             <View style={styles.buttonContainer}>
