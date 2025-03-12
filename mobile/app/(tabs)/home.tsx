@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import {
     View,
     Button,
@@ -11,14 +11,19 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const serverAddress = "http://192.168.1.203:5000"
+const serverAddress = "http://192.168.1.203:5000";
+
+type Prediction = [number, number, number, number];
+type ImageSize = { width: number; height: number };
 
 const App: React.FC = () => {
     const insets = useSafeAreaInsets();
+    
+    // State
     const [imageUri, setImageUri] = useState<string | null>(null);
-    const [predictions, setPredictions] = useState<any[]>([]);
-    const [showPredictions, setShowPredictions] = useState<boolean>(false);
-    const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+    const [predictions, setPredictions] = useState<Prediction[]>([]);
+    const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null);
+    const [showPredictions, setShowPredictions] = useState(false);
 
     // Animated values for transformations
     const scale = useRef(new Animated.Value(1)).current;
@@ -26,52 +31,113 @@ const App: React.FC = () => {
     const translateY = useRef(new Animated.Value(0)).current;
     const rotation = useRef(new Animated.Value(0)).current;
 
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: () => true,
-            onPanResponderMove: (event, gesture) => {
-                const { touches } = event.nativeEvent;
-    
-                if (touches.length === 2) {
-                    // Compute distance between fingers for scaling
-                    const dx = touches[0].pageX - touches[1].pageX;
-                    const dy = touches[0].pageY - touches[1].pageY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-                    // Compute rotation angle between fingers
-                    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    
-                    // Scale based on distance
-                    scale.setValue(distance / 200); // Adjust sensitivity
-    
-                    // Move based on average position of both fingers
-                    const centerX = (touches[0].pageX + touches[1].pageX) / 2;
-                    const centerY = (touches[0].pageY + touches[1].pageY) / 2;
-                    translateX.setValue(centerX - screenWidth / 2);
-                    translateY.setValue(centerY - screenHeight / 2);
-    
-                    // Rotate based on finger angle
-                    rotation.setValue(angle);
+    // Store previous scale, rotation, and position values
+    const lastDistance = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
+    const lastRotation = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
+    const lastTranslateX = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
+    const lastTranslateY = useRef<number | null>(null); // Create a ref to store the previous distance between the two fingers
+
+    // Screen dimensions
+    const screenWidth = Dimensions.get("window").width;
+    const screenHeight = Dimensions.get("window").height;
+
+    // Scale image while keeping aspect ratio
+    const scaledImageDimensions = imageDimensions
+        ? (() => {
+            const aspectRatio = imageDimensions.width / imageDimensions.height;
+            let width = screenWidth;
+            let height = screenWidth / aspectRatio;
+
+            if (height > screenHeight * 0.8) {
+                height = screenHeight * 0.8;
+                width = height * aspectRatio;
+            }
+
+            return { width, height };
+        })()
+        : null;
+
+        const panResponder = useRef(
+            PanResponder.create({
+                onStartShouldSetPanResponder: () => true,
+                onMoveShouldSetPanResponder: () => true,
+                onPanResponderGrant: (event) => {
+                    // last distance should be null when gesture starts as there was no previous distance
+                    lastDistance.current = null;
+                    lastRotation.current = null;
+                    lastTranslateX.current = null;
+                    lastTranslateY.current = null;
+                },
+                onPanResponderMove: (event, gesture) => {
+                    const { touches } = event.nativeEvent;
+        
+                    if (touches.length === 2) {
+                        const dx = touches[0].pageX - touches[1].pageX;
+                        const dy = touches[0].pageY - touches[1].pageY;
+                        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+        
+                        // If this is not the first movement, calculate the change in distance
+                        if (lastDistance.current !== null) {
+                            const distanceChange = currentDistance - lastDistance.current;
+        
+                            // Incrementally update scale based on the change in distance
+                            const newScale = distanceChange / 200; // Adjust this value to control sensitivity
+                            scale.setValue(scale.__getValue() * (newScale + 1)); // Apply scaling incrementally
+                        }
+        
+                        // Update the last distance for the next movement
+                        lastDistance.current = currentDistance;
+        
+                        // Calculate the rotation angle change
+                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        
+                        // If this is not the first rotation, calculate the change in rotation
+                        if (lastRotation.current !== null) {
+                            const rotationChange = angle - lastRotation.current;
+        
+                            // Incrementally update rotation based on the change in angle
+                            rotation.setValue(rotation.__getValue() + rotationChange);
+                        }
+        
+                        // Update the last rotation for the next movement
+                        lastRotation.current = angle;
+        
+                        // Calculate the center position of the two touches
+                        const centerX = (touches[0].pageX + touches[1].pageX) / 2;
+                        const centerY = (touches[0].pageY + touches[1].pageY) / 2;
+        
+                        // If this is not the first translation, calculate the change in position
+                        if (lastTranslateX.current !== null && lastTranslateY.current !== null) {
+                            const translateXChange = centerX - lastTranslateX.current;
+                            const translateYChange = centerY - lastTranslateY.current;
+        
+                            // Incrementally update translation based on the change in position
+                            translateX.setValue(translateX.__getValue() + translateXChange);
+                            translateY.setValue(translateY.__getValue() + translateYChange);
+                        }
+        
+                        // Update the last translate position for the next movement
+                        lastTranslateX.current = centerX;
+                        lastTranslateY.current = centerY;
+                    }
                 }
-            },
-            onPanResponderRelease: () => {},
-        })
-    ).current;
+            })
+        ).current;
 
-    const takePicture = async () => {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== "granted") {
-            alert("Permission to access camera is required!");
+    // Handle image selection and capturing
+    const handleImagePick = useCallback(async (useCamera: boolean) => {
+        const permission = useCamera
+            ? await ImagePicker.requestCameraPermissionsAsync()
+            : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (permission.status !== "granted") {
+            alert("Permission is required!");
             return;
         }
 
-        const pickerResult = await ImagePicker.launchCameraAsync({
-            allowsEditing: false,
-            quality: 1,
-        });
-
-        setShowPredictions(false);
+        const pickerResult = useCamera
+            ? await ImagePicker.launchCameraAsync({ quality: 1 })
+            : await ImagePicker.launchImageLibraryAsync({ quality: 1 });
 
         if (pickerResult.assets && pickerResult.assets.length > 0) {
             const uri = pickerResult.assets[0].uri;
@@ -81,43 +147,14 @@ const App: React.FC = () => {
                 setImageDimensions({ width, height });
             });
 
+            setShowPredictions(false);
             await sendImageToServer(uri);
-        } else {
-            alert("No image captured or operation cancelled.");
         }
-    };
+    }, []);
 
-    const selectImage = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-            alert("Permission to access gallery is required!");
-            return;
-        }
-
-        const pickerResult = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: false,
-            quality: 1,
-        });
-
-        setShowPredictions(false);
-
-        if (pickerResult.assets && pickerResult.assets.length > 0) {
-            const uri = pickerResult.assets[0].uri;
-            setImageUri(uri);
-
-            Image.getSize(uri, (width, height) => {
-                setImageDimensions({ width, height });
-            });
-
-            await sendImageToServer(uri);
-        } else {
-            alert("No image selected or operation cancelled.");
-        }
-    };
-
-    const sendImageToServer = async (uri: string) => {
-        console.log("sending to server");
+    // Send image to server
+    const sendImageToServer = useCallback(async (uri: string) => {
+        console.log("Sending to server...");
 
         const formData = new FormData();
         formData.append("image", {
@@ -127,7 +164,7 @@ const App: React.FC = () => {
         } as any);
 
         try {
-            const response = await fetch(serverAddress + "/predict", {
+            const response = await fetch(`${serverAddress}/predict`, {
                 method: "POST",
                 body: formData,
                 headers: {
@@ -136,36 +173,44 @@ const App: React.FC = () => {
             });
 
             const data = await response.json();
-            console.log("Server Response:", data);
 
-            if (!data || !data.imageSize || !Array.isArray(data.predictions)) {
+            if (data?.imageSize && Array.isArray(data.predictions)) {
+                setPredictions(data.predictions);
+                setImageDimensions(data.imageSize);
+                setShowPredictions(true);
+            } else {
                 console.error("Unexpected response format", data);
-                return;
             }
-
-            setPredictions(data.predictions);
-            setImageDimensions(data.imageSize);
-            setShowPredictions(true);
         } catch (error) {
             console.error("Error uploading image:", error);
         }
+    }, []);
+
+    // Render predictions (no scaling)
+    const renderBoundingBoxes = () => {
+        if (!showPredictions || !scaledImageDimensions) return null;
+
+        return predictions.map((box, index) => {
+            const [x, y, width, height] = box;
+            const scaleX = scaledImageDimensions.width / imageDimensions!.width;
+            const scaleY = scaledImageDimensions.height / imageDimensions!.height;
+
+            return (
+                <View
+                    key={index}
+                    style={[
+                        styles.boundingBox,
+                        {
+                            left: x * scaleX,
+                            top: y * scaleY,
+                            width: width * scaleX,
+                            height: height * scaleY,
+                        },
+                    ]}
+                />
+            );
+        });
     };
-
-    const screenWidth = Dimensions.get("window").width;
-    const screenHeight = Dimensions.get("window").height;
-
-    const scaledImageDimensions = imageDimensions ? (() => {
-        const imageAspectRatio = imageDimensions.width / imageDimensions.height;
-        let scaledWidth = screenWidth;
-        let scaledHeight = screenWidth / imageAspectRatio;
-
-        if (scaledHeight > screenHeight * 0.8) {
-            scaledHeight = screenHeight * 0.8;
-            scaledWidth = scaledHeight * imageAspectRatio;
-        }
-
-        return { width: scaledWidth, height: scaledHeight };
-    })() : null;
 
     return (
         <View style={styles.container}>
@@ -175,13 +220,11 @@ const App: React.FC = () => {
                     style={[
                         styles.imageContainer,
                         {
-                            width: scaledImageDimensions.width,
-                            height: scaledImageDimensions.height,
                             transform: [
                                 { translateX },
                                 { translateY },
                                 { scale },
-                                { rotate: rotation.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] }) }
+                                { rotate: rotation.interpolate({ inputRange: [-360, 360], outputRange: ["-360deg", "360deg"] }) }
                             ],
                         },
                     ]}
@@ -193,36 +236,14 @@ const App: React.FC = () => {
                             height: scaledImageDimensions.height,
                         }}
                     />
-                    {showPredictions &&
-                        predictions.map((box, index) => {
-                            if (!Array.isArray(box) || box.length < 4) return null;
-                            const [x, y, width, height] = box;
-
-                            const scaleX = scaledImageDimensions.width / imageDimensions!.width;
-                            const scaleY = scaledImageDimensions.height / imageDimensions!.height;
-
-                            return (
-                                <Animated.View
-                                    key={index}
-                                    style={[
-                                        styles.boundingBox,
-                                        {
-                                            left: x * scaleX,
-                                            top: y * scaleY,
-                                            width: width * scaleX,
-                                            height: height * scaleY,
-                                        },
-                                    ]}
-                                />
-                            );
-                        })}
+                    {renderBoundingBoxes()}
                 </Animated.View>
             )}
 
-            <View style={{ position: "absolute", bottom: insets.bottom + 10, width: "90%" }}>
-                <Button title="Pick an Image" onPress={selectImage} />
+            <View style={styles.buttonContainer}>
+                <Button title="Pick an Image" onPress={() => handleImagePick(false)} />
                 <View style={{ marginTop: 10 }} />
-                <Button title="Take a Picture" onPress={takePicture} />
+                <Button title="Take a Picture" onPress={() => handleImagePick(true)} />
             </View>
         </View>
     );
@@ -236,13 +257,16 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         position: "relative",
-        alignItems: "center",
-        justifyContent: "center",
     },
     boundingBox: {
         position: "absolute",
         borderColor: "red",
         borderWidth: 2,
+    },
+    buttonContainer: {
+        position: "absolute",
+        bottom: 20,
+        width: "90%",
     },
 });
 
