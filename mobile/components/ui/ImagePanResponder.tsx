@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Animated, PanResponder, View, StyleSheet } from "react-native";
+import { Animated, PanResponder, View, StyleSheet, TouchableOpacity } from "react-native";
 
 interface ImagePanResponderProps {
   children: React.ReactNode;
@@ -20,8 +20,20 @@ const ImagePanResponder: React.FC<ImagePanResponderProps> = ({ children }) => {
   // PanResponder logic
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: (evt, gestureState) => {
+        // Prevent the PanResponder from intercepting touch events for TouchableOpacity buttons
+        if (gestureState.numberActiveTouches > 1) {
+          return true; // Allow gestures (e.g., pinch to zoom or rotate)
+        }
+        return false; // Don't capture touch for individual elements like buttons
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Prevent the PanResponder from intercepting touch events for TouchableOpacity buttons
+        if (gestureState.numberActiveTouches > 1) {
+          return true; // Allow gestures (e.g., pinch to zoom or rotate)
+        }
+        return false; // Don't capture touch for individual elements like buttons
+      },
       onPanResponderGrant: () => {
         lastDistance.current = null;
         lastRotation.current = null;

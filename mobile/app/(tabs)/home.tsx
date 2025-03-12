@@ -2,15 +2,16 @@ import React, { useRef, useState, useCallback } from "react";
 import {
     View,
     Button,
+    Text,
     Image,
     StyleSheet,
     Dimensions,
-    Animated,
-    PanResponder
+    TouchableOpacity,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ImagePanResponder from '../../components/ui/ImagePanResponder';
+import ClimbingHoldButton from '../../components/ui/ClimbingHoldButton';
 
 const serverAddress = "http://192.168.1.203:5000";
 
@@ -97,6 +98,7 @@ const App: React.FC = () => {
             const data = await response.json();
 
             if (data?.imageSize && Array.isArray(data.predictions)) {
+                console.log("Received predictions: " + data.predictions);
                 setPredictions(data.predictions);
                 setImageDimensions(data.imageSize);
                 setShowPredictions(true);
@@ -118,10 +120,9 @@ const App: React.FC = () => {
             const scaleY = scaledImageDimensions.height / imageDimensions!.height;
 
             return (
-                <View
+                <ClimbingHoldButton
                     key={index}
                     style={[
-                        styles.boundingBox,
                         {
                             left: x * scaleX,
                             top: y * scaleY,
@@ -167,15 +168,22 @@ const styles = StyleSheet.create({
     imageContainer: {
         position: "relative",
     },
-    boundingBox: {
-        position: "absolute",
-        borderColor: "red",
-        borderWidth: 2,
-    },
     buttonContainer: {
         position: "absolute",
         bottom: 20,
         width: "90%",
+    },
+    transparentRedButton: {
+      backgroundColor: 'rgba(255, 0, 0, 0.2)', // Transparent red (50% opacity)
+      padding: 10,
+      borderWidth: 1,
+      borderColor: '#fff', // You can adjust the border color if needed
+      borderRadius: 5,
+    },
+    buttonText: {
+      color: '#fff', // Text color (white)
+      fontSize: 16,
+      textAlign: 'center',
     },
 });
 
