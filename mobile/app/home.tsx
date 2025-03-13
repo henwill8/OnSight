@@ -43,14 +43,14 @@ const Home = () => {
 
 const styles = StyleSheet.create({
   container: {
-	flex: 1,
-	alignItems: "center",
-	justifyContent: "center",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
   },
   buttonContainer: {
-	position: "absolute",
-	bottom: 20,
-	width: "90%",
+		position: "absolute",
+		bottom: 20,
+		width: "90%",
   }
 });
 

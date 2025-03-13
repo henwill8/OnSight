@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '../components/ui/ClimbingHoldButton';
 import PanRotateZoomView from '../components/ui/PanRotateZoomView';
@@ -114,7 +114,7 @@ const RouteCreation: React.FC = () => {
         style={styles.closeButton}
         onPress={() => router.back()} // Use router.back() for navigation
       >
-        {/* <Image source={require('../assets/close.png')} style={styles.closeIcon} /> */}
+        <Image source={require('../assets/images/close.png')} style={styles.closeIcon} />
       </TouchableOpacity>
 
       {scaledImageDimensions && (
@@ -129,19 +129,28 @@ const RouteCreation: React.FC = () => {
           {renderBoundingBoxes()}
         </PanRotateZoomView>
       )}
+
+      <Modal
+        transparent={true}
+        visible={predictions.length == 0}
+        animationType="fade"
+      >
+        <View style={styles.overlay}>
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.loadingText}>Detecting Climbing Holds...</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'contain',
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
   },
   boundingBox: {
     position: 'absolute',
@@ -157,6 +166,24 @@ const styles = StyleSheet.create({
   closeIcon: {
     width: 24,
     height: 24,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+  },
+  loaderContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#333',
+    padding: 20,
+    borderRadius: 10,
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 
