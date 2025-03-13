@@ -11,9 +11,9 @@ const ClimbingHoldButton: React.FC<ClimbingHoldButtonProps> = ({ style }) => {
   // Array of colors to cycle through
   const colors = [
     "rgba(0, 0, 0, 0)",       // Transparent
-    "rgba(0, 68, 255, 0.5)",    // Red with 50% transparency
-    "rgba(0, 255, 0, 0.5)",    // Green with 50% transparency
-    "rgba(216, 0, 0, 0.5)", // Gray with 50% transparency
+    "rgba(0, 68, 255, 1)",    // Red with 50% transparency
+    "rgba(0, 255, 0, 1)",    // Green with 50% transparency
+    "rgba(216, 0, 0, 1)", // Gray with 50% transparency
   ];;
 
   // Function to handle color change on button click
@@ -23,7 +23,7 @@ const ClimbingHoldButton: React.FC<ClimbingHoldButtonProps> = ({ style }) => {
 
   return (
     <TouchableOpacity
-      style={[defaultStyles.button, { backgroundColor: colors[buttonColorIndex] }, style]} // Apply the custom style
+      style={[defaultStyles.button, { borderColor: colors[buttonColorIndex] }, style]} // Apply the custom style
       onPress={handleColorChange}
     />
   );
@@ -33,6 +33,8 @@ const ClimbingHoldButton: React.FC<ClimbingHoldButtonProps> = ({ style }) => {
 const defaultStyles = StyleSheet.create({
   button: {
     position: "absolute",
+    borderWidth: 2,
+    backgroundColor: "transparent"
   },
 });
 

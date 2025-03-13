@@ -1,22 +1,15 @@
-import { useEffect } from "react";
-import { useRouter } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import React, { useEffect } from "react";
+import { useRouter } from "expo-router"; // Import useRouter
 
 export default function Index() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const userToken = await getItemAsync("userToken"); // Check login status
-    //   if (userToken) {
-    //     router.replace("/(tabs)/home"); // Go to main app if logged in
-    //   } else {
-        router.replace("/auth/login"); // Go to login if not logged in
-    //   }
-    };
+    const timer = setTimeout(() => {
+      router.replace("/auth/login");
+    }, 0); // You can adjust the timeout duration if necessary
+    return () => clearTimeout(timer); // Clean up the timeout
+  }, [router]);
 
-    checkAuth();
-  }, []);
-
-  return null; // Empty screen, just used for redirection
+  return null;
 }

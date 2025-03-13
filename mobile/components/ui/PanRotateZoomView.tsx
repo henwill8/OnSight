@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Animated, PanResponder, View, StyleSheet, TouchableOpacity } from "react-native";
 
-interface ImagePanResponderProps {
+interface Props {
   children: React.ReactNode;
 }
 
-const ImagePanResponder: React.FC<ImagePanResponderProps> = ({ children }) => {
+const PanRotateZoomView: React.FC<Props> = ({ children }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -105,4 +105,4 @@ const ImagePanResponder: React.FC<ImagePanResponderProps> = ({ children }) => {
   );
 };
 
-export default ImagePanResponder;
+export default PanRotateZoomView;

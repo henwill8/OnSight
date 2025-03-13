@@ -1,22 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { setItemAsync } from "expo-secure-store";
+import { setItemAsync, getItemAsync } from "expo-secure-store";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+
+const nextScreen = "/home"
 
 export default function LoginScreen() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user token exists in secure storage to determine if logged in
+    const checkAuth = async () => {
+      const userToken = await getItemAsync("userToken");
+      if (userToken) {
+        setIsLoggedIn(true); // If token exists, user is logged in
+      } else {
+        setIsLoggedIn(false); // If no token, user is not logged in
+      }
+    };
+
+    checkAuth();
+  }, []); // Empty dependency array to run once when the component mounts
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.replace("/home"); // Navigate to home if logged in
+    }
+  }, [isLoggedIn, router]); // Ensures navigation happens after login state is updated
 
   const handleLogin = async () => {
-    // Replace with actual authentication logic
-    // if (username === "user" && password === "password") {
+    if (true) {// TODO: switch this to actual login checking
       await setItemAsync("userToken", "someUniqueToken"); // Set user token
-      router.replace("/(tabs)/home");
-    // } else {
-      // Alert.alert("Login Failed", "Invalid username or password");
-    // }
+      setIsLoggedIn(true); // Update login state
+    } else {
+      Alert.alert("Login Failed", "Invalid username or password");
+    }
   };
 
   const insets = useSafeAreaInsets();
