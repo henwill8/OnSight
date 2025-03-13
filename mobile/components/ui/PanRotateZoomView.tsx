@@ -5,7 +5,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-const PanRotateZoomView: React.FC<Props> = ({ children }) => {
+const PanRotateZoomView: React.FC<Props> = ({ children }) => {// TODO: make scaling scale based on where fingers are on image instead of just scaling around the center of the image
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -50,7 +50,7 @@ const PanRotateZoomView: React.FC<Props> = ({ children }) => {
 
           if (lastDistance.current !== null) {
             const distanceChange = currentDistance - lastDistance.current;
-            const newScale = distanceChange / 200; // Adjust for sensitivity
+            const newScale = distanceChange / 200;
             scale.setValue(scale.__getValue() * (newScale + 1));
           }
 

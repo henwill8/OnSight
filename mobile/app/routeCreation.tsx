@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '../components/ui/ClimbingHoldButton';
 import PanRotateZoomView from '../components/ui/PanRotateZoomView';
 
-const serverAddress = "http://192.168.1.203:5000";
+const serverAddress = "http://192.168.1.203:5000"; // Maybe switch to onnxruntime-react-native and handle the predictions on the client
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
