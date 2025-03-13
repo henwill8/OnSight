@@ -60,14 +60,15 @@ const RouteCreation: React.FC = () => {
     } as any);
 
     try {
-      const test = await fetch(`${serverAddress}`, { method: "GET" });
-      const w = await test.json();  // Parse the response body as JSON
-      console.log(w);  // Log the parsed JSON data
-
       const response = await fetch(`${serverAddress}/predict`, {
         method: "POST",
         body: formData
       });
+      
+      if (!response.ok) {
+        console.error("Server error:", response.status);
+        return;
+      }
 
       const data = await response.json();
 

@@ -22,13 +22,10 @@ const Home = () => {
 
 		if (pickerResult.assets && pickerResult.assets.length > 0) {
 			const uri = pickerResult.assets[0].uri;
-			Image.getSize(uri, (width, height) => {
-				console.log(width + "x" + height + " sdfasdf")
-			});
-			console.log(uri)
+
 			router.push({
 				pathname: '/routeCreation',
-				params: { imageUri: uri },
+				params: { imageUri: encodeURIComponent(uri) }, // I hate this but express encodes and decodes the uri and messes with it and it fails if I dont encode it an extra time myself
 			});
 		}
   }, [router]);
