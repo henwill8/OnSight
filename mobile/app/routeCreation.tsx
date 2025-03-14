@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '../components/ui/ClimbingHoldButton';
-import PanRotateZoomView from '../components/ui/PanRotateZoomView';
+import PanRotateZoomView, { PanRotateZoomViewRef } from '../components/ui/PanRotateZoomView';
 
 const serverAddress = "http://192.168.1.203:5000"; // Maybe switch to onnxruntime-react-native and handle the predictions on the client
 
@@ -18,6 +18,10 @@ const RouteCreation: React.FC = () => {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null);
   
+  const panRotateZoomViewRef = useRef<PanRotateZoomViewRef>(null);
+
+  const [dataReceived, setDataReceived] = useState(false);
+
   useEffect(() => {
     if (imageUri) {
       Image.getSize(imageUriString, (width, height) => {
@@ -78,6 +82,7 @@ const RouteCreation: React.FC = () => {
         
         setPredictions(data.predictions);
         setImageDimensions(data.imageSize);
+        setDataReceived(true);
       } else {
         console.error("Unexpected response format", data);
       }
@@ -108,6 +113,13 @@ const RouteCreation: React.FC = () => {
     });
   };
 
+  // Handle export button
+  const handleExport = async () => {
+    if (panRotateZoomViewRef.current) {
+      await panRotateZoomViewRef.current.exportView();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -118,7 +130,7 @@ const RouteCreation: React.FC = () => {
       </TouchableOpacity>
 
       {scaledImageDimensions && (
-        <PanRotateZoomView>
+        <PanRotateZoomView ref={panRotateZoomViewRef}>
           <Image
             source={{ uri: imageUriString }}
             style={{
@@ -130,9 +142,14 @@ const RouteCreation: React.FC = () => {
         </PanRotateZoomView>
       )}
 
+      {/* Export Button */}
+      <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
+        <Text style={styles.exportButtonText}>Export</Text>
+      </TouchableOpacity>
+
       <Modal
         transparent={true}
-        visible={predictions.length == 0}
+        visible={!dataReceived}
         animationType="fade"
       >
         <View style={styles.overlay}>
@@ -167,11 +184,25 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
+  exportButton: {
+    position: 'absolute',
+    bottom: 40,
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  exportButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   loaderContainer: {
     justifyContent: 'center',
