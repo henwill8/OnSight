@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { View, Button, StyleSheet, Image } from "react-native";
+import { Text, View, Button, StyleSheet, Image } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 
@@ -32,10 +32,10 @@ const Home = () => {
 
   return (
 	<View style={styles.container}>
+    <Text>Running as {__DEV__ ? 'Development' : 'Production'}</Text>
 	  <View style={styles.buttonContainer}>
 			<Button title="Pick an Image" onPress={() => handleImagePick(false)} />
 			<View style={{ marginTop: 10 }} />
-			<Button title="Take a Picture" onPress={() => handleImagePick(true)} />
 	  </View>
 	</View>
   );

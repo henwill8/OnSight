@@ -4,12 +4,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '../components/ui/ClimbingHoldButton';
 import PanRotateZoomView, { PanRotateZoomViewRef } from '../components/ui/PanRotateZoomView';
 
-const serverAddress = "http://192.168.1.203:5000"; // Maybe switch to onnxruntime-react-native and handle the predictions on the client
+const dev = false; // Switch to __DEV__ once you can get that working
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
 
 const RouteCreation: React.FC = () => {
+  const serverAddress = dev ? "http://192.168.1.203:5000" : "https://thecarpenterwall.com";
+  console.log("Using server address " + serverAddress);
+
   const router = useRouter();
   const { imageUri } = useLocalSearchParams();
   
@@ -52,7 +55,11 @@ const RouteCreation: React.FC = () => {
     })()
     : null;
   
-  // Send image to server
+  const handleError = (message: string) => {
+    console.error(message);
+    router.back();
+  };
+
   const sendImageToServer = useCallback(async (uri: string) => {
     console.log("Sending to server...");
 
@@ -68,9 +75,9 @@ const RouteCreation: React.FC = () => {
         method: "POST",
         body: formData
       });
-      
+
       if (!response.ok) {
-        console.error("Server error:", response.status);
+        handleError(`Server error: ${response.status}`);
         return;
       }
 
@@ -79,17 +86,15 @@ const RouteCreation: React.FC = () => {
       if (data?.imageSize && Array.isArray(data.predictions)) {
         let num_predictions = data.predictions.length;
         console.log("Received " + num_predictions + " predictions");
-        
+
         setPredictions(data.predictions);
         setImageDimensions(data.imageSize);
         setDataReceived(true);
       } else {
-        console.error("Unexpected response format", data);
+        handleError("Unexpected response format");
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
-
-      router.back();
+      handleError("Error uploading image: " + error);
     }
   }, []);
   
