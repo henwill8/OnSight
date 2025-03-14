@@ -36,6 +36,7 @@ const Home = () => {
 	  <View style={styles.buttonContainer}>
 			<Button title="Pick an Image" onPress={() => handleImagePick(false)} />
 			<View style={{ marginTop: 10 }} />
+			<Button title="Take a Picture" onPress={() => handleImagePick(true)} />
 	  </View>
 	</View>
   );
