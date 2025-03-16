@@ -1,8 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import ClimbingHoldButton from '../components/ui/ClimbingHoldButton';
-import PanRotateZoomView, { PanRotateZoomViewRef } from '../components/ui/PanRotateZoomView';
+import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
+import PanRotateZoomView, { PanRotateZoomViewRef } from '@/components/ui/PanRotateZoomView';
+import DrawingCanvas from "@/components/ui/DrawingCanvas";
 
 const dev = false; // Switch to __DEV__ once you can get that working
 
@@ -88,8 +89,9 @@ const RouteCreation: React.FC = () => {
         console.log("Received " + num_predictions + " predictions");
 
         setPredictions(data.predictions);
-        setImageDimensions(data.imageSize);
         setDataReceived(true);
+
+        setImageDimensions(data.imageSize);
       } else {
         handleError("Unexpected response format");
       }
@@ -125,6 +127,12 @@ const RouteCreation: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (imageDimensions) {
+      console.log("Image size is " + imageDimensions.width + "x" + imageDimensions.height);
+    }
+  }, [imageDimensions]);
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -136,6 +144,7 @@ const RouteCreation: React.FC = () => {
 
       {scaledImageDimensions && (
         <PanRotateZoomView ref={panRotateZoomViewRef}>
+          {/* The Image */}
           <Image
             source={{ uri: imageUriString }}
             style={{
@@ -143,7 +152,21 @@ const RouteCreation: React.FC = () => {
               height: scaledImageDimensions!.height,
             }}
           />
+          
+          {/* Render the bounding boxes */}
           {renderBoundingBoxes()}
+
+          {/* Drawing canvas */}
+          <DrawingCanvas 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 10, // Ensure it stays on top of the image
+            }}
+          />
         </PanRotateZoomView>
       )}
 
@@ -173,11 +196,6 @@ const styles = StyleSheet.create({
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-  },
-  boundingBox: {
-    position: 'absolute',
-    borderColor: 'red',
-    borderWidth: 2,
   },
   closeButton: {
     position: 'absolute',
