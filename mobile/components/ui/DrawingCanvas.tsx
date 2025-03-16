@@ -8,7 +8,7 @@ interface IPath {
 }
 
 interface DrawProps {
-  style?: ViewStyle; // Allow passing a custom style
+  style?: ViewStyle;
 }
 
 const Draw: React.FC<DrawProps> = ({ style }) => {

@@ -4,16 +4,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
 import PanRotateZoomView, { PanRotateZoomViewRef } from '@/components/ui/PanRotateZoomView';
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
-
-const dev = false; // Switch to __DEV__ once you can get that working
+import config from '@/config';
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
 
 const RouteCreation: React.FC = () => {
-  const serverAddress = dev ? "http://192.168.1.203:5000" : "https://thecarpenterwall.com";
-  console.log("Using server address " + serverAddress);
-
   const router = useRouter();
   const { imageUri } = useLocalSearchParams();
   
@@ -72,7 +68,7 @@ const RouteCreation: React.FC = () => {
     } as any);
 
     try {
-      const response = await fetch(`${serverAddress}/predict`, {
+      const response = await fetch(config.API_URL + '/predict', {
         method: "POST",
         body: formData
       });

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { setItemAsync, getItemAsync } from "expo-secure-store";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
-
-const nextScreen = "/home"
+import config from '@/config';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -17,14 +15,50 @@ export default function LoginScreen() {
     const checkAuth = async () => {
       const userToken = await getItemAsync("userToken");
       if (userToken) {
-        setIsLoggedIn(true); // If token exists, user is logged in
+        // Verify the token with the server
+        try {
+          const response = await fetch(config.API_URL + "/verify-token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${userToken}`, // Attach token for validation
+            },
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            setIsLoggedIn(true); // Token is valid, user is logged in
+          } else {// If the token is expired, try refreshing the token
+            if (data.message === "Token expired") {
+              const refreshResponse = await fetch(config.API_URL + "/refresh-token", {
+                method: "POST",
+                credentials: "include", // Include cookies in the request
+              });
+    
+              const refreshData = await refreshResponse.json();
+    
+              if (refreshResponse.ok) {
+                await setItemAsync("userToken", refreshData.accessToken); // Store new access token
+                setIsLoggedIn(true); // Token is refreshed, user is logged in
+              } else {
+                Alert.alert("Session Expired", "Your session has expired. Please log in again.");
+                await setItemAsync("userToken", ""); // Clear user token
+                setIsLoggedIn(false); // Logout user
+              }
+            }
+          }
+        } catch (error) {
+          console.error(error);
+          setIsLoggedIn(false); // In case of error, assume the user is not logged in
+        }
       } else {
-        setIsLoggedIn(false); // If no token, user is not logged in
+        setIsLoggedIn(false); // No token, user is not logged in
       }
     };
 
     checkAuth();
-  }, []); // Empty dependency array to run once when the component mounts
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -33,23 +67,36 @@ export default function LoginScreen() {
   }, [isLoggedIn, router]); // Ensures navigation happens after login state is updated
 
   const handleLogin = async () => {
-    if (true) {// TODO: switch this to actual login checking
-      await setItemAsync("userToken", "someUniqueToken"); // Set user token
-      setIsLoggedIn(true); // Update login state
-    } else {
-      Alert.alert("Login Failed", "Invalid username or password");
+    try {
+      const response = await fetch(config.API_URL + "/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await setItemAsync("userToken", data.accessToken); // Store token
+        setIsLoggedIn(true); // Update login state
+      } else {
+        Alert.alert("Login Failed", data.message || "Invalid username or password");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "An error occurred while logging in");
     }
   };
 
-  const insets = useSafeAreaInsets();
-
   return (
     <View style={styles.container}>
-      <View style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-        <Text style={styles.title}>Test</Text>
-      </View>
+      <Text style={styles.title}>Login</Text>
       <View style={styles.innerContainer}>
-        <Text style={styles.loginTitle}>Login</Text>
         <TextInput
           style={styles.input}
           placeholder="Username"
@@ -68,6 +115,9 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/auth/register")}>
+          <Text style={styles.link}>Don't have an account? Register here</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -77,25 +127,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "dodgerblue", // Set background color to blue
+    backgroundColor: "dodgerblue",
   },
   innerContainer: {
     flex: 1,
     width: "75%",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "white", // Change text color for better contrast
-  },
-  loginTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "white", // Change text color for better contrast
+    color: "white",
   },
   input: {
     width: "100%",
@@ -103,19 +147,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderRadius: 5,
-    borderColor: "white", // Optional: Change border color for better contrast
-    color: "white", // Change text color inside the input
+    borderColor: "white",
+    color: "white",
   },
   button: {
-    backgroundColor: "aquamarine", // Set button background color
-    padding: 15, // Adjust padding for the button
-    borderRadius: 5, // Round button corners
-    width: "100%", // Full width
-    alignItems: "center", // Center text
+    backgroundColor: "aquamarine",
+    padding: 15,
+    borderRadius: 5,
+    width: "100%",
+    alignItems: "center",
   },
   buttonText: {
-    color: "black", // Button text color
-    fontSize: 16, // Text size
-    fontWeight: "bold", // Text weight
+    color: "black",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  link: {
+    marginTop: 10,
+    color: "white",
+    textDecorationLine: "underline",
   },
 });

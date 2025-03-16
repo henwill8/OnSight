@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useRouter } from "expo-router"; // Import useRouter
+import { useRouter } from "expo-router";
 
 export default function Index() {
   const router = useRouter();
@@ -7,7 +7,7 @@ export default function Index() {
   useEffect(() => {
     const timer = setTimeout(() => {
       router.replace("/auth/login");
-    }, 0); // You can adjust the timeout duration if necessary
+    }, 0);
     return () => clearTimeout(timer); // Clean up the timeout
   }, [router]);
 
