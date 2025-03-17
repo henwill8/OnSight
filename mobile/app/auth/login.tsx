@@ -30,7 +30,7 @@ export default function LoginScreen() {
           if (response.ok) {
             setIsLoggedIn(true); // Token is valid, user is logged in
           } else {// If the token is expired, try refreshing the token
-            if (data.message === "Token expired") {
+            if (response.status == 401) {
               const refreshResponse = await fetch(config.API_URL + "/refresh-token", {
                 method: "POST",
                 credentials: "include", // Include cookies in the request
