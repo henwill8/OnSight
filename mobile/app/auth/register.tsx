@@ -10,7 +10,10 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
 
   const handleRegister = async () => {
+    console.log("Attempting to register user:", username);
+
     try {
+      console.log("Sending registration request to the server...");
       const response = await fetch(config.API_URL + "/register", {
         method: "POST",
         headers: {
@@ -26,13 +29,15 @@ export default function RegisterScreen() {
       const data = await response.json();
 
       if (response.ok) {
+        console.log("Registration successful for user:", username);
         Alert.alert("Registration Successful", "You can now log in with your credentials");
-        router.push("/auth/login"); // Navigate to login page
+        router.replace("/auth/login"); // Navigate to login page
       } else {
+        console.log("Registration failed for user:", username, "Error message:", data.message);
         Alert.alert("Registration Failed", data.message || "Error during registration");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error during registration:", error);
       Alert.alert("Error", "An error occurred while registering");
     }
   };

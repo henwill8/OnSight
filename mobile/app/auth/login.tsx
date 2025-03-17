@@ -4,6 +4,8 @@ import { setItemAsync, getItemAsync } from "expo-secure-store";
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import config from '@/config';
 
+const landingPage = "/(tabs)/home";
+
 export default function LoginScreen() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -11,62 +13,88 @@ export default function LoginScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check if user token exists in secure storage to determine if logged in
     const checkAuth = async () => {
+      console.log("Checking authentication status...");
+  
       const userToken = await getItemAsync("userToken");
-      if (userToken) {
-        // Verify the token with the server
-        try {
-          const response = await fetch(config.API_URL + "/verify-token", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${userToken}`, // Attach token for validation
-            },
-          });
-
-          const data = await response.json();
-
-          if (response.ok) {
-            setIsLoggedIn(true); // Token is valid, user is logged in
-          } else {// If the token is expired, try refreshing the token
-            if (response.status == 401) {
-              const refreshResponse = await fetch(config.API_URL + "/refresh-token", {
-                method: "POST",
-                credentials: "include", // Include cookies in the request
-              });
-    
-              const refreshData = await refreshResponse.json();
-    
-              if (refreshResponse.ok) {
-                await setItemAsync("userToken", refreshData.accessToken); // Store new access token
-                setIsLoggedIn(true); // Token is refreshed, user is logged in
-              } else {
-                Alert.alert("Session Expired", "Your session has expired. Please log in again.");
-                await setItemAsync("userToken", ""); // Clear user token
-                setIsLoggedIn(false); // Logout user
-              }
-            }
-          }
-        } catch (error) {
-          console.error(error);
-          setIsLoggedIn(false); // In case of error, assume the user is not logged in
+      if (!userToken) {
+        console.log("No token found, user is not logged in.");
+        setIsLoggedIn(false);
+        return;
+      }
+  
+      console.log("Token found, verifying...");
+      try {
+        const response = await fetch(config.API_URL + "/verify-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userToken}`,
+          },
+        });
+  
+        // Check if the response is valid JSON
+        const contentType = response.headers.get("Content-Type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error("Invalid response format: Expected JSON, received:", contentType);
+          throw new Error("Invalid response format");
         }
-      } else {
-        setIsLoggedIn(false); // No token, user is not logged in
+  
+        const data = await response.json();
+  
+        if (response.ok) {
+          console.log("Token is valid, user is logged in.");
+          setIsLoggedIn(true);
+          return;
+        }
+
+        console.log("Token is invalid or expired. Attempting to refresh token...");
+        await refreshToken();
+      } catch (error) {
+        console.error("Error verifying token:", error);
+        setIsLoggedIn(false);
       }
     };
+  
+    const refreshToken = async () => {
+      try {
 
+        const refreshResponse = await fetch(config.API_URL + "/refresh-token", {
+          method: "POST",
+          credentials: "include",
+        });
+  
+        const refreshData = await refreshResponse.json();
+  
+        if (refreshResponse.ok) {
+          console.log("Token refreshed successfully.");
+          await setItemAsync("userToken", refreshData.accessToken);
+          setIsLoggedIn(true);
+        } else {
+          console.log("Session expired, user needs to log in again.");
+          Alert.alert("Session Expired", "Your session has expired. Please log in again.");
+          await setItemAsync("userToken", "");
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        setIsLoggedIn(false);
+      }
+    };
+  
     checkAuth();
-  }, []);
+  }, []);  
 
   useEffect(() => {
     if (isLoggedIn) {
-      router.replace("/home"); // Navigate to home if logged in
+      console.log("User is logged in, navigating to home...");
+      router.replace(landingPage);
     }
-  }, [isLoggedIn, router]); // Ensures navigation happens after login state is updated
+  }, [isLoggedIn, router]);
 
   const handleLogin = async () => {
+    console.log("Attempting login for user:", username);
+
     try {
       const response = await fetch(config.API_URL + "/login", {
         method: "POST",
@@ -79,16 +107,24 @@ export default function LoginScreen() {
         }),
       });
 
+      const contentType = response.headers.get("Content-Type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("Invalid response format: Expected JSON, received:", contentType);
+        throw new Error("Invalid response format");
+      }
+
       const data = await response.json();
 
       if (response.ok) {
-        await setItemAsync("userToken", data.accessToken); // Store token
-        setIsLoggedIn(true); // Update login state
+        console.log("Login successful for user:", username);
+        await setItemAsync("userToken", data.accessToken);
+        setIsLoggedIn(true);
       } else {
+        console.log("Login failed:", data.message || "Invalid username or password");
         Alert.alert("Login Failed", data.message || "Invalid username or password");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error logging in:", error);
       Alert.alert("Error", "An error occurred while logging in");
     }
   };
@@ -115,7 +151,7 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push("/auth/register")}>
+        <TouchableOpacity onPress={() => router.replace("/auth/register")}>
           <Text style={styles.link}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>

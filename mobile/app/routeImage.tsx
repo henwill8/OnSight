@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
 import PanRotateZoomView, { PanRotateZoomViewRef } from '@/components/ui/PanRotateZoomView';
@@ -9,10 +9,13 @@ import config from '@/config';
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
 
-const RouteCreation: React.FC = () => {
+const RouteImage: React.FC = () => {
   const router = useRouter();
-  const { imageUri } = useLocalSearchParams();
   
+  // Get params from router
+  const { imageUri, name, description, difficulty, gymId } = useLocalSearchParams();
+  
+  // Make sure the imageUri is properly passed as a single string, not an array
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -23,14 +26,16 @@ const RouteCreation: React.FC = () => {
   const [dataReceived, setDataReceived] = useState(false);
 
   useEffect(() => {
-    if (imageUri) {
+    if (imageUriString) {
       Image.getSize(imageUriString, (width, height) => {
         setImageDimensions({ width, height });
       });
 
       sendImageToServer(imageUriString);
+    } else {
+      console.error("No imageUri provided");
     }
-  }, [imageUri]);
+  }, [imageUriString]);
 
   // Screen dimensions
   const screenWidth = Dimensions.get("window").width;
@@ -54,7 +59,9 @@ const RouteCreation: React.FC = () => {
   
   const handleError = (message: string) => {
     console.error(message);
-    router.back();
+  
+    setDataReceived(true);
+    Alert.alert("Predictions Failed!", "Hold predictions failed, but you can still draw.");
   };
 
   const sendImageToServer = useCallback(async (uri: string) => {
@@ -111,6 +118,7 @@ const RouteCreation: React.FC = () => {
             width: width * scaleX,
             height: height * scaleY,
           }]}
+
         />
       );
     });
@@ -135,7 +143,7 @@ const RouteCreation: React.FC = () => {
         style={styles.closeButton}
         onPress={() => router.back()} // Use router.back() for navigation
       >
-        <Image source={require('../assets/images/close.png')} style={styles.closeIcon} />
+        <Image source={require('@/assets/images/close.png')} style={styles.closeIcon} />
       </TouchableOpacity>
 
       {scaledImageDimensions && (
@@ -189,9 +197,9 @@ const RouteCreation: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeButton: {
     position: 'absolute',
@@ -237,4 +245,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RouteCreation;
+export default RouteImage;

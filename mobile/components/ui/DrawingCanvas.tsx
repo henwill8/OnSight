@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, PanResponder, GestureResponderEvent, PanResponderGestureState, ViewStyle } from "react-native";
-import { Canvas, Path } from "@shopify/react-native-skia";
+import { Canvas, Color, Path } from "@shopify/react-native-skia";
 
 interface IPath {
   segments: string[];
@@ -8,10 +8,11 @@ interface IPath {
 }
 
 interface DrawProps {
+  color?: string;  // Optional color prop, which defaults to black
   style?: ViewStyle;
 }
 
-const Draw: React.FC<DrawProps> = ({ style }) => {
+const Draw: React.FC<DrawProps> = ({ color = 'black', style }) => { // Default color to 'black' if not provided
   const [paths, setPaths] = useState<IPath[]>([]);
   const isDrawing = useRef(false);
 
@@ -30,7 +31,7 @@ const Draw: React.FC<DrawProps> = ({ style }) => {
       ...prevPaths,
       {
         segments: [`M ${e.nativeEvent.locationX} ${e.nativeEvent.locationY}`],
-        color: "#06d6a0",
+        color: color,
       },
     ]);
 
@@ -74,7 +75,7 @@ const Draw: React.FC<DrawProps> = ({ style }) => {
   ).current;
 
   return (
-    <View style={[ style ]} {...panResponder.panHandlers}>
+    <View style={[style]} {...panResponder.panHandlers}>
       <Canvas style={{ flex: 1 }}>
         {paths.map((p, index) => (
           <Path
@@ -82,7 +83,7 @@ const Draw: React.FC<DrawProps> = ({ style }) => {
             path={p.segments.join(" ")}
             strokeWidth={2.5}
             style="stroke"
-            color={p.color}
+            color={p.color || color}  // Ensure color is used if it's set
           />
         ))}
       </Canvas>
