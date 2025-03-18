@@ -3,16 +3,24 @@ import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import RNPickerSelect from 'react-native-picker-select'; // Import the picker component
+import config from "@/config";
 
 const RouteCreation = () => {
   const router = useRouter();
-  const { name: passedName, description: passedDescription, difficulty: passedDifficulty, gymId: passedGymId, imageUri: passedImageUri } = useLocalSearchParams(); // Retrieve params
+  const { name: passedName, description: passedDescription, difficulty: passedDifficulty, gymId: passedGymId, imageUri: passedImageUri } = useLocalSearchParams();
 
-  const [name, setName] = useState(passedName || ''); // Use passed values or defaults
+  const [name, setName] = useState(passedName || '');
   const [description, setDescription] = useState(passedDescription || '');
-  const [difficulty, setDifficulty] = useState(passedDifficulty || 'v0'); // Set initial difficulty to v0
+  const [difficulty, setDifficulty] = useState(passedDifficulty || '');
   const [gymId, setGymId] = useState(passedGymId || '');
   const [imageUri, setImageUri] = useState(passedImageUri || '');
+  
+  const [canSubmit, setCanSubmit] = useState(false);
+
+  useEffect(() => {
+    // Enable submit if difficulty and imageUri are both set
+    setCanSubmit(!!difficulty && !!imageUri);
+  }, [difficulty, imageUri]);
 
   const handleImagePick = useCallback(async (useCamera: boolean) => {
     const permission = useCamera
@@ -31,7 +39,7 @@ const RouteCreation = () => {
     if (pickerResult.assets && pickerResult.assets.length > 0) {
       const uri = pickerResult.assets[0].uri;
 
-      router.push({
+			router.replace({
         pathname: '/routeImage',
         params: {
           imageUri: encodeURIComponent(uri),
@@ -42,20 +50,50 @@ const RouteCreation = () => {
         },
       });
     }
-  }, [router, name, description, difficulty, gymId, imageUri]);
+  }, []);
 
-  const handleSubmit = () => {
-    // Here you can handle form submission, e.g., send data to the backend
-    const formData = {
-      name,
-      description,
-      difficulty,
-      gym_id: gymId,
-      image_Uri: imageUri,
-    };
-    console.log('Form data:', formData);
-    // Submit the data to your backend or API
-  };
+  const handleSubmit = async () => {  
+    if (imageUri) {
+      try {
+        const formData = new FormData();
+        formData.append("name", name);  // Assuming name is populated
+        formData.append("description", description);  // Assuming description is populated
+        formData.append("difficulty", difficulty);  // Assuming difficulty is populated
+        formData.append("gym_id", gymId);  // Assuming gymId is populated
+
+        // Assuming imageUri is a valid file path or URI
+        const imageFile = {
+          uri: imageUri, // The URI of the image
+          name: "photo.jpg",  // The name of the image file
+          type: "image/jpeg",  // The file type
+        };
+
+        formData.append("image", imageFile);
+
+        // Log the form data contents
+        formData.forEach((value, key) => {
+          console.log(key, value);
+        });
+
+        // Send the form data
+        const response = await fetch(config.API_URL + '/api/create-route', {
+          method: "POST",
+          body: formData,
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          console.log('Route created successfully:', data);
+        } else {
+          console.error('Error creating route:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching the image:', error);
+      }
+    } else {
+      console.error('Image URI is missing');
+    }
+  };  
 
   return (
     <View style={styles.container}>
@@ -104,34 +142,44 @@ const RouteCreation = () => {
           { label: 'v16', value: 'v16' },
           { label: 'v17', value: 'v17' },
         ]}
-        style={pickerSelectStyles}
         value={difficulty}
         placeholder={{ label: 'Select Difficulty', value: null }}
+				style={{
+					inputIOS: {
+						height: 52,
+						marginBottom: 20,
+						width: '90%',
+						alignSelf: 'center',
+						color: 'black',
+						backgroundColor: 'white',
+						borderRadius: 5,
+					},
+					inputAndroid: {
+						height: 52,
+						marginBottom: 20,
+						width: '90%',
+						alignSelf: 'center',
+						color: 'black',
+						backgroundColor: 'white',
+						borderRadius: 5,
+					},
+					placeholder: {
+						color: 'gray',
+					},
+				}}
       />
 
-      <Button title="Submit" onPress={handleSubmit} />
+      <Button
+        title="Submit"
+        onPress={handleSubmit}
+        disabled={!canSubmit}
+        color={canSubmit ? '#4CAF50' : '#B0B0B0'} // Green if enabled, grey if disabled
+      />
+
+      {!canSubmit && <Text style={styles.incompleteMessage}>Please select difficulty and upload an image before submitting.</Text>}
     </View>
   );
 };
-
-const pickerSelectStyles = StyleSheet.create({
-  inputIOS: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingLeft: 10,
-    width: "90%",
-  },
-  inputAndroid: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingLeft: 10,
-    width: "90%",
-  },
-});
 
 const styles = StyleSheet.create({
   container: {
@@ -154,8 +202,13 @@ const styles = StyleSheet.create({
   },
   buttons: {
     width: "90%",
-    marginBottom: 30
-  }
+    marginBottom: 30,
+  },
+  incompleteMessage: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 10,
+  },
 });
 
 export default RouteCreation;

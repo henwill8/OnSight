@@ -75,7 +75,7 @@ const RouteImage: React.FC = () => {
     } as any);
 
     try {
-      const response = await fetch(config.API_URL + '/predict', {
+      const response = await fetch(config.API_URL + '/api/predict', {
         method: "POST",
         body: formData
       });
@@ -124,12 +124,36 @@ const RouteImage: React.FC = () => {
     });
   };
 
-  // Handle export button
   const handleExport = async () => {
     if (panRotateZoomViewRef.current) {
-      await panRotateZoomViewRef.current.exportView();
+      const uri = await panRotateZoomViewRef.current.exportView();
+  
+      // Redirect to RouteCreation and pass all params
+      router.push({
+        pathname: "/(tabs)/routeCreation",
+        params: {
+          name: encodeURIComponent(name as string),
+          description: encodeURIComponent(description as string),
+          difficulty: encodeURIComponent(difficulty as string),
+          gymId: encodeURIComponent(gymId as string),
+          imageUri: encodeURIComponent(uri as string),
+        },
+      });
     }
   };
+  
+  const handleClose = () => {
+    // Redirect to RouteCreation without the imageUri
+    router.push({
+      pathname: "/(tabs)/routeCreation",
+      params: {
+        name: encodeURIComponent(name as string),
+        description: encodeURIComponent(description as string),
+        difficulty: encodeURIComponent(difficulty as string),
+        gymId: encodeURIComponent(gymId as string),
+      },
+    });
+  };  
 
   useEffect(() => {
     if (imageDimensions) {
@@ -141,7 +165,7 @@ const RouteImage: React.FC = () => {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.closeButton}
-        onPress={() => router.back()} // Use router.back() for navigation
+        onPress={handleClose}
       >
         <Image source={require('@/assets/images/close.png')} style={styles.closeIcon} />
       </TouchableOpacity>
@@ -161,7 +185,7 @@ const RouteImage: React.FC = () => {
           {renderBoundingBoxes()}
 
           {/* Drawing canvas */}
-          <DrawingCanvas 
+          {/* <DrawingCanvas 
             style={{
               position: 'absolute',
               top: 0,
@@ -170,13 +194,13 @@ const RouteImage: React.FC = () => {
               height: '100%',
               zIndex: 10, // Ensure it stays on top of the image
             }}
-          />
+          /> */}
         </PanRotateZoomView>
       )}
 
       {/* Export Button */}
       <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
-        <Text style={styles.exportButtonText}>Export</Text>
+        <Text style={styles.exportButtonText}>Save</Text>
       </TouchableOpacity>
 
       <Modal

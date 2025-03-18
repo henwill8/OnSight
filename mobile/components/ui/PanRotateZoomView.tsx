@@ -9,7 +9,7 @@ interface Props {
 }
 
 export interface PanRotateZoomViewRef {
-  exportView: () => Promise<void>;
+  exportView: () => Promise<string | null>;
 }
 
 const PanRotateZoomView = forwardRef<PanRotateZoomViewRef, Props>(({ children }, ref) => {
@@ -80,34 +80,30 @@ const PanRotateZoomView = forwardRef<PanRotateZoomViewRef, Props>(({ children },
 
   useImperativeHandle(ref, () => ({
     exportView: async () => {
-      if (viewShotRef.current) {
-        try {
-          setTransformEnabled(false);
-
-          const uri = await viewShotRef.current.capture();
-          if (uri) {
-            console.log("Captured image URI:", uri);
-
-            // Save to local storage
-            const fileUri = `${FileSystem.cacheDirectory}exported-image.jpg`;
-            await FileSystem.copyAsync({ from: uri, to: fileUri });
-
-            // Share the image
-            if (await Sharing.isAvailableAsync()) {
-              await Sharing.shareAsync(fileUri);
-            }
-          }
-        } catch (error) {
-          console.error("Error exporting view:", error);
-        } finally {
-          // ➡️ Restore transformations after capture
-          setTransformEnabled(true);
-        }
-      } else {
+      if (!viewShotRef?.current) {
         console.error("ViewShot reference is undefined");
+        return null;
+      }
+  
+      try {
+        setTransformEnabled(false);
+  
+        const uri = await viewShotRef.current.capture();
+        if (uri) {
+          console.log("Captured image URI:", uri);
+          return uri;
+        } else {
+          console.error("Failed to capture image");
+          return null;
+        }
+      } catch (error) {
+        console.error("Error exporting view:", error);
+        return null;
+      } finally {
+        setTransformEnabled(true);
       }
     },
-  }));
+  }));  
 
   return (
     <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 0.9 }}>

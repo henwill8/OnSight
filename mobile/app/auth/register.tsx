@@ -14,7 +14,7 @@ export default function RegisterScreen() {
 
     try {
       console.log("Sending registration request to the server...");
-      const response = await fetch(config.API_URL + "/register", {
+      const response = await fetch(config.API_URL + "/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
