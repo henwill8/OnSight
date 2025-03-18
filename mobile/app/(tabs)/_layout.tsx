@@ -17,6 +17,14 @@ export default function TabLayout() {
           name="routeCreation"
           options={{ title: 'Route Creation' }}
         />
+        <Tabs.Screen
+          name="chooseGym"
+          options={{ title: 'Choose Gym' }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{ title: 'Settings' }}
+        />
       </Tabs>
     </KeyboardAvoidingView>
   );

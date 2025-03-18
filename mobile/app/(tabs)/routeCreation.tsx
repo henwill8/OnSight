@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { setItemAsync, getItemAsync } from 'expo-secure-store';
 import RNPickerSelect from 'react-native-picker-select'; // Import the picker component
 import config from "@/config";
 
@@ -12,7 +13,6 @@ const RouteCreation = () => {
   const [name, setName] = useState(passedName || '');
   const [description, setDescription] = useState(passedDescription || '');
   const [difficulty, setDifficulty] = useState(passedDifficulty || '');
-  const [gymId, setGymId] = useState(passedGymId || '');
   const [imageUri, setImageUri] = useState(passedImageUri || '');
   
   const [canSubmit, setCanSubmit] = useState(false);
@@ -45,8 +45,7 @@ const RouteCreation = () => {
           imageUri: encodeURIComponent(uri),
           name,
           description,
-          difficulty,
-          gymId
+          difficulty
         },
       });
     }
@@ -55,6 +54,8 @@ const RouteCreation = () => {
   const handleSubmit = async () => {  
     if (imageUri) {
       try {
+        const gymId = await getItemAsync("gymId");
+
         const formData = new FormData();
         formData.append("name", name);  // Assuming name is populated
         formData.append("description", description);  // Assuming description is populated

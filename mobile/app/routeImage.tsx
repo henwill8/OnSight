@@ -13,7 +13,7 @@ const RouteImage: React.FC = () => {
   const router = useRouter();
   
   // Get params from router
-  const { imageUri, name, description, difficulty, gymId } = useLocalSearchParams();
+  const { imageUri, name, description, difficulty } = useLocalSearchParams();
   
   // Make sure the imageUri is properly passed as a single string, not an array
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
@@ -135,7 +135,6 @@ const RouteImage: React.FC = () => {
           name: encodeURIComponent(name as string),
           description: encodeURIComponent(description as string),
           difficulty: encodeURIComponent(difficulty as string),
-          gymId: encodeURIComponent(gymId as string),
           imageUri: encodeURIComponent(uri as string),
         },
       });
@@ -150,7 +149,6 @@ const RouteImage: React.FC = () => {
         name: encodeURIComponent(name as string),
         description: encodeURIComponent(description as string),
         difficulty: encodeURIComponent(difficulty as string),
-        gymId: encodeURIComponent(gymId as string),
       },
     });
   };  
