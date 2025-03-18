@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
@@ -39,7 +39,7 @@ const RouteCreation = () => {
     if (pickerResult.assets && pickerResult.assets.length > 0) {
       const uri = pickerResult.assets[0].uri;
 
-			router.replace({
+      router.replace({
         pathname: '/routeImage',
         params: {
           imageUri: encodeURIComponent(uri),
@@ -49,7 +49,7 @@ const RouteCreation = () => {
         },
       });
     }
-  }, []);
+  }, [name, description, difficulty]);
 
   const handleSubmit = async () => {  
     if (imageUri) {
@@ -85,6 +85,16 @@ const RouteCreation = () => {
         const data = await response.json();
         if (response.ok) {
           console.log('Route created successfully:', data);
+
+          // Show success alert
+          Alert.alert('Success', 'Route created successfully!');
+
+          // Reset form data
+          setName('');
+          setDescription('');
+          setDifficulty('');
+          setImageUri('');
+
         } else {
           console.error('Error creating route:', data.error);
         }
@@ -145,29 +155,29 @@ const RouteCreation = () => {
         ]}
         value={difficulty}
         placeholder={{ label: 'Select Difficulty', value: null }}
-				style={{
-					inputIOS: {
-						height: 52,
-						marginBottom: 20,
-						width: '90%',
-						alignSelf: 'center',
-						color: 'black',
-						backgroundColor: 'white',
-						borderRadius: 5,
-					},
-					inputAndroid: {
-						height: 52,
-						marginBottom: 20,
-						width: '90%',
-						alignSelf: 'center',
-						color: 'black',
-						backgroundColor: 'white',
-						borderRadius: 5,
-					},
-					placeholder: {
-						color: 'gray',
-					},
-				}}
+        style={{
+          inputIOS: {
+            height: 52,
+            marginBottom: 20,
+            width: '90%',
+            alignSelf: 'center',
+            color: 'black',
+            backgroundColor: 'white',
+            borderRadius: 5,
+          },
+          inputAndroid: {
+            height: 52,
+            marginBottom: 20,
+            width: '90%',
+            alignSelf: 'center',
+            color: 'black',
+            backgroundColor: 'white',
+            borderRadius: 5,
+          },
+          placeholder: {
+            color: 'gray',
+          },
+        }}
       />
 
       <Button
