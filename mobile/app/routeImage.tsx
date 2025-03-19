@@ -142,7 +142,6 @@ const RouteImage: React.FC = () => {
   };
   
   const handleClose = () => {
-    // Redirect to RouteCreation without the imageUri
     router.push({
       pathname: "/(tabs)/routeCreation",
       params: {
@@ -170,7 +169,6 @@ const RouteImage: React.FC = () => {
 
       {scaledImageDimensions && (
         <PanRotateZoomView ref={panRotateZoomViewRef}>
-          {/* The Image */}
           <Image
             source={{ uri: imageUriString }}
             style={{

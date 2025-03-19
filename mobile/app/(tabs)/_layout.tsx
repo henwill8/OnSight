@@ -14,6 +14,10 @@ export default function TabLayout() {
           options={{ title: 'Home' }}
         />
         <Tabs.Screen
+          name="routeList"
+          options={{ title: 'Route List' }}
+        />
+        <Tabs.Screen
           name="routeCreation"
           options={{ title: 'Route Creation' }}
         />
