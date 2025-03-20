@@ -141,7 +141,7 @@ const RouteImage: React.FC = () => {
   return (
     <View style={styles.container}>
       {scaledImageDimensions && (
-        <PanRotateZoomView ref={panRotateZoomViewRef}>
+        <PanRotateZoomView enableRotate={false} ref={panRotateZoomViewRef}>
           <Image
             source={{ uri: imageUriString }}
             style={{

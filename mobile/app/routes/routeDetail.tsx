@@ -76,7 +76,7 @@ const RouteDetail = () => {
       <View style={styles.imageContainer}>
         {/* Image */}
         {scaledImageDimensions && (
-          <PanRotateZoomView>
+          <PanRotateZoomView enableRotate={false}>
             <Image
               source={{ uri: routeDetails.image_url }}
               style={{
