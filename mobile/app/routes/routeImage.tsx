@@ -91,26 +91,27 @@ const RouteImage: React.FC = () => {
   };
 
   const renderBoundingBoxes = () => {
-
-    return predictions.map((box, index) => {
-      const [x, y, width, height] = box;
-      const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
-      const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
-
-      return (
-        <ClimbingHoldButton
-          key={index}
-          style={{
-            left: x * scaleX,
-            top: y * scaleY,
-            width: width * scaleX,
-            height: height * scaleY,
-          }}
-          showUnselectedHolds={showBoundingBoxes}
-        />
-      );
-    });
-  };
+    return predictions
+      .sort((a, b) => (b[2] * b[3]) - (a[2] * a[3]))
+      .map((box, index) => {
+        const [x, y, width, height] = box;
+        const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
+        const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
+  
+        return (
+          <ClimbingHoldButton
+            key={index}
+            style={{
+              left: x * scaleX,
+              top: y * scaleY,
+              width: width * scaleX,
+              height: height * scaleY,
+            }}
+            showUnselectedHolds={showBoundingBoxes}
+          />
+        );
+      });
+  };  
 
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
