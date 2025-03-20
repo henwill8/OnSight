@@ -66,26 +66,19 @@ const CreateRouteScreen = () => {
         const gymId = await getItemAsync("gymId");
 
         const formData = new FormData();
-        formData.append("name", name);  // Assuming name is populated
-        formData.append("description", description);  // Assuming description is populated
-        formData.append("difficulty", difficulty);  // Assuming difficulty is populated
-        formData.append("gym_id", gymId);  // Assuming gymId is populated
+        formData.append("name", name);  
+        formData.append("description", description);  
+        formData.append("difficulty", difficulty);  
+        formData.append("gym_id", gymId);  
 
-        // Assuming imageUri is a valid file path or URI
         const imageFile = {
-          uri: imageUri, // The URI of the image
-          name: "photo.jpg",  // The name of the image file
-          type: "image/jpeg",  // The file type
+          uri: imageUri, 
+          name: "photo.jpg",  
+          type: "image/jpeg",  
         };
 
         formData.append("image", imageFile);
 
-        // Log the form data contents
-        formData.forEach((value, key) => {
-          console.log(key, value);
-        });
-
-        // Send the form data
         const response = await fetch(config.API_URL + '/api/create-route', {
           method: "POST",
           body: formData,
@@ -93,17 +86,8 @@ const CreateRouteScreen = () => {
   
         const data = await response.json();
         if (response.ok) {
-          console.log('Route created successfully:', data);
-
-          // Show success alert
           Alert.alert('Success', 'Route created successfully!');
-
-          // Reset form data
-          setName('');
-          setDescription('');
-          setDifficulty('');
-          setImageUri('');
-
+          router.replace("/(tabs)/home");
         } else {
           console.error('Error creating route:', data.error);
         }
@@ -117,7 +101,7 @@ const CreateRouteScreen = () => {
 
   return (
     <View style={globalStyles.container}>
-      <Text style={styles.title}>Create a Route</Text>
+      <Text style={[styles.title, { textAlign: 'center' }]}>Create a Route</Text>
 
       <View style={styles.buttons}>
         <Button title="Pick an Image" onPress={() => handleImagePick(false)} />
@@ -126,17 +110,19 @@ const CreateRouteScreen = () => {
       </View>
 
       <TextInput
-        style={styles.input}
+        style={styles.textInput}
         placeholder="Route Name"
         value={name}
         onChangeText={setName}
+        placeholderTextColor={COLORS.textSecondary}
       />
 
       <TextInput
-        style={styles.input}
+        style={styles.textInput}
         placeholder="Description"
         value={description}
         onChangeText={setDescription}
+        placeholderTextColor={COLORS.textSecondary}
       />
 
       {/* Difficulty Dropdown */}
@@ -188,27 +174,22 @@ const CreateRouteScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingLeft: 10,
-    borderRadius: 5,
+    color: COLORS.textPrimary,
   },
   buttons: {
-    color: COLORS.primary,
     marginBottom: 20,
+  },
+  textInput: {
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
+    color: COLORS.textPrimary,
+    borderColor: COLORS.textPrimary,
+    borderRadius: 5,
   },
   picker: {
     height: 52,

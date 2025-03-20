@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import PanRotateZoomView from '@/components/ui/PanRotateZoomView'; // Custom zoom/pan component
 
@@ -15,7 +15,7 @@ const RouteDetail = () => {
   const [routeDetails, setRouteDetails] = useState<Route | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-  const { route: routeString } = useLocalSearchParams(); // Access query parameter using useSearchParams
+  const { route: routeString } = useLocalSearchParams();
 
   useEffect(() => {
     if (routeString) {
@@ -72,7 +72,7 @@ const RouteDetail = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.imageContainer}>
         {/* Image */}
         {scaledImageDimensions && (
@@ -89,13 +89,13 @@ const RouteDetail = () => {
         )}
       </View>
 
-      {/* Text overlay */}
+      {/* Text overlay fixed at the bottom */}
       <View style={styles.textOverlay}>
         <Text style={styles.name}>{routeDetails.name || 'No Name'}</Text>
         <Text style={styles.description}>{routeDetails.description || 'No Description'}</Text>
         <Text style={styles.difficulty}>Difficulty: {routeDetails.difficulty}</Text>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -116,23 +116,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 20,
-  },
-  closeButtonContainer: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 10,
-    backgroundColor: 'white', // White background for the close button
-    borderRadius: 10, // Optional: rounded corners for a cleaner look
-    padding: 5, // Padding to make the button clickable
-  },
-  closeButton: {
-    zIndex: 10,
-  },
-  closeIcon: {
-    width: 24,
-    height: 24,
+    position: 'relative', // Allow absolute positioning of text overlay
   },
   imageContainer: {
     flex: 1,
@@ -141,6 +125,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   textOverlay: {
+    position: 'absolute', // Fix the text overlay at the bottom
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 20,
     backgroundColor: 'rgb(255, 255, 255)', // White background for text section
     borderRadius: 10,

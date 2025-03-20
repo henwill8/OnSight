@@ -20,14 +20,13 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [gymId, setGymId] = useState<string | null>(null);
   const [gymIdLoading, setGymIdLoading] = useState<boolean>(true);
-
-  const router = useRouter(); // Initialize the router
-
   const [currentGymName, setCurrentGymName] = useState<string>('');
+
+  const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
-      fetchCurrentGymName()
+      fetchCurrentGymName();
     }, [])
   );
 
@@ -37,14 +36,13 @@ const HomeScreen = () => {
   };
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       const loadGymId = async () => {
         const id = await getItemAsync('gymId');
         console.log(`Loaded gym ID: ${id}`);
         setGymId(id);
         setGymIdLoading(false);
       };
-
       loadGymId();
     }, [])
   );
@@ -89,53 +87,46 @@ const HomeScreen = () => {
     router.push('/routes/createRoute');
   };
 
-  if (loading || gymIdLoading) {
-    return (
-      <View style={globalStyles.container}>
-        <ActivityIndicator size="large" color="#06d6a0" />
-      </View>
-    );
-  }
-
-  if (routes.length === 0) {
-    return (
-      <View style={globalStyles.container}>
-        <Text style={styles.emptyText}>No routes found for this gym</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={globalStyles.container}>
-      {currentGymName ? (
-        <Text style={[ styles.text, { marginVertical: 30 }]}>
-          Current Gym: {currentGymName}
-        </Text>
+      {loading || gymIdLoading ? (
+        <ActivityIndicator size="large" color="#06d6a0" />
       ) : (
-        <Text style={[ styles.text, { marginVertical: 30 }]}>
-          No gym selected.
-        </Text>
+        <>
+          {currentGymName ? (
+            <Text style={[styles.text, { marginVertical: 30 }]}>
+              Current Gym: {currentGymName}
+            </Text>
+          ) : (
+            <Text style={[styles.text, { marginVertical: 30 }]}>
+              No gym selected.
+            </Text>
+          )}
+
+          {routes.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No routes found for this gym</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={routes}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
+                  <Image source={{ uri: item.image_url }} style={styles.routeImage} resizeMode="cover" />
+                  <View style={styles.routeInfo}>
+                    <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
+                    <Text style={styles.routeDescription}>{item.description || 'No Description'}</Text>
+                    <Text style={styles.routeDifficulty}>Difficulty: {item.difficulty}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </>
       )}
 
-      <FlatList
-        data={routes}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
-            <Image
-              source={{ uri: item.image_url }}
-              style={styles.routeImage}
-              resizeMode="cover"
-            />
-            <View style={styles.routeInfo}>
-              <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
-              <Text style={styles.routeDescription}>{item.description || 'No Description'}</Text>
-              <Text style={styles.routeDifficulty}>Difficulty: {item.difficulty}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-
+      {/* Add Route Button (Always Present) */}
       <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
         <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
       </TouchableOpacity>
@@ -144,6 +135,11 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyText: {
     fontSize: 18,
     color: '#999',
@@ -204,8 +200,8 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    color: COLORS.textPrimary
-  }
+    color: COLORS.textPrimary,
+  },
 });
 
 export default HomeScreen;
