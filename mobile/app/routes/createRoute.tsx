@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
 import RNPickerSelect from 'react-native-picker-select';
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from "@/config";
 
 const CreateRouteScreen = () => {
@@ -115,7 +116,7 @@ const CreateRouteScreen = () => {
   };  
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       <Text style={styles.title}>Create a Route</Text>
 
       <View style={styles.buttons}>
@@ -206,6 +207,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   buttons: {
+    color: COLORS.primary,
     marginBottom: 20,
   },
   picker: {

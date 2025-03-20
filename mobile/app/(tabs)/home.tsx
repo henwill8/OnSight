@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,6 +22,19 @@ const HomeScreen = () => {
   const [gymIdLoading, setGymIdLoading] = useState<boolean>(true);
 
   const router = useRouter(); // Initialize the router
+
+  const [currentGymName, setCurrentGymName] = useState<string>('');
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchCurrentGymName()
+    }, [])
+  );
+
+  const fetchCurrentGymName = async () => {
+    const currentGymName = await getItemAsync("gymName");
+    setCurrentGymName(currentGymName || "");
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -94,6 +107,16 @@ const HomeScreen = () => {
 
   return (
     <View style={globalStyles.container}>
+      {currentGymName ? (
+        <Text style={[ styles.text, { marginVertical: 30 }]}>
+          Current Gym: {currentGymName}
+        </Text>
+      ) : (
+        <Text style={[ styles.text, { marginVertical: 30 }]}>
+          No gym selected.
+        </Text>
+      )}
+
       <FlatList
         data={routes}
         keyExtractor={(item) => item.id}
@@ -114,23 +137,13 @@ const HomeScreen = () => {
       />
 
       <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
-        <AntDesign name="plus" size={32} color={COLORS.headerText} />
+        <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   emptyText: {
     fontSize: 18,
     color: '#999',
@@ -161,16 +174,16 @@ const styles = StyleSheet.create({
   routeName: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.headerText,
+    color: COLORS.textPrimary,
   },
   routeDescription: {
     fontSize: 14,
-    color: COLORS.descriptionText,
+    color: COLORS.textSecondary,
     marginTop: 4,
   },
   routeDifficulty: {
     fontSize: 14,
-    color: COLORS.descriptionText,
+    color: COLORS.textSecondary,
     marginTop: 6,
   },
   addButton: {
@@ -189,6 +202,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
+  text: {
+    fontSize: 18,
+    color: COLORS.textPrimary
+  }
 });
 
 export default HomeScreen;

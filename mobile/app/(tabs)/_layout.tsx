@@ -20,14 +20,14 @@ export default function TabLayout() {
     >
       <Tabs 
         screenOptions={{
-          tabBarActiveTintColor: COLORS.headerText,
+          tabBarActiveTintColor: COLORS.textPrimary,
           tabBarStyle: {
             backgroundColor: COLORS.backgroundSecondary
           },
           headerStyle: {
             backgroundColor: COLORS.backgroundSecondary
           },
-          headerTintColor: COLORS.headerText,
+          headerTintColor: COLORS.textPrimary,
         }}
       >
         <Tabs.Screen
@@ -42,8 +42,8 @@ export default function TabLayout() {
           options={{ title: 'Choose Gym' }}
         />
         <Tabs.Screen
-          name="settings"
-          options={{ title: 'Settings' }}
+          name="profile"
+          options={{ title: 'Profile' }}
         />
       </Tabs>
     </KeyboardAvoidingView>

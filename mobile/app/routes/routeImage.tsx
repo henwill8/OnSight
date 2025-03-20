@@ -11,19 +11,17 @@ type ImageSize = { width: number; height: number };
 
 const RouteImage: React.FC = () => {
   const router = useRouter();
-  
-  // Get params from router
+
   const { imageUri } = useLocalSearchParams();
-  
-  // Make sure the imageUri is properly passed as a single string, not an array
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null);
-  
-  const panRotateZoomViewRef = useRef<PanRotateZoomViewRef>(null);
-
   const [dataReceived, setDataReceived] = useState(false);
+  
+  const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false);
+
+  const panRotateZoomViewRef = useRef<PanRotateZoomViewRef>(null);
 
   useEffect(() => {
     if (imageUriString) {
@@ -37,31 +35,17 @@ const RouteImage: React.FC = () => {
     }
   }, [imageUriString]);
 
-  // Screen dimensions
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = Dimensions.get("window").height;
+  const handleToggleBoundingBoxes = () => {
+    setShowBoundingBoxes(prev => !prev);
+  };
 
-  // Scale image while keeping aspect ratio
-  const scaledImageDimensions = imageDimensions
-    ? (() => {
-      const aspectRatio = imageDimensions.width / imageDimensions.height;
-      let width = screenWidth;
-      let height = screenWidth / aspectRatio;
-
-      if (height > screenHeight * 0.8) {
-        height = screenHeight * 0.8;
-        width = height * aspectRatio;
-      }
-
-      return { width, height };
-    })()
-    : null;
+  const handleExport = async () => {
+    if (panRotateZoomViewRef.current) {
+      const uri = await panRotateZoomViewRef.current.exportView();
   
-  const handleError = (message: string) => {
-    console.error(message);
-  
-    setDataReceived(true);
-    Alert.alert("Predictions Failed!", "Hold predictions failed, but you can still draw.");
+      router.back();
+      router.setParams({ exportedUri: encodeURIComponent(uri) });
+    }
   };
 
   const sendImageToServer = useCallback(async (uri: string) => {
@@ -88,22 +72,26 @@ const RouteImage: React.FC = () => {
       const data = await response.json();
 
       if (data?.imageSize && Array.isArray(data.predictions)) {
-        let num_predictions = data.predictions.length;
-        console.log("Received " + num_predictions + " predictions");
-
+        console.log(`Received ${data.predictions.length} predictions`);
         setPredictions(data.predictions);
         setDataReceived(true);
-
         setImageDimensions(data.imageSize);
       } else {
         handleError("Unexpected response format");
       }
     } catch (error) {
-      handleError("Error uploading image: " + error);
+      handleError(`Error uploading image: ${error}`);
     }
   }, []);
-  
+
+  const handleError = (message: string) => {
+    console.error(message);
+    setDataReceived(true);
+    Alert.alert("Predictions Failed!", "Hold predictions failed, but you can still draw.");
+  };
+
   const renderBoundingBoxes = () => {
+
     return predictions.map((box, index) => {
       const [x, y, width, height] = box;
       const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
@@ -112,34 +100,48 @@ const RouteImage: React.FC = () => {
       return (
         <ClimbingHoldButton
           key={index}
-          style={[{
+          style={{
             left: x * scaleX,
             top: y * scaleY,
             width: width * scaleX,
             height: height * scaleY,
-          }]}
+          }}
+          showUnselectedHolds={showBoundingBoxes}
         />
       );
     });
   };
 
-  const handleExport = async () => {
-    if (panRotateZoomViewRef.current) {
-      const uri = await panRotateZoomViewRef.current.exportView();
-  
-      router.back();
-      router.setParams({ exportedUri: encodeURIComponent(uri) });
-    }
-  };
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
 
-  useEffect(() => {
-    if (imageDimensions) {
-      console.log("Image size is " + imageDimensions.width + "x" + imageDimensions.height);
-    }
-  }, [imageDimensions]);
+  const scaledImageDimensions = imageDimensions
+    ? (() => {
+        const aspectRatio = imageDimensions.width / imageDimensions.height;
+        let width = screenWidth;
+        let height = screenWidth / aspectRatio;
+
+        if (height > screenHeight * 0.8) {
+          height = screenHeight * 0.8;
+          width = height * aspectRatio;
+        }
+
+        return { width, height };
+      })()
+    : null;
 
   return (
     <View style={styles.container}>
+      {/* NEW: Toggle Button */}
+      <TouchableOpacity
+        style={styles.toggleButton}
+        onPress={handleToggleBoundingBoxes}
+      >
+        <Text style={styles.toggleButtonText}>
+          {showBoundingBoxes ? "Hide" : "Show"} Unselected Holds
+        </Text>
+      </TouchableOpacity>
+
       {scaledImageDimensions && (
         <PanRotateZoomView enableRotate={false} ref={panRotateZoomViewRef}>
           <Image
@@ -149,21 +151,7 @@ const RouteImage: React.FC = () => {
               height: scaledImageDimensions!.height,
             }}
           />
-          
-          {/* Render the bounding boxes */}
           {renderBoundingBoxes()}
-
-          {/* Drawing canvas */}
-          {/* <DrawingCanvas 
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              zIndex: 10, // Ensure it stays on top of the image
-            }}
-          /> */}
         </PanRotateZoomView>
       )}
 
@@ -172,11 +160,8 @@ const RouteImage: React.FC = () => {
         <Text style={styles.exportButtonText}>Save</Text>
       </TouchableOpacity>
 
-      <Modal
-        transparent={true}
-        visible={!dataReceived}
-        animationType="fade"
-      >
+      {/* Loader */}
+      <Modal transparent={true} visible={!dataReceived} animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#fff" />
@@ -194,45 +179,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
+  toggleButton: {
+    position: "absolute",
+    bottom: 100,
+    backgroundColor: "#2196F3",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     zIndex: 10,
   },
-  closeIcon: {
-    width: 24,
-    height: 24,
+  toggleButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   exportButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 40,
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     zIndex: 10,
   },
   exportButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   loaderContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#333',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#333",
     padding: 20,
     borderRadius: 10,
   },
   loadingText: {
-    color: '#fff',
+    color: "#fff",
     marginTop: 10,
     fontSize: 16,
   },

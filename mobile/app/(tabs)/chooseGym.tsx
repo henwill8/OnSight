@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, FlatList, TextInput, Alert, TouchableOpacity } from 'react-native';
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
+import { StyleSheet } from 'react-native';
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from '@/config';
 
 const ChooseGym: React.FC = () => {
@@ -36,19 +38,8 @@ const ChooseGym: React.FC = () => {
   };
 
   const fetchCurrentGymName = async () => {
-    try {
-      const gymId = await getItemAsync('gymId');
-      if (gymId) {
-        const response = await fetch(`${config.API_URL}/api/get-gym/${gymId}`);
-        const data = await response.json();
-
-        if (response.ok && data.gym) {
-          setCurrentGymName(data.gym.name); // Set the current gym name
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching current gym name:", error);
-    }
+    const currentGymName = await getItemAsync("gymName");
+    setCurrentGymName(currentGymName || "");
   };
 
   const handleCreateGym = async () => {
@@ -89,8 +80,9 @@ const ChooseGym: React.FC = () => {
     const handlePress = async () => {
       try {
         await setItemAsync("gymId", item.id);
+        await setItemAsync("gymName", item.name);
+        setCurrentGymName(item.name)
         console.log(`Gym ID ${item.id} selected.`);
-        setCurrentGymName(item.name); // Set the current gym name when selected
       } catch (error) {
         console.error("Error saving gym ID:", error);
       }
@@ -98,43 +90,45 @@ const ChooseGym: React.FC = () => {
 
     return (
       <TouchableOpacity onPress={handlePress}>
-        <View style={{ padding: 10, borderBottomWidth: 1 }}>
-          <Text style={{ fontSize: 18 }}>{item.name}</Text>
-          <Text>{item.location}</Text>
+        <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: COLORS.textPrimary }}>
+          <Text style={styles.text}>{item.name}</Text>
+          <Text style={{ color: COLORS.textSecondary}}>{item.location}</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
+    <View style={globalStyles.container}>
       {/* Form to create a new gym */}
       <TextInput
         value={newGymName}
         onChangeText={setNewGymName}
         placeholder="Gym Name"
-        style={{ borderWidth: 1, marginBottom: 10, padding: 10 }}
+        placeholderTextColor={COLORS.textSecondary}
+        style={styles.textInput}
       />
       <TextInput
         value={newGymLocation}
         onChangeText={setNewGymLocation}
         placeholder="Gym Location"
-        style={{ borderWidth: 1, marginBottom: 10, padding: 10 }}
+        placeholderTextColor={COLORS.textSecondary}
+        style={styles.textInput}
       />
-      <Button title="Create Gym" onPress={handleCreateGym} />
+      <Button title="Create Gym" color={COLORS.primary} onPress={handleCreateGym} />
 
       {/* Display the name of the current gym */}
       {currentGymName ? (
-        <Text style={{ fontSize: 18, marginVertical: 30 }}>
+        <Text style={[ styles.text, { marginVertical: 30 }]}>
           Current Gym: {currentGymName}
         </Text>
       ) : (
-        <Text style={{ fontSize: 18, marginVertical: 30 }}>
+        <Text style={[ styles.text, { marginVertical: 30 }]}>
           No gym selected.
         </Text>
       )}
 
-      <Text style={{ fontSize: 20, marginBottom: 10 }}>Available Gyms</Text>
+      <Text style={{ fontSize: 20, marginBottom: 10, color: COLORS.textPrimary }}>Available Gyms</Text>
 
       {/* List of gyms */}
       <FlatList
@@ -145,5 +139,19 @@ const ChooseGym: React.FC = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  textInput: {
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
+    color: COLORS.textPrimary,
+    borderColor: COLORS.textPrimary
+  },
+  text: {
+    fontSize: 18,
+    color: COLORS.textPrimary
+  }
+});
 
 export default ChooseGym;

@@ -3,8 +3,8 @@ import { StyleSheet } from 'react-native';
 export const COLORS = {
   backgroundPrimary: '#222222',
   backgroundSecondary: '#333333',
-  headerText: '#cccccc',
-  descriptionText: '#828282',
+  textPrimary: '#dedede',
+  textSecondary: '#c2c2c2',
   primary: "#575757",
   border: '#333',
   shadow: '#000',
@@ -28,12 +28,21 @@ export const SHADOWS = {
 export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: "center",
+    alignContent: "center",
+    backgroundColor: COLORS.backgroundPrimary,
+    padding: SIZES.padding,
+  },
+  centerItemsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignContent: "center",
     backgroundColor: COLORS.backgroundPrimary,
     padding: SIZES.padding,
   },
   link: {
     marginTop: 10,
-    color: COLORS.headerText,
+    color: COLORS.textPrimary,
     textDecorationLine: "underline",
   },
 });
