@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import config from '@/config';
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -70,6 +71,9 @@ export default function RegisterScreen() {
         />
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Register</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.replace("/auth/login")}>
+          <Text style={globalStyles.link}>Already have an account? Login here</Text>
         </TouchableOpacity>
       </View>
     </View>

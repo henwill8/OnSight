@@ -16,7 +16,6 @@ const RouteDetail = () => {
   const [loading, setLoading] = useState(true);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const { route: routeString } = useLocalSearchParams(); // Access query parameter using useSearchParams
-  const router = useRouter(); // Hook to navigate programmatically
 
   useEffect(() => {
     if (routeString) {

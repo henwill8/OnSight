@@ -15,11 +15,6 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'index',
-};
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -53,12 +48,12 @@ function RootLayoutNav() {
   return (
     <>
       <StatusBar 
-        backgroundColor={COLORS.background} // For Android
+        backgroundColor={COLORS.backgroundSecondary} // For Android
         barStyle="light-content"  // Light text/icons for both platforms
         translucent={false}       // Ensures background color is solid
       />
       <Stack>
-        <Stack.Screen name="index" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="index" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </>

@@ -3,22 +3,30 @@ import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
-import RNPickerSelect from 'react-native-picker-select'; // Import the picker component
+import { useFocusEffect } from '@react-navigation/native';
+import RNPickerSelect from 'react-native-picker-select';
 import config from "@/config";
 
-const RouteCreation = () => {
+const CreateRouteScreen = () => {
   const router = useRouter();
-  const { name: passedName, description: passedDescription, difficulty: passedDifficulty, gymId: passedGymId, imageUri: passedImageUri } = useLocalSearchParams();
-
-  const [name, setName] = useState(passedName || '');
-  const [description, setDescription] = useState(passedDescription || '');
-  const [difficulty, setDifficulty] = useState(passedDifficulty || '');
-  const [imageUri, setImageUri] = useState(passedImageUri || '');
   
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [difficulty, setDifficulty] = useState<string | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState(false);
 
+  const { exportedUri } = useLocalSearchParams();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (exportedUri) {
+        setImageUri(exportedUri);
+      }
+    }, [exportedUri])
+  );
+
   useEffect(() => {
-    // Enable submit if difficulty and imageUri are both set
     setCanSubmit(!!difficulty && !!imageUri);
   }, [difficulty, imageUri]);
 
@@ -39,8 +47,8 @@ const RouteCreation = () => {
     if (pickerResult.assets && pickerResult.assets.length > 0) {
       const uri = pickerResult.assets[0].uri;
 
-      router.replace({
-        pathname: '/routeImage',
+      router.push({
+        pathname: '/routes/routeImage',
         params: {
           imageUri: encodeURIComponent(uri),
           name,
@@ -79,6 +87,9 @@ const RouteCreation = () => {
         // Send the form data
         const response = await fetch(config.API_URL + '/api/create-route', {
           method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: formData,
         });
   
@@ -156,27 +167,9 @@ const RouteCreation = () => {
         value={difficulty}
         placeholder={{ label: 'Select Difficulty', value: null }}
         style={{
-          inputIOS: {
-            height: 52,
-            marginBottom: 20,
-            width: '90%',
-            alignSelf: 'center',
-            color: 'black',
-            backgroundColor: 'white',
-            borderRadius: 5,
-          },
-          inputAndroid: {
-            height: 52,
-            marginBottom: 20,
-            width: '90%',
-            alignSelf: 'center',
-            color: 'black',
-            backgroundColor: 'white',
-            borderRadius: 5,
-          },
-          placeholder: {
-            color: 'gray',
-          },
+          inputIOS: styles.picker,
+          inputAndroid: styles.picker,
+          placeholder: { color: 'gray' },
         }}
       />
 
@@ -184,10 +177,14 @@ const RouteCreation = () => {
         title="Submit"
         onPress={handleSubmit}
         disabled={!canSubmit}
-        color={canSubmit ? '#4CAF50' : '#B0B0B0'} // Green if enabled, grey if disabled
+        color={canSubmit ? '#4CAF50' : '#B0B0B0'}
       />
 
-      {!canSubmit && <Text style={styles.incompleteMessage}>Please select difficulty and upload an image before submitting.</Text>}
+      {!canSubmit && (
+        <Text style={styles.incompleteMessage}>
+          Please fill in all fields before submitting.
+        </Text>
+      )}
     </View>
   );
 };
@@ -195,13 +192,13 @@ const RouteCreation = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
   input: {
     height: 40,
@@ -209,17 +206,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 20,
     paddingLeft: 10,
-    width: "90%",
+    borderRadius: 5,
   },
   buttons: {
-    width: "90%",
-    marginBottom: 30,
+    marginBottom: 20,
+  },
+  picker: {
+    height: 52,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: 'white',
+    color: 'black',
   },
   incompleteMessage: {
     color: 'red',
     fontSize: 14,
     marginTop: 10,
+    textAlign: 'center',
   },
 });
 
-export default RouteCreation;
+export default CreateRouteScreen;

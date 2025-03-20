@@ -4,7 +4,8 @@ import { getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
 import config from '@/config';
 import { useRouter } from 'expo-router';
-import { globalStyles } from '@/constants/theme';
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { AntDesign } from '@expo/vector-icons';
 
 interface Route {
   id: string;
@@ -68,7 +69,11 @@ const HomeScreen = () => {
   }, [gymId, gymIdLoading]);
 
   const handleRoutePress = (route: Route) => {
-    router.push(`/routeDetail?route=${JSON.stringify(route)}`);
+    router.push(`/routes/routeDetail?route=${JSON.stringify(route)}`);
+  };
+
+  const handleAddRoute = () => {
+    router.push('/routes/createRoute');
   };
 
   if (loading || gymIdLoading) {
@@ -107,6 +112,10 @@ const HomeScreen = () => {
           </TouchableOpacity>
         )}
       />
+
+      <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
+        <AntDesign name="plus" size={32} color={COLORS.headerText} />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -128,15 +137,17 @@ const styles = StyleSheet.create({
   },
   routeCard: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: COLORS.backgroundSecondary,
     marginBottom: 12,
     padding: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: SIZES.borderRadius,
+    elevation: SHADOWS.elevation,
+    shadowColor: SHADOWS.shadowColor,
+    shadowOffset: SHADOWS.shadowOffset,
+    shadowOpacity: SHADOWS.shadowOpacity,
+    shadowRadius: SHADOWS.shadowRadius,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   routeImage: {
     width: 80,
@@ -150,17 +161,33 @@ const styles = StyleSheet.create({
   routeName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.headerText,
   },
   routeDescription: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.descriptionText,
     marginTop: 4,
   },
   routeDifficulty: {
     fontSize: 14,
-    color: '#06d6a0',
+    color: COLORS.descriptionText,
     marginTop: 6,
+  },
+  addButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 30,
+    backgroundColor: COLORS.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
 

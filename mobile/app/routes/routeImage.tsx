@@ -130,29 +130,10 @@ const RouteImage: React.FC = () => {
     if (panRotateZoomViewRef.current) {
       const uri = await panRotateZoomViewRef.current.exportView();
   
-      // Redirect to RouteCreation and pass all params
-      router.push({
-        pathname: "/(tabs)/routeCreation",
-        params: {
-          name: encodeURIComponent(name as string),
-          description: encodeURIComponent(description as string),
-          difficulty: encodeURIComponent(difficulty as string),
-          imageUri: encodeURIComponent(uri as string),
-        },
-      });
+      router.back();
+      router.setParams({ exportedUri: uri });
     }
   };
-  
-  const handleClose = () => {
-    router.push({
-      pathname: "/(tabs)/routeCreation",
-      params: {
-        name: encodeURIComponent(name as string),
-        description: encodeURIComponent(description as string),
-        difficulty: encodeURIComponent(difficulty as string),
-      },
-    });
-  };  
 
   useEffect(() => {
     if (imageDimensions) {
@@ -162,13 +143,6 @@ const RouteImage: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={handleClose}
-      >
-        <Image source={require('@/assets/images/close.png')} style={styles.closeIcon} />
-      </TouchableOpacity>
-
       {scaledImageDimensions && (
         <PanRotateZoomView ref={panRotateZoomViewRef}>
           <Image

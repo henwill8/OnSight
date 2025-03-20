@@ -13,21 +13,17 @@ export default function TabLayout() {
       <Tabs 
         screenOptions={{
           tabBarStyle: {
-            backgroundColor: COLORS.background
+            backgroundColor: COLORS.backgroundSecondary
           },
           headerStyle: {
-            backgroundColor: COLORS.headerBackground
+            backgroundColor: COLORS.backgroundSecondary
           },
-          headerTintColor: "#ffffff", // Change the text color on the header bar
+          headerTintColor: COLORS.headerText,
         }}
       >
         <Tabs.Screen
           name="home"
           options={{ title: 'Home' }}
-        />
-        <Tabs.Screen
-          name="routeCreation"
-          options={{ title: 'Route Creation' }}
         />
         <Tabs.Screen
           name="chooseGym"

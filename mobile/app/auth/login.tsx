@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { setItemAsync } from "expo-secure-store";
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import config from "@/config";
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 
 const landingPage = "/(tabs)/home";
 
@@ -68,7 +69,7 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/auth/register")}>
-          <Text style={styles.link}>Don't have an account? Register here</Text>
+          <Text style={globalStyles.link}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -113,10 +114,5 @@ const styles = StyleSheet.create({
     color: "black",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  link: {
-    marginTop: 10,
-    color: "white",
-    textDecorationLine: "underline",
   },
 });
