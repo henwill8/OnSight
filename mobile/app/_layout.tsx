@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import 'react-native-reanimated';
-import '@/constants/theme';
+import { COLORS } from '@/constants/theme';
 
 export { useColorScheme } from 'react-native';
 
@@ -53,7 +53,7 @@ function RootLayoutNav() {
   return (
     <>
       <StatusBar 
-        backgroundColor="#333333" // For Android
+        backgroundColor={COLORS.background} // For Android
         barStyle="light-content"  // Light text/icons for both platforms
         translucent={false}       // Ensures background color is solid
       />

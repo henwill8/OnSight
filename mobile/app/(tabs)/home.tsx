@@ -4,7 +4,7 @@ import { getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
 import config from '@/config';
 import { useRouter } from 'expo-router';
-import { globalStyles } from '@/app/_styles';
+import { globalStyles } from '@/constants/theme';
 
 interface Route {
   id: string;

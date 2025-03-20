@@ -16,7 +16,7 @@ export default function TabLayout() {
             backgroundColor: COLORS.background
           },
           headerStyle: {
-            backgroundColor: COLORS.background
+            backgroundColor: COLORS.headerBackground
           },
           headerTintColor: "#ffffff", // Change the text color on the header bar
         }}
