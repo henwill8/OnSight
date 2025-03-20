@@ -80,6 +80,8 @@ const RouteImage: React.FC = () => {
         body: formData
       });
 
+      console.log(response)
+
       if (!response.ok) {
         handleError(`Server error: ${response.status}`);
         return;

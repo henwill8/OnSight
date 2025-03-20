@@ -1,4 +1,4 @@
-const DEV_API_URL = "http://144.38.240.253:5000";  // Development server URL
+const DEV_API_URL = "http://144.38.240.22:5000";  // Development server URL
 const PROD_API_URL = "https://thecarpenterwall.com";  // Production server URL
 
 // Set this variable to switch between dev and prod

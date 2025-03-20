@@ -1,14 +1,21 @@
 import React from 'react';
 import { View, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
+import { globalStyles } from './_styles';
 
 export default function TabLayout() {
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Tabs>
+      <Tabs 
+        screenOptions={{
+          tabBarStyle: {
+            backgroundColor: "#333333"
+          }
+        }}
+      >
         <Tabs.Screen
           name="home"
           options={{ title: 'Home' }}
@@ -33,9 +40,3 @@ export default function TabLayout() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
