@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { globalStyles } from './_styles';
+import '@/constants/theme';
+import { COLORS } from '@/constants/theme';
 
 export default function TabLayout() {
   return (
@@ -12,17 +13,17 @@ export default function TabLayout() {
       <Tabs 
         screenOptions={{
           tabBarStyle: {
-            backgroundColor: "#333333"
-          }
+            backgroundColor: COLORS.background
+          },
+          headerStyle: {
+            backgroundColor: COLORS.background
+          },
+          headerTintColor: "#ffffff", // Change the text color on the header bar
         }}
       >
         <Tabs.Screen
           name="home"
           options={{ title: 'Home' }}
-        />
-        <Tabs.Screen
-          name="routeList"
-          options={{ title: 'Route List' }}
         />
         <Tabs.Screen
           name="routeCreation"

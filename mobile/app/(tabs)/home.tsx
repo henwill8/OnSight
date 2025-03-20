@@ -4,7 +4,7 @@ import { getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
 import config from '@/config';
 import { useRouter } from 'expo-router';
-import { globalStyles } from './_styles';
+import { globalStyles } from '@/app/_styles';
 
 interface Route {
   id: string;
@@ -68,7 +68,7 @@ const HomeScreen = () => {
   }, [gymId, gymIdLoading]);
 
   const handleRoutePress = (route: Route) => {
-    router.replace(`/routeDetail?route=${JSON.stringify(route)}`);
+    router.push(`/routeDetail?route=${JSON.stringify(route)}`);
   };
 
   if (loading || gymIdLoading) {

@@ -27,10 +27,6 @@ const RouteDetail = () => {
     }
   }, [routeString]);
 
-  const handleClose = () => {
-    router.replace("/(tabs)/routeList"); // Navigate back to the previous screen
-  };
-
   // Get image size
   const imageUriString = routeDetails?.image_url;
   const screenWidth = Dimensions.get('window').width;
@@ -78,16 +74,6 @@ const RouteDetail = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Close Button */}
-      <View style={styles.closeButtonContainer}>
-        <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-          <Image
-            source={require('@/assets/images/close.png')}
-            style={styles.closeIcon}
-          />
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.imageContainer}>
         {/* Image */}
         {scaledImageDimensions && (

@@ -4,7 +4,9 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import 'react-native-reanimated';
+import '@/constants/theme';
 
 export { useColorScheme } from 'react-native';
 
@@ -49,9 +51,16 @@ function RootLayoutNav() {
   // const colorScheme = useColorScheme();
 
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
+    <>
+      <StatusBar 
+        backgroundColor="#333333" // For Android
+        barStyle="light-content"  // Light text/icons for both platforms
+        translucent={false}       // Ensures background color is solid
+      />
+      <Stack>
+        <Stack.Screen name="index" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </>
   );
 }
