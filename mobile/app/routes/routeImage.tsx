@@ -13,7 +13,7 @@ const RouteImage: React.FC = () => {
   const router = useRouter();
   
   // Get params from router
-  const { imageUri, name, description, difficulty } = useLocalSearchParams();
+  const { imageUri } = useLocalSearchParams();
   
   // Make sure the imageUri is properly passed as a single string, not an array
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
@@ -80,8 +80,6 @@ const RouteImage: React.FC = () => {
         body: formData
       });
 
-      console.log(response)
-
       if (!response.ok) {
         handleError(`Server error: ${response.status}`);
         return;
@@ -131,7 +129,7 @@ const RouteImage: React.FC = () => {
       const uri = await panRotateZoomViewRef.current.exportView();
   
       router.back();
-      router.setParams({ exportedUri: uri });
+      router.setParams({ exportedUri: encodeURIComponent(uri) });
     }
   };
 

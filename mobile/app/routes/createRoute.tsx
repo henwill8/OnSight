@@ -87,9 +87,6 @@ const CreateRouteScreen = () => {
         // Send the form data
         const response = await fetch(config.API_URL + '/api/create-route', {
           method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: formData,
         });
   
