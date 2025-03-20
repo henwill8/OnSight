@@ -118,7 +118,6 @@ const RouteImage: React.FC = () => {
             width: width * scaleX,
             height: height * scaleY,
           }]}
-
         />
       );
     });
