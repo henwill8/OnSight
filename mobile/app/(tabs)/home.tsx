@@ -64,7 +64,6 @@ const HomeScreen = () => {
         if (!response.ok) throw new Error('Failed to fetch routes');
 
         const data = await response.json();
-        console.log('Fetched routes:', data);
         setRoutes(data);
       } catch (error) {
         console.error('Error fetching routes:', error);

@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
 import PanRotateZoomView, { PanRotateZoomViewRef } from '@/components/ui/PanRotateZoomView';
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
+import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/constants/theme';
 import config from '@/config';
 
 type Prediction = [number, number, number, number];
@@ -11,15 +12,14 @@ type ImageSize = { width: number; height: number };
 
 const RouteImage: React.FC = () => {
   const router = useRouter();
-
   const { imageUri } = useLocalSearchParams();
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null);
   const [dataReceived, setDataReceived] = useState(false);
-  
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null); // New state for color selection
 
   const panRotateZoomViewRef = useRef<PanRotateZoomViewRef>(null);
 
@@ -39,10 +39,17 @@ const RouteImage: React.FC = () => {
     setShowBoundingBoxes(prev => !prev);
   };
 
+  const handleColorSelect = (color: string) => {
+    setSelectedColor(prevColor => {
+      const newColor = prevColor === color ? null : color; // Toggle selection
+      console.log(`Selected color changed to: ${newColor ?? "None"}`); // Log when color changes
+      return newColor;
+    });
+  };
+
   const handleExport = async () => {
     if (panRotateZoomViewRef.current) {
       const uri = await panRotateZoomViewRef.current.exportView();
-  
       router.back();
       router.setParams({ exportedUri: encodeURIComponent(uri) });
     }
@@ -92,12 +99,12 @@ const RouteImage: React.FC = () => {
 
   const renderBoundingBoxes = () => {
     return predictions
-      .sort((a, b) => (b[2] * b[3]) - (a[2] * a[3]))
+      .sort((a, b) => (b[2] * b[3]) - (a[2] * a[3])) // Smallest areas on top
       .map((box, index) => {
         const [x, y, width, height] = box;
         const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
         const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
-  
+
         return (
           <ClimbingHoldButton
             key={index}
@@ -111,7 +118,7 @@ const RouteImage: React.FC = () => {
           />
         );
       });
-  };  
+  };
 
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
@@ -133,11 +140,20 @@ const RouteImage: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* NEW: Toggle Button */}
-      <TouchableOpacity
-        style={styles.toggleButton}
-        onPress={handleToggleBoundingBoxes}
-      >
+      <View style={styles.colorSelectionContainer}>
+        {[HOLD_SELECTION_COLORS.intermediate, HOLD_SELECTION_COLORS.start, HOLD_SELECTION_COLORS.end].map((color) => (
+          <TouchableOpacity
+            key={color}
+            style={[
+              styles.colorButton,
+              { backgroundColor: color, borderWidth: selectedColor === color ? 5 : 1 },
+            ]}
+            onPress={() => handleColorSelect(color)}
+          />
+        ))}
+      </View>
+
+      <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
         <Text style={styles.toggleButtonText}>
           {showBoundingBoxes ? "Hide" : "Show"} Unselected Holds
         </Text>
@@ -153,15 +169,25 @@ const RouteImage: React.FC = () => {
             }}
           />
           {renderBoundingBoxes()}
+          <DrawingCanvas
+            enabled={!!selectedColor} // Disable drawing if no color is selected
+            color={selectedColor || "gray"}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 10,
+            }}
+          />
         </PanRotateZoomView>
       )}
 
-      {/* Export Button */}
       <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
         <Text style={styles.exportButtonText}>Save</Text>
       </TouchableOpacity>
 
-      {/* Loader */}
       <Modal transparent={true} visible={!dataReceived} animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.loaderContainer}>
@@ -179,6 +205,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  colorSelectionContainer: {
+    flexDirection: "row",
+    position: "absolute",
+    top: 40,
+    alignSelf: "center",
+    zIndex: 10,
+    backgroundColor: "#ffffffaa",
+    padding: 8,
+    borderRadius: 10,
+  },
+  colorButton: {
+    width: 40,
+    height: 40,
+    marginHorizontal: 10,
+    borderRadius: 20,
+    borderColor: "black",
   },
   toggleButton: {
     position: "absolute",
@@ -229,3 +272,4 @@ const styles = StyleSheet.create({
 });
 
 export default RouteImage;
+

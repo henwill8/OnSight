@@ -10,15 +10,18 @@ interface IPath {
 interface DrawProps {
   color?: string;  // Optional color prop, which defaults to black
   style?: ViewStyle;
+  enabled?: boolean;
 }
 
-const Draw: React.FC<DrawProps> = ({ color = 'black', style }) => { // Default color to 'black' if not provided
+const Draw: React.FC<DrawProps> = ({ color = 'black', style, enabled = true }) => {
   const [paths, setPaths] = useState<IPath[]>([]);
   const isDrawing = useRef(false);
+  const colorRef = useRef(color);
 
   useEffect(() => {
-    return () => {};
-  }, []);
+    console.log("DrawCanvas switched color:", color);
+    colorRef.current = color;
+  }, [color]);
 
   const handleStart = (e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
     if (gestureState.numberActiveTouches !== 1) return;
@@ -31,7 +34,7 @@ const Draw: React.FC<DrawProps> = ({ color = 'black', style }) => { // Default c
       ...prevPaths,
       {
         segments: [`M ${e.nativeEvent.locationX} ${e.nativeEvent.locationY}`],
-        color: color,
+        color: colorRef.current,
       },
     ]);
 
@@ -41,9 +44,9 @@ const Draw: React.FC<DrawProps> = ({ color = 'black', style }) => { // Default c
   const handleMove = (e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
     if (!isDrawing.current || gestureState.numberActiveTouches !== 1) return;
 
-    e.persist(); // Prevent event recycling
+    e.persist();
 
-    if (!e.nativeEvent) return; // Safeguard against null event
+    if (!e.nativeEvent) return;
 
     setPaths((prevPaths) => {
       if (prevPaths.length === 0) return prevPaths;
@@ -75,20 +78,25 @@ const Draw: React.FC<DrawProps> = ({ color = 'black', style }) => { // Default c
   ).current;
 
   return (
-    <View style={[style]} {...panResponder.panHandlers}>
+    <View 
+      style={[style]} 
+      {...(enabled ? panResponder.panHandlers : {})} 
+      pointerEvents={enabled ? "auto" : "none"}
+    >
       <Canvas style={{ flex: 1 }}>
         {paths.map((p, index) => (
           <Path
             key={index}
             path={p.segments.join(" ")}
-            strokeWidth={2.5}
+            strokeWidth={2}
             style="stroke"
-            color={p.color || color}  // Ensure color is used if it's set
+            color={p.color}
           />
         ))}
       </Canvas>
     </View>
-  );
+  );  
 };
 
 export default Draw;
+

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { TouchableOpacity, ViewStyle, StyleSheet } from "react-native";
+import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/constants/theme';
 
 interface ClimbingHoldButtonProps {
   style?: ViewStyle[]; // Accept style as a prop for customization
@@ -12,9 +13,9 @@ const ClimbingHoldButton: React.FC<ClimbingHoldButtonProps> = ({ style, showUnse
   // Array of colors to cycle through
   const colors = [
     "rgba(0, 0, 0, 0)",  // Transparent
-    "rgba(0, 68, 255, 1)", // Blue
-    "rgba(0, 255, 0, 1)",  // Green
-    "rgba(216, 0, 0, 1)",  // Red
+    HOLD_SELECTION_COLORS.intermediate,
+    HOLD_SELECTION_COLORS.start,
+    HOLD_SELECTION_COLORS.end
   ];
 
   // Function to handle color change on button click
