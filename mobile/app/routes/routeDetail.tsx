@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { COLORS, SIZES, SHADOWS, globalStyles } from '@/constants/theme';
 
@@ -13,10 +13,20 @@ interface Route {
 }
 
 const RouteDetail = () => {
+  const navigation = useNavigation();
+
   const [routeDetails, setRouteDetails] = useState<Route | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const { route: routeString } = useLocalSearchParams();
+    
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "View Route",
+      headerStyle: { backgroundColor: COLORS.backgroundSecondary },
+      headerTintColor: "white"
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (routeString) {

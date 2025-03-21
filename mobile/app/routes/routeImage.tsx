@@ -1,6 +1,6 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react';
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
@@ -14,6 +14,8 @@ type ImageSize = { width: number; height: number };
 
 const RouteImage: React.FC = () => {
   const router = useRouter();
+  const navigation = useNavigation();
+
   const { imageUri } = useLocalSearchParams();
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
@@ -25,6 +27,14 @@ const RouteImage: React.FC = () => {
 
   const drawingCanvasRef = useRef(null);
   const viewShotRef = useRef<ViewShot>(null);
+  
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Create Route Image",
+      headerStyle: { backgroundColor: COLORS.backgroundSecondary },
+      headerTintColor: "white"
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (imageUriString) {
@@ -177,10 +187,6 @@ const RouteImage: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
-        <Text style={styles.toggleButtonText}>{showBoundingBoxes ? "Hide" : "Show"} Unselected Holds</Text>
-      </TouchableOpacity>
-
       {scaledImageDimensions && (
         <ReactNativeZoomableView
           maxZoom={10.0}
@@ -196,6 +202,7 @@ const RouteImage: React.FC = () => {
               source={{ uri: imageUriString }}
               style={{
                 top: 0,
+                borderRadius: SIZES.borderRadius,
                 width: scaledImageDimensions!.width,
                 height: scaledImageDimensions!.height,
               }}
@@ -218,6 +225,10 @@ const RouteImage: React.FC = () => {
         </ReactNativeZoomableView>
       )}
 
+      <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
+        <Text style={styles.toggleButtonText}>{showBoundingBoxes ? "Hide" : "Show"} Unselected Holds</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
         <Text style={styles.exportButtonText}>Save</Text>
       </TouchableOpacity>
@@ -237,8 +248,9 @@ const RouteImage: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.backgroundPrimary
   },
   colorSelectionContainer: {
     flexDirection: "row",
@@ -270,22 +282,25 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   toggleButton: {
-    position: "absolute",
-    bottom: 100,
-    backgroundColor: "#2196F3",
+    position: 'absolute',
+    bottom: 80,
+    width: '75%',
+    backgroundColor: '#2196F3',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     zIndex: 10,
   },
   toggleButtonText: {
-    color: "#fff",
+    color: COLORS.textPrimary,
+    textAlign: "center",
     fontSize: 16,
     fontWeight: "bold",
   },
   exportButton: {
     position: "absolute",
-    bottom: 40,
+    bottom: 20,
+    width: '75%',
     backgroundColor: "#4CAF50",
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -293,8 +308,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   exportButtonText: {
-    color: "#fff",
+    color: COLORS.textPrimary,
     fontSize: 16,
+    textAlign: "center",
     fontWeight: "bold",
   },
   overlay: {

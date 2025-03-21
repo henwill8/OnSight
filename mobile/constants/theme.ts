@@ -5,7 +5,7 @@ export const COLORS = {
   backgroundSecondary: '#333333',
   textPrimary: '#dedede',
   textSecondary: '#c2c2c2',
-  primary: "#575757",
+  primary: "#2f5aa3",
   border: '#333',
   shadow: '#000',
 };
@@ -36,7 +36,6 @@ export const globalStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignContent: "center",
-//    backgroundColor: COLORS.backgroundPrimary,
     backgroundColor: COLORS.backgroundPrimary,
     padding: SIZES.padding,
   },

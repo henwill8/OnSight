@@ -93,11 +93,11 @@ const HomeScreen = () => {
       ) : (
         <>
           {currentGymName ? (
-            <Text style={[styles.text, { marginVertical: 30 }]}>
-              Current Gym: {currentGymName}
+            <Text style={[styles.text, { marginVertical: 30, textAlign: "center", fontWeight: 500, fontSize: 25 }]}>
+              {currentGymName}
             </Text>
           ) : (
-            <Text style={[styles.text, { marginVertical: 30 }]}>
+            <Text style={[styles.text, { marginVertical: 30, textAlign: "center" }]}>
               No gym selected.
             </Text>
           )}
@@ -125,10 +125,14 @@ const HomeScreen = () => {
         </>
       )}
 
-      {/* Add Route Button (Always Present) */}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
-        <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
-      </TouchableOpacity>
+      {currentGymName ? (
+        // Only allow users to create a route if a gym is selected
+        <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
+          <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+      ) : (
+        <></>
+      )}
     </View>
   );
 };
@@ -167,8 +171,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   routeName: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '500',
     color: COLORS.textPrimary,
   },
   routeDescription: {

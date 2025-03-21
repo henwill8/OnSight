@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState, useCallback, useLayoutEffect } from "react";
+import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
 import RNPickerSelect from 'react-native-picker-select';
@@ -11,12 +11,14 @@ import { getFileType } from '@/components/FileUtils';
 
 const CreateRouteScreen = () => {
   const router = useRouter();
+  const navigation = useNavigation();
   
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState(false);
+  const [gymName, setGymName] = useState<string>('');
 
   const { exportedUri } = useLocalSearchParams();
 
@@ -27,6 +29,21 @@ const CreateRouteScreen = () => {
       }
     }, [exportedUri])
   );
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Create Route",
+      headerStyle: { backgroundColor: COLORS.backgroundSecondary },
+      headerTintColor: "white"
+    });
+
+    fetchCurrentGymName();
+  }, [navigation]);
+
+  const fetchCurrentGymName = async () => {
+    const currentGymName = await getItemAsync("gymName");
+    setGymName(currentGymName || "");
+  };
 
   useEffect(() => {
     setCanSubmit(!!difficulty && !!imageUri);
@@ -104,16 +121,27 @@ const CreateRouteScreen = () => {
       contentContainerStyle={styles.container}
       style={{ backgroundColor: COLORS.backgroundPrimary }}
     >
-      <Text style={styles.title}>Create a Route</Text>
+      <Text style={[styles.title, {textAlign: "center", marginBottom: 25}]}>{gymName}</Text>
 
-      <View style={styles.buttons}>
+      <View style={styles.buttonsContainer}>
         <TouchableOpacity style={styles.button} onPress={() => handleImagePick(false)}>
           <Text style={styles.buttonText}>Pick an Image</Text>
         </TouchableOpacity>
+
+        <Text style={[styles.buttonText, {textAlign: "center"}]}>OR</Text>
+
         <TouchableOpacity style={styles.button} onPress={() => handleImagePick(true)}>
           <Text style={styles.buttonText}>Take a Picture</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Conditionally display the image if imageUri is not empty */}
+      {imageUri && (
+        <Image 
+          source={{ uri: imageUri }} 
+          style={styles.imagePreview} 
+        />
+      )}
 
       <TextInput
         style={styles.textInput}
@@ -132,54 +160,20 @@ const CreateRouteScreen = () => {
         multiline
       />
 
-      {/* Difficulty Dropdown */}
-      {/* Difficulty Dropdown */}
-      {/* <RNPickerSelect
-        onValueChange={(value) => setDifficulty(value)}
-        items={[
-          { label: 'v0', value: 'v0' },
-          { label: 'v1', value: 'v1' },
-          { label: 'v2', value: 'v2' },
-          { label: 'v3', value: 'v3' },
-          { label: 'v4', value: 'v4' },
-          { label: 'v5', value: 'v5' },
-          { label: 'v6', value: 'v6' },
-          { label: 'v7', value: 'v7' },
-          { label: 'v8', value: 'v8' },
-          { label: 'v9', value: 'v9' },
-          { label: 'v10', value: 'v10' },
-          { label: 'v11', value: 'v11' },
-          { label: 'v12', value: 'v12' },
-          { label: 'v13', value: 'v13' },
-          { label: 'v14', value: 'v14' },
-          { label: 'v15', value: 'v15' },
-          { label: 'v16', value: 'v16' },
-          { label: 'v17', value: 'v17' },
-        ]}
-        value={difficulty}
-        placeholder={{ label: 'Select Difficulty', value: null }}
-        style={{
-          inputIOS: styles.picker,
-          inputAndroid: styles.picker,
-          placeholder: { color: 'gray' },
-        }}
-      /> */}
-
       <TextInput
-        style={styles.textInput}
+        style={[styles.textInput, { marginBottom: 30}]}
         placeholder="Difficulty"
         value={difficulty}
         onChangeText={setDifficulty}
         placeholderTextColor={COLORS.textSecondary}
       />
 
-
       <TouchableOpacity
-        style={[styles.submitButton, { backgroundColor: canSubmit ? COLORS.primary : '#B0B0B0' }]}
+        style={[styles.submitButton, { backgroundColor: canSubmit ? '#2f8f4c' : '#B0BEC5' }]}
         onPress={handleSubmit}
         disabled={!canSubmit}
       >
-        <Text style={styles.submitButtonText}>Submit</Text>
+        <Text style={[styles.submitButtonText, { color: canSubmit ? COLORS.textPrimary : '#2e2e2e' }]}>Submit</Text>
       </TouchableOpacity>
 
       {!canSubmit && (
@@ -195,7 +189,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 35,
   },
   title: {
     fontSize: 24,
@@ -203,16 +197,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: COLORS.textPrimary,
   },
-  buttons: {
+  buttonsContainer: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    height: 130,
     marginBottom: 20,
   },
   button: {
     backgroundColor: COLORS.primary,
-    padding: 15,
     borderRadius: SIZES.borderRadius,
+    padding: 13,
     alignItems: 'center',
-    marginBottom: 10,
-    // ...SHADOWS.small,
   },
   buttonText: {
     color: COLORS.textPrimary,
@@ -221,37 +216,33 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 15,
     padding: 10,
     color: COLORS.textPrimary,
     borderColor: COLORS.border,
     borderRadius: SIZES.borderRadius,
     backgroundColor: COLORS.backgroundSecondary,
-    // ...SHADOWS.small,
   },
-  picker: {
-    height: 52,
+  imagePreview: {
+    width: '100%',
+    height: 400,
     marginBottom: 20,
-    paddingHorizontal: 10,
     borderRadius: SIZES.borderRadius,
-    backgroundColor: COLORS.backgroundSecondary,
-    color: COLORS.textPrimary,
-    // ...SHADOWS.small,
+    resizeMode: 'cover',
   },
   submitButton: {
     padding: 15,
     borderRadius: SIZES.borderRadius,
     alignItems: 'center',
-    // ...SHADOWS.small,
   },
   submitButtonText: {
-    color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   incompleteMessage: {
     color: 'red',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "500",
     marginTop: 10,
     textAlign: 'center',
   },
