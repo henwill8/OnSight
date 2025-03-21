@@ -6,6 +6,7 @@ import PanRotateZoomView, { PanRotateZoomViewRef } from '@/components/ui/PanRota
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
 import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/constants/theme';
 import config from '@/config';
+import { getFileType } from '@/components/FileUtils';
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
@@ -59,10 +60,12 @@ const RouteImage: React.FC = () => {
     console.log("Sending to server...");
 
     const formData = new FormData();
+
+    const { extension, mimeType } = getFileType(uri);
     formData.append("image", {
       uri,
-      name: "photo.jpg",
-      type: "image/jpeg",
+      name: `photo.${extension}`,
+      type: mimeType,
     } as any);
 
     try {

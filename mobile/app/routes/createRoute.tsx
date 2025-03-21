@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import RNPickerSelect from 'react-native-picker-select';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from "@/config";
+import { getFileType } from '@/components/FileUtils';
 
 const CreateRouteScreen = () => {
   const router = useRouter();
@@ -68,16 +69,15 @@ const CreateRouteScreen = () => {
         const formData = new FormData();
         formData.append("name", name);  
         formData.append("description", description);  
-        formData.append("difficulty", difficulty);  
-        formData.append("gym_id", gymId);  
+        formData.append("difficulty", difficulty || "");  
+        formData.append("gym_id", gymId || "");  
 
-        const imageFile = {
-          uri: imageUri, 
-          name: "photo.jpg",  
-          type: "image/jpeg",  
-        };
-
-        formData.append("image", imageFile);
+        const { extension, mimeType } = getFileType(imageUri);
+        formData.append("image", {
+          uri: imageUri,
+          name: `photo.${extension}`,
+          type: mimeType,
+        } as any);
 
         const response = await fetch(config.API_URL + '/api/create-route', {
           method: "POST",
