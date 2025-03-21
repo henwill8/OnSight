@@ -61,6 +61,8 @@ const RouteImage: React.FC = () => {
   };
 
   const handleExport = async () => {
+    setShowBoundingBoxes(false);
+
     if (viewShotRef.current) {
       try {
         await new Promise((resolve) => setTimeout(resolve, 500)); // Add a small delay to ensure rendering
