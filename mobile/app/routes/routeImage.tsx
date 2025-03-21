@@ -239,7 +239,7 @@ const RouteImage: React.FC = () => {
         <View style={styles.overlay}>
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.loadingText}>Detecting Climbing Holds...</Text>
+            <Text style={styles.loadingText}>Detecting Climbing Holds...{"\n"}(may take up to 10 seconds)</Text>
           </View>
         </View>
       </Modal>
@@ -332,6 +332,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginTop: 10,
     fontSize: 16,
+    textAlign: "center"
   },
 });
 

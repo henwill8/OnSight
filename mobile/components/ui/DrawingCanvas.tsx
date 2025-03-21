@@ -72,6 +72,18 @@ const Draw: React.FC<DrawProps> = forwardRef(({ color = 'black', style, enabled 
 
   const handleEnd = () => {
     isDrawing.current = false;
+    setPaths((prevPaths) => {
+      if (prevPaths.length === 0) return prevPaths;
+
+      const index = prevPaths.length - 1;
+      const newPaths = [...prevPaths];
+
+      if (newPaths[index]?.segments.length < 10) {
+        newPaths.pop();
+      }
+
+      return newPaths;
+    });
   };
 
   const panResponder = useRef(
