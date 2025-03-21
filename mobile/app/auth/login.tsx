@@ -52,7 +52,7 @@ export default function LoginScreen() {
       <View style={styles.innerContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username or EMail"
+          placeholder="Username or Email"
           placeholderTextColor="white"
           value={username}
           onChangeText={setUsername}
