@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
+import { COLORS, SIZES, SHADOWS, globalStyles } from '@/constants/theme';
 
 interface Route {
   id: string;
@@ -72,7 +73,7 @@ const RouteDetail = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       <View style={styles.imageContainer}>
         {/* Image */}
         {scaledImageDimensions && (
@@ -97,7 +98,7 @@ const RouteDetail = () => {
       </View>
 
       {/* Text overlay fixed at the bottom */}
-      <View style={styles.textOverlay}>
+      <View style={styles.routeCard}>
         <Text style={styles.name}>{routeDetails.name || 'No Name'}</Text>
         <Text style={styles.description}>{routeDetails.description || 'No Description'}</Text>
         <Text style={styles.difficulty}>Difficulty: {routeDetails.difficulty}</Text>
@@ -144,17 +145,30 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: '600',
-    color: 'black', // Text color
+    color: COLORS.textPrimary, // Text color
     marginBottom: 5,
   },
   description: {
     fontSize: 16,
-    color: 'black', // Text color
+    color: COLORS.textPrimary, // Text color
     marginBottom: 5,
   },
   difficulty: {
     fontSize: 18,
     color: '#06d6a0', // Green color for difficulty
+  },
+  routeCard: {
+    backgroundColor: COLORS.backgroundSecondary,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: SIZES.borderRadius,
+    elevation: SHADOWS.elevation,
+    shadowColor: SHADOWS.shadowColor,
+    shadowOffset: SHADOWS.shadowOffset,
+    shadowOpacity: SHADOWS.shadowOpacity,
+    shadowRadius: SHADOWS.shadowRadius,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
 });
 
