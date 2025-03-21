@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import PanRotateZoomView from '@/components/ui/PanRotateZoomView'; // Custom zoom/pan component
+import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 
 interface Route {
   id: string;
@@ -76,7 +76,14 @@ const RouteDetail = () => {
       <View style={styles.imageContainer}>
         {/* Image */}
         {scaledImageDimensions && (
-          <PanRotateZoomView enableRotate={false}>
+          <ReactNativeZoomableView
+            maxZoom={10.0}
+            minZoom={0.5}
+            zoomStep={0.5}
+            initialZoom={1.0}
+            bindToBorders={true}
+            style={{ width: scaledImageDimensions.width, height: scaledImageDimensions.height }}
+          >
             <Image
               source={{ uri: routeDetails.image_url }}
               style={{
@@ -85,7 +92,7 @@ const RouteDetail = () => {
                 borderRadius: 10,
               }}
             />
-          </PanRotateZoomView>
+          </ReactNativeZoomableView>
         )}
       </View>
 

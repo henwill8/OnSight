@@ -2,11 +2,12 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
-import PanRotateZoomView, { PanRotateZoomViewRef } from '@/components/ui/PanRotateZoomView';
+import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
 import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/constants/theme';
 import config from '@/config';
 import { getFileType } from '@/components/FileUtils';
+import ViewShot from 'react-native-view-shot';
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
@@ -22,8 +23,8 @@ const RouteImage: React.FC = () => {
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false); // Show bounding boxes state
   const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
 
-  const panRotateZoomViewRef = useRef<PanRotateZoomViewRef>(null);
-  const drawingCanvasRef = useRef(null); // Reference to the DrawingCanvas for undo functionality
+  const drawingCanvasRef = useRef(null);
+  const viewShotRef = useRef<ViewShot>(null);
 
   useEffect(() => {
     if (imageUriString) {
@@ -50,10 +51,20 @@ const RouteImage: React.FC = () => {
   };
 
   const handleExport = async () => {
-    if (panRotateZoomViewRef.current) {
-      const uri = await panRotateZoomViewRef.current.exportView();
-      router.back();
-      router.setParams({ exportedUri: encodeURIComponent(uri) });
+    if (viewShotRef.current) {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Add a small delay to ensure rendering
+
+        // Capture the entire zoomable view
+        const uri = await await viewShotRef.current.capture();
+  
+        console.log("Captured image URI: ", uri);
+        router.back(); // Go back to previous screen
+        router.setParams({ exportedUri: encodeURIComponent(uri) }); // Pass URI to router params
+      } catch (error) {
+        console.error("Error exporting image: ", error);
+        Alert.alert("Export Failed", "There was an error exporting the image.");
+      }
     }
   };
 
@@ -112,7 +123,7 @@ const RouteImage: React.FC = () => {
         return (
           <ClimbingHoldButton
             key={index}
-            style={{
+            style={{ // position is already absolute
               left: x * scaleX,
               top: y * scaleY,
               width: width * scaleX,
@@ -171,29 +182,40 @@ const RouteImage: React.FC = () => {
       </TouchableOpacity>
 
       {scaledImageDimensions && (
-        <PanRotateZoomView enableRotate={false} ref={panRotateZoomViewRef}>
-          <Image
-            source={{ uri: imageUriString }}
-            style={{
-              width: scaledImageDimensions!.width,
-              height: scaledImageDimensions!.height,
-            }}
-          />
-          {renderBoundingBoxes()}
-          <DrawingCanvas
-            ref={drawingCanvasRef} // Reference to DrawingCanvas
-            enabled={!!selectedColor} // Disable drawing if no color is selected
-            color={selectedColor || "gray"}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: 10,
-            }}
-          />
-        </PanRotateZoomView>
+        <ReactNativeZoomableView
+          maxZoom={10.0}
+          minZoom={0.5}
+          zoomStep={0.5}
+          initialZoom={1.0}
+          bindToBorders={true}
+          style={{ width: scaledImageDimensions.width, height: scaledImageDimensions.height }}
+        >
+          {/* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */}
+          <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 0.9 }} style={{ position: 'relative', width: scaledImageDimensions!.width, height: scaledImageDimensions!.height }}>
+            <Image
+              source={{ uri: imageUriString }}
+              style={{
+                top: 0,
+                width: scaledImageDimensions!.width,
+                height: scaledImageDimensions!.height,
+              }}
+            />
+            {renderBoundingBoxes()}
+            <DrawingCanvas
+              ref={drawingCanvasRef} // Reference to DrawingCanvas
+              enabled={!!selectedColor} // Disable drawing if no color is selected
+              color={selectedColor || "gray"}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: scaledImageDimensions!.width,
+                height: scaledImageDimensions!.height,
+                zIndex: 10,
+              }}
+            />
+          </ViewShot>
+        </ReactNativeZoomableView>
       )}
 
       <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
