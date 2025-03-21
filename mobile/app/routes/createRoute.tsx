@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
@@ -100,13 +100,19 @@ const CreateRouteScreen = () => {
   };  
 
   return (
-    <View style={globalStyles.container}>
-      <Text style={[styles.title, { textAlign: 'center' }]}>Create a Route</Text>
+    <ScrollView 
+      contentContainerStyle={styles.container}
+      style={{ backgroundColor: COLORS.backgroundPrimary }}
+    >
+      <Text style={styles.title}>Create a Route</Text>
 
       <View style={styles.buttons}>
-        <Button title="Pick an Image" onPress={() => handleImagePick(false)} />
-        <View style={{ marginTop: 10 }} />
-        <Button title="Take a Picture" onPress={() => handleImagePick(true)} />
+        <TouchableOpacity style={styles.button} onPress={() => handleImagePick(false)}>
+          <Text style={styles.buttonText}>Pick an Image</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => handleImagePick(true)}>
+          <Text style={styles.buttonText}>Take a Picture</Text>
+        </TouchableOpacity>
       </View>
 
       <TextInput
@@ -123,8 +129,10 @@ const CreateRouteScreen = () => {
         value={description}
         onChangeText={setDescription}
         placeholderTextColor={COLORS.textSecondary}
+        multiline
       />
 
+      {/* Difficulty Dropdown */}
       {/* Difficulty Dropdown */}
       {/* <RNPickerSelect
         onValueChange={(value) => setDifficulty(value)}
@@ -165,23 +173,30 @@ const CreateRouteScreen = () => {
         placeholderTextColor={COLORS.textSecondary}
       />
 
-      <Button
-        title="Submit"
+
+      <TouchableOpacity
+        style={[styles.submitButton, { backgroundColor: canSubmit ? COLORS.primary : '#B0B0B0' }]}
         onPress={handleSubmit}
         disabled={!canSubmit}
-        color={canSubmit ? '#4CAF50' : '#B0B0B0'}
-      />
+      >
+        <Text style={styles.submitButtonText}>Submit</Text>
+      </TouchableOpacity>
 
       {!canSubmit && (
         <Text style={styles.incompleteMessage}>
           Please fill in all fields before submitting.
         </Text>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    paddingTop: 40,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -191,21 +206,48 @@ const styles = StyleSheet.create({
   buttons: {
     marginBottom: 20,
   },
+  button: {
+    backgroundColor: COLORS.primary,
+    padding: 15,
+    borderRadius: SIZES.borderRadius,
+    alignItems: 'center',
+    marginBottom: 10,
+    // ...SHADOWS.small,
+  },
+  buttonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   textInput: {
     borderWidth: 1,
     marginBottom: 10,
     padding: 10,
     color: COLORS.textPrimary,
-    borderColor: COLORS.textPrimary,
-    borderRadius: 5,
+    borderColor: COLORS.border,
+    borderRadius: SIZES.borderRadius,
+    backgroundColor: COLORS.backgroundSecondary,
+    // ...SHADOWS.small,
   },
   picker: {
     height: 52,
     marginBottom: 20,
     paddingHorizontal: 10,
-    borderRadius: 5,
-    backgroundColor: 'white',
-    color: 'black',
+    borderRadius: SIZES.borderRadius,
+    backgroundColor: COLORS.backgroundSecondary,
+    color: COLORS.textPrimary,
+    // ...SHADOWS.small,
+  },
+  submitButton: {
+    padding: 15,
+    borderRadius: SIZES.borderRadius,
+    alignItems: 'center',
+    // ...SHADOWS.small,
+  },
+  submitButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   incompleteMessage: {
     color: 'red',

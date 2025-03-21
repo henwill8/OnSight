@@ -9,7 +9,7 @@ function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -39,11 +39,17 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="chooseGym"
-          options={{ title: 'Choose Gym' }}
+          options={{ 
+            title: 'Choose Gym', 
+            tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />
+          }}
         />
         <Tabs.Screen
           name="profile"
-          options={{ title: 'Profile' }}
+          options={{ 
+            title: 'Profile', 
+            tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />
+          }}
         />
       </Tabs>
     </KeyboardAvoidingView>
