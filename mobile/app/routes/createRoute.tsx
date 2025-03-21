@@ -14,7 +14,7 @@ const CreateRouteScreen = () => {
   
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [difficulty, setDifficulty] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<string>('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState(false);
 
@@ -126,7 +126,7 @@ const CreateRouteScreen = () => {
       />
 
       {/* Difficulty Dropdown */}
-      <RNPickerSelect
+      {/* <RNPickerSelect
         onValueChange={(value) => setDifficulty(value)}
         items={[
           { label: 'v0', value: 'v0' },
@@ -155,6 +155,14 @@ const CreateRouteScreen = () => {
           inputAndroid: styles.picker,
           placeholder: { color: 'gray' },
         }}
+      /> */}
+
+      <TextInput
+        style={styles.textInput}
+        placeholder="Difficulty"
+        value={difficulty}
+        onChangeText={setDifficulty}
+        placeholderTextColor={COLORS.textSecondary}
       />
 
       <Button
