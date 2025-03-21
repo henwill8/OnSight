@@ -16,13 +16,14 @@ const RouteImage: React.FC = () => {
   const { imageUri } = useLocalSearchParams();
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null);
-  const [dataReceived, setDataReceived] = useState(false);
-  const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null); // New state for color selection
+  const [predictions, setPredictions] = useState<Prediction[]>([]); // Bounding boxes data
+  const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null); // Image size
+  const [dataReceived, setDataReceived] = useState(false); // Whether data has been received
+  const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false); // Show bounding boxes state
+  const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
 
   const panRotateZoomViewRef = useRef<PanRotateZoomViewRef>(null);
+  const drawingCanvasRef = useRef(null); // Reference to the DrawingCanvas for undo functionality
 
   useEffect(() => {
     if (imageUriString) {
@@ -141,25 +142,32 @@ const RouteImage: React.FC = () => {
       })()
     : null;
 
+  const handleUndo = () => {
+    // Call the undo function of the DrawingCanvas
+    if (drawingCanvasRef.current) {
+      drawingCanvasRef.current.undo();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.colorSelectionContainer}>
         {[HOLD_SELECTION_COLORS.intermediate, HOLD_SELECTION_COLORS.start, HOLD_SELECTION_COLORS.end].map((color) => (
           <TouchableOpacity
             key={color}
-            style={[
-              styles.colorButton,
-              { backgroundColor: color, borderWidth: selectedColor === color ? 5 : 1 },
-            ]}
+            style={[styles.colorButton, { backgroundColor: color, borderWidth: selectedColor === color ? 5 : 1 }]}
             onPress={() => handleColorSelect(color)}
           />
         ))}
+
+        {/* Undo Button next to the color buttons */}
+        <TouchableOpacity style={styles.undoButton} onPress={handleUndo}>
+          <Text style={styles.undoButtonText}>Undo</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
-        <Text style={styles.toggleButtonText}>
-          {showBoundingBoxes ? "Hide" : "Show"} Unselected Holds
-        </Text>
+        <Text style={styles.toggleButtonText}>{showBoundingBoxes ? "Hide" : "Show"} Unselected Holds</Text>
       </TouchableOpacity>
 
       {scaledImageDimensions && (
@@ -173,6 +181,7 @@ const RouteImage: React.FC = () => {
           />
           {renderBoundingBoxes()}
           <DrawingCanvas
+            ref={drawingCanvasRef} // Reference to DrawingCanvas
             enabled={!!selectedColor} // Disable drawing if no color is selected
             color={selectedColor || "gray"}
             style={{
@@ -226,6 +235,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderColor: "black",
   },
+  undoButton: {
+    backgroundColor: "#f44336",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  undoButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
   toggleButton: {
     position: "absolute",
     bottom: 100,
@@ -275,4 +296,3 @@ const styles = StyleSheet.create({
 });
 
 export default RouteImage;
-

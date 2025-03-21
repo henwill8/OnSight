@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { View, PanResponder, GestureResponderEvent, PanResponderGestureState, ViewStyle } from "react-native";
 import { Canvas, Color, Path } from "@shopify/react-native-skia";
 
@@ -13,10 +13,18 @@ interface DrawProps {
   enabled?: boolean;
 }
 
-const Draw: React.FC<DrawProps> = ({ color = 'black', style, enabled = true }) => {
+// Using forwardRef to pass a ref to the Draw component
+const Draw: React.FC<DrawProps> = forwardRef(({ color = 'black', style, enabled = true }, ref) => {
   const [paths, setPaths] = useState<IPath[]>([]);
   const isDrawing = useRef(false);
   const colorRef = useRef(color);
+
+  // Expose the undo method to parent components or external code
+  useImperativeHandle(ref, () => ({
+    undo: () => {
+      setPaths((prevPaths) => prevPaths.slice(0, -1));  // Remove the last path from the array
+    }
+  }));
 
   useEffect(() => {
     console.log("DrawCanvas switched color:", color);
@@ -95,8 +103,8 @@ const Draw: React.FC<DrawProps> = ({ color = 'black', style, enabled = true }) =
         ))}
       </Canvas>
     </View>
-  );  
-};
+  );
+});
 
+// Export Draw with ref
 export default Draw;
-
