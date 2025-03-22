@@ -108,6 +108,8 @@ const ChooseGym: React.FC = () => {
         placeholderTextColor={COLORS.textSecondary}
         style={styles.textInput}
       />
+
+
       <TextInput
         value={newGymLocation}
         onChangeText={setNewGymLocation}
@@ -115,11 +117,17 @@ const ChooseGym: React.FC = () => {
         placeholderTextColor={COLORS.textSecondary}
         style={styles.textInput}
       />
-      <Button title="Create Gym" color={COLORS.primary} onPress={handleCreateGym} />
+      {/*<Button title="Create Gym" styles={styles.button}  onPress={handleCreateGym}/> */}
+
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity style={styles.button} onPress={() => handleCreateGym(true)}>
+          <Text style={styles.buttonText}>Create Gym</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Display the name of the current gym */}
       {currentGymName ? (
-        <Text style={[ styles.text, { marginVertical: 30 }]}>
+        <Text style={[styles.text, { marginVertical: 30, textAlign: "center", fontWeight: 500, fontSize: 25 }]}>
           Current Gym: {currentGymName}
         </Text>
       ) : (
@@ -128,13 +136,13 @@ const ChooseGym: React.FC = () => {
         </Text>
       )}
 
-      <Text style={{ fontSize: 20, marginBottom: 10, color: COLORS.textPrimary }}>Available Gyms</Text>
 
+      <Text style={{ fontSize: 20, marginBottom: 10, color: COLORS.textPrimary }}>Available Gyms</Text>
       {/* List of gyms */}
       <FlatList
-        data={gyms}
-        renderItem={renderGymItem}
-        keyExtractor={(item) => item.id.toString()}
+          data={gyms}
+          renderItem={renderGymItem}
+          keyExtractor={(item) => item.id.toString()}
       />
     </View>
   );
@@ -143,15 +151,51 @@ const ChooseGym: React.FC = () => {
 const styles = StyleSheet.create({
   textInput: {
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 15,
     padding: 10,
     color: COLORS.textPrimary,
-    borderColor: COLORS.textPrimary
+    borderColor: COLORS.border,
+    borderRadius: SIZES.borderRadius,
+    backgroundColor: COLORS.backgroundSecondary,
   },
   text: {
     fontSize: 18,
     color: COLORS.textPrimary
-  }
+  },
+  button: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.borderRadius,
+    padding: 13,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonsContainer: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    height: 130,
+    marginBottom: 20,
+  },
+  routeInfo: {
+    flex: 1,
+  },
+  routeCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.backgroundSecondary,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: SIZES.borderRadius,
+    elevation: SHADOWS.elevation,
+    shadowColor: SHADOWS.shadowColor,
+    shadowOffset: SHADOWS.shadowOffset,
+    shadowOpacity: SHADOWS.shadowOpacity,
+    shadowRadius: SHADOWS.shadowRadius,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
 });
 
 export default ChooseGym;
