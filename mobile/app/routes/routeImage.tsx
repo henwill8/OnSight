@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#333",
     padding: 20,
-    borderRadius: 10,
+    borderRadius: SIZES.borderRadius,
   },
   loadingText: {
     color: "#fff",

@@ -100,7 +100,7 @@ const RouteDetail = () => {
               style={{
                 width: scaledImageDimensions.width,
                 height: scaledImageDimensions.height,
-                borderRadius: 10,
+                borderRadius: SIZES.borderRadius,
               }}
             />
           </ReactNativeZoomableView>
