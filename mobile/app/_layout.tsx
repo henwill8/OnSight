@@ -52,9 +52,11 @@ function RootLayoutNav() {
         barStyle="light-content"  // Light text/icons for both platforms
         translucent={false}       // Ensures background color is solid
       />
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="auth/login" />
+        <Stack.Screen name="auth/register" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </>
   );

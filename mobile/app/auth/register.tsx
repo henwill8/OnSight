@@ -73,7 +73,7 @@ export default function RegisterScreen() {
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/auth/login")}>
-          <Text style={globalStyles.link}>Already have an account? Login here</Text>
+          <Text style={[globalStyles.link, { textAlign: "center" }]}>Already have an account? Login here</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -83,14 +83,14 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    backgroundColor: "dodgerblue",
+    alignItems: "center", // Centers content horizontally
+    justifyContent: "center", // Centers content vertically
+    backgroundColor: COLORS.backgroundPrimary, // You can replace this with your color
   },
   innerContainer: {
-    flex: 1,
-    width: "75%",
+    width: "75%", // Adjust the width as per your requirement
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center", // Ensures content is centered within inner container
   },
   title: {
     fontSize: 24,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     color: "white",
   },
   input: {
-    width: "100%",
+    width: "100%", // Takes full width of inner container
     padding: 10,
     marginBottom: 10,
     borderWidth: 1,
@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
     color: "white",
   },
   button: {
-    backgroundColor: "aquamarine",
+    backgroundColor: COLORS.primary, // Ensure COLORS.primary exists in your theme
     padding: 15,
     borderRadius: 5,
-    width: "100%",
+    width: "100%", // Takes full width of inner container
     alignItems: "center",
   },
   buttonText: {
-    color: "black",
+    color: COLORS.textPrimary, // Ensure COLORS.textPrimary exists in your theme
     fontSize: 16,
     fontWeight: "bold",
   },

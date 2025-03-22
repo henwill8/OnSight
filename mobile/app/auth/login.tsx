@@ -48,7 +48,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={[styles.title, { marginBottom: 20 }]}>Login</Text>
       <View style={styles.innerContainer}>
         <TextInput
           style={styles.input}
@@ -69,7 +69,7 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/auth/register")}>
-          <Text style={globalStyles.link}>Don't have an account? Register here</Text>
+          <Text style={[globalStyles.link, { textAlign: "center" }]}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -78,15 +78,14 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "dodgerblue",
+    flex: 1, // Ensures the container takes up all available space
+    padding: 40,
+    alignItems: "center", // Centers content horizontally
+    justifyContent: "center", // Centers content vertically
+    backgroundColor: COLORS.backgroundPrimary,
   },
   innerContainer: {
-    flex: 1,
-    width: "75%",
-    alignItems: "center",
-    justifyContent: "center",
+    width: "100%",
   },
   title: {
     fontSize: 24,
@@ -104,14 +103,14 @@ const styles = StyleSheet.create({
     color: "white",
   },
   button: {
-    backgroundColor: "aquamarine",
+    backgroundColor: COLORS.primary,
     padding: 15,
     borderRadius: 5,
     width: "100%",
     alignItems: "center",
   },
   buttonText: {
-    color: "black",
+    color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: "bold",
   },
