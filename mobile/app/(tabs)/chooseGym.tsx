@@ -109,7 +109,6 @@ const ChooseGym: React.FC = () => {
         style={styles.textInput}
       />
 
-
       <TextInput
         value={newGymLocation}
         onChangeText={setNewGymLocation}
@@ -117,17 +116,14 @@ const ChooseGym: React.FC = () => {
         placeholderTextColor={COLORS.textSecondary}
         style={styles.textInput}
       />
-      {/*<Button title="Create Gym" styles={styles.button}  onPress={handleCreateGym}/> */}
 
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => handleCreateGym(true)}>
-          <Text style={styles.buttonText}>Create Gym</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.button} onPress={() => handleCreateGym()}>
+        <Text style={styles.buttonText}>Create Gym</Text>
+      </TouchableOpacity>
 
       {/* Display the name of the current gym */}
       {currentGymName ? (
-        <Text style={[styles.text, { marginVertical: 30, textAlign: "center", fontWeight: 500, fontSize: 25 }]}>
+        <Text style={[styles.text, { marginVertical: 30, textAlign: "center", fontWeight: 500, fontSize: 22 }]}>
           Current Gym: {currentGymName}
         </Text>
       ) : (
@@ -135,7 +131,6 @@ const ChooseGym: React.FC = () => {
           No gym selected.
         </Text>
       )}
-
 
       <Text style={{ fontSize: 20, marginBottom: 10, color: COLORS.textPrimary }}>Available Gyms</Text>
       {/* List of gyms */}
@@ -172,12 +167,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: '600',
-  },
-  buttonsContainer: {
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    height: 130,
-    marginBottom: 20,
   },
   routeInfo: {
     flex: 1,
