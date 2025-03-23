@@ -34,7 +34,6 @@ export default function LoginScreen() {
 
       if (response.ok) {
         console.log("Login successful for user:", username);
-        await setItemAsync("userToken", data.accessToken);
         router.replace(landingPage);
       } else {
         console.log("Login failed:", data.message || "Invalid username or password");
