@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useLayoutEffect } from "react";
 import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image, Modal, ActivityIndicator } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
@@ -56,30 +57,41 @@ const CreateRouteScreen = () => {
     const permission = useCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
-
+  
     if (permission.status !== "granted") {
       alert("Permission is required!");
       return;
     }
-
+  
     const pickerResult = useCamera
       ? await ImagePicker.launchCameraAsync({ quality: 1 })
       : await ImagePicker.launchImageLibraryAsync({ quality: 1 });
-
+  
     if (pickerResult.assets && pickerResult.assets.length > 0) {
       const uri = pickerResult.assets[0].uri;
+  
+      try {
+        const manipResult = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { height: 800 } }],
+          { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
+        );
 
-      router.push({
-        pathname: '/routes/routeImage',
-        params: {
-          imageUri: encodeURIComponent(uri),
-          name,
-          description,
-          difficulty
-        },
-      });
+        router.push({
+          pathname: '/routes/routeImage',
+          params: {
+            imageUri: encodeURIComponent(manipResult.uri),
+            name,
+            description,
+            difficulty
+          },
+        });
+      } catch (error) {
+        console.error("Error manipulating image:", error);
+        alert("Failed to process the image.");
+      }
     }
-  }, [name, description, difficulty]);
+  }, [name, description, difficulty, router]);
 
   const handleSubmit = async () => {
     if (!imageUri) return console.error('Image URI is missing');

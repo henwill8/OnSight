@@ -110,7 +110,7 @@ const RouteImage: React.FC = () => {
       const response = await fetchWithTimeout(config.API_URL + '/api/predict', {
         method: "POST",
         body: formData,
-      }, 10000); // TODO: Image upload takes a while and can time out, probably downscale images on client (ideally just run model on phone... sigh)
+      }, 10000);
 
       const data = await response.json();
 
