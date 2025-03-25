@@ -83,10 +83,10 @@ const RouteImage: React.FC = () => {
   };
 
   const handleJobDone = (statusData: any) => {
-    console.log(`Received ${statusData.result.length} predictions`, statusData.result);
-    setPredictions(statusData.result);
+    console.log(`Received ${statusData.result.predictions.length} predictions`);
+    setPredictions(statusData.result.predictions);
     setDataReceived(true);
-    setImageDimensions(statusData.imageSize);
+    setImageDimensions(statusData.result.imageSize);
   };
 
   const handleJobError = (statusData: any) => {
