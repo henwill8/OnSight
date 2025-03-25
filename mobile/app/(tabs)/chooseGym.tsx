@@ -4,29 +4,31 @@ import { setItemAsync, getItemAsync } from 'expo-secure-store';
 import { StyleSheet } from 'react-native';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from '@/config';
+import LoadingModal from '@/components/ui/LoadingModal';  // Import LoadingModal
+import { fetchWithTimeout } from "@/utils/api";  // Import fetchWithTimeout
 
 const ChooseGym: React.FC = () => {
-  const [gyms, setGyms] = useState<any[]>([]); // Array to store the list of gyms
+  const [gyms, setGyms] = useState<any[]>([]);
   const [newGymName, setNewGymName] = useState('');
   const [newGymLocation, setNewGymLocation] = useState('');
-  const [currentGymName, setCurrentGymName] = useState<string>(''); // Store the selected gym's name
+  const [currentGymName, setCurrentGymName] = useState<string>('');
+  const [loading, setLoading] = useState(false);  // State to track loading
 
-  // Fetch gyms when the component mounts
   useEffect(() => {
     fetchGyms();
     fetchCurrentGymName();
   }, []);
 
   const fetchGyms = async () => {
+    setLoading(true);  // Start loading
     try {
-      const response = await fetch(`${config.API_URL}/api/list-gyms`);
+      const response = await fetchWithTimeout(`${config.API_URL}/api/list-gyms`, {
+        method: 'GET',
+      }, 5000);  // Timeout set to 5 seconds
+
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Gyms fetched:");
-        data.gyms.forEach((gym, index) => {
-          console.log(`Gym ${index + 1}: ID: ${gym.id}, Name: ${gym.name}, Location: ${gym.location}`);
-        });
         setGyms(data.gyms);
       } else {
         Alert.alert('Error', 'Failed to fetch gyms');
@@ -34,6 +36,8 @@ const ChooseGym: React.FC = () => {
     } catch (error) {
       console.error('Error fetching gyms:', error);
       Alert.alert('Error', 'Failed to fetch gyms');
+    } finally {
+      setLoading(false);  // Stop loading
     }
   };
 
@@ -48,8 +52,9 @@ const ChooseGym: React.FC = () => {
       return;
     }
 
+    setLoading(true);  // Start loading
     try {
-      const response = await fetch(`${config.API_URL}/api/create-gym`, {
+      const response = await fetchWithTimeout(`${config.API_URL}/api/create-gym`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,14 +63,14 @@ const ChooseGym: React.FC = () => {
           name: newGymName,
           location: newGymLocation,
         }),
-      });
+      }, 5000);  // Timeout set to 5 seconds
 
       if (response.ok) {
         const data = await response.json();
         Alert.alert('Success', 'Gym created successfully!');
         setNewGymName('');
         setNewGymLocation('');
-        fetchGyms(); // Refresh the list after creating a gym
+        fetchGyms();  // Refresh the list after creating a gym
       } else {
         const errorData = await response.json();
         Alert.alert('Error', errorData.message || 'Failed to create gym');
@@ -73,6 +78,8 @@ const ChooseGym: React.FC = () => {
     } catch (error) {
       console.error('Error creating gym:', error);
       Alert.alert('Error', 'Failed to create gym');
+    } finally {
+      setLoading(false);  // Stop loading
     }
   };
 
@@ -81,7 +88,7 @@ const ChooseGym: React.FC = () => {
       try {
         await setItemAsync("gymId", item.id);
         await setItemAsync("gymName", item.name);
-        setCurrentGymName(item.name)
+        setCurrentGymName(item.name);
         console.log(`Gym ID ${item.id} selected.`);
       } catch (error) {
         console.error("Error saving gym ID:", error);
@@ -92,7 +99,7 @@ const ChooseGym: React.FC = () => {
       <TouchableOpacity onPress={handlePress}>
         <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: COLORS.textPrimary }}>
           <Text style={styles.text}>{item.name}</Text>
-          <Text style={{ color: COLORS.textSecondary}}>{item.location}</Text>
+          <Text style={{ color: COLORS.textSecondary }}>{item.location}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -127,18 +134,22 @@ const ChooseGym: React.FC = () => {
           Current Gym: {currentGymName}
         </Text>
       ) : (
-        <Text style={[ styles.text, { marginVertical: 30 }]}>
+        <Text style={[styles.text, { marginVertical: 30 }]}>
           No gym selected.
         </Text>
       )}
 
       <Text style={{ fontSize: 20, marginBottom: 10, color: COLORS.textPrimary }}>Available Gyms</Text>
+
       {/* List of gyms */}
       <FlatList
-          data={gyms}
-          renderItem={renderGymItem}
-          keyExtractor={(item) => item.id.toString()}
+        data={gyms}
+        renderItem={renderGymItem}
+        keyExtractor={(item) => item.id.toString()}
       />
+
+      {/* Loading Modal */}
+      {loading && <LoadingModal />}
     </View>
   );
 };
@@ -167,23 +178,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: '600',
-  },
-  routeInfo: {
-    flex: 1,
-  },
-  routeCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.backgroundSecondary,
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: SIZES.borderRadius,
-    elevation: SHADOWS.elevation,
-    shadowColor: SHADOWS.shadowColor,
-    shadowOffset: SHADOWS.shadowOffset,
-    shadowOpacity: SHADOWS.shadowOpacity,
-    shadowRadius: SHADOWS.shadowRadius,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
 });
 

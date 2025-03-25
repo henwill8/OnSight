@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useLayoutEffect } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image, Modal, ActivityIndicator } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { setItemAsync, getItemAsync } from 'expo-secure-store';
@@ -8,6 +8,8 @@ import RNPickerSelect from 'react-native-picker-select';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from "@/config";
 import { getFileType } from '@/components/FileUtils';
+import { fetchWithTimeout } from "@/utils/api";
+import LoadingModal from '@/components/ui/LoadingModal';
 
 const CreateRouteScreen = () => {
   const router = useRouter();
@@ -19,6 +21,7 @@ const CreateRouteScreen = () => {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState(false);
   const [gymName, setGymName] = useState<string>('');
+  const [loading, setLoading] = useState(false);  // State for loading modal
 
   const { exportedUri } = useLocalSearchParams();
 
@@ -78,64 +81,67 @@ const CreateRouteScreen = () => {
     }
   }, [name, description, difficulty]);
 
-  const handleSubmit = async () => {  
-    if (imageUri) {
-      try {
-        const gymId = await getItemAsync("gymId");
+  const handleSubmit = async () => {
+    if (!imageUri) return console.error('Image URI is missing');
+    
+    setLoading(true);  // Show the loading modal
 
-        const formData = new FormData();
-        formData.append("name", name);  
-        formData.append("description", description);  
-        formData.append("difficulty", difficulty || "");  
-        formData.append("gym_id", gymId || "");  
+    try {
+      const gymId = await getItemAsync("gymId");
 
-        const { extension, mimeType } = getFileType(imageUri);
-        formData.append("image", {
-          uri: imageUri,
-          name: `photo.${extension}`,
-          type: mimeType,
-        } as any);
+      const formData = new FormData();
+      formData.append("name", name);  
+      formData.append("description", description);  
+      formData.append("difficulty", difficulty || "");  
+      formData.append("gym_id", gymId || "");  
 
-        const response = await fetch(config.API_URL + '/api/create-route', {
-          method: "POST",
-          body: formData,
-        });
-  
-        const data = await response.json();
-        if (response.ok) {
-          Alert.alert('Success', 'Route created successfully!');
-          router.replace("/(tabs)/home");
-        } else {
-          console.error('Error creating route:', data.error);
-        }
-      } catch (error) {
-        console.error('Error fetching the image:', error);
+      const { extension, mimeType } = getFileType(imageUri);
+      formData.append("image", {
+        uri: imageUri,
+        name: `photo.${extension}`,
+        type: mimeType,
+      } as any);
+
+      const response = await fetchWithTimeout(config.API_URL + '/api/create-route', {
+        method: "POST",
+        body: formData,
+      }, 5000);
+
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert('Success', 'Route created successfully!');
+        router.replace("/(tabs)/home");
+      } else {
+        console.error('Error creating route:', data.error);
+        Alert.alert('Error', 'Failed to create route');
       }
-    } else {
-      console.error('Image URI is missing');
+    } catch (error) {
+      console.error('Error fetching the image:', error);
+      Alert.alert('Error', 'An error occurred while creating the route');
+    } finally {
+      setLoading(false);  // Hide the loading modal
     }
-  };  
+  };
 
   return (
     <ScrollView 
       contentContainerStyle={styles.container}
       style={{ backgroundColor: COLORS.backgroundPrimary }}
     >
-      <Text style={[styles.title, {textAlign: "center", marginBottom: 25}]}>{gymName}</Text>
+      <Text style={[styles.title, { textAlign: "center", marginBottom: 25 }]}>{gymName}</Text>
 
       <View style={styles.buttonsContainer}>
         <TouchableOpacity style={styles.button} onPress={() => handleImagePick(false)}>
           <Text style={styles.buttonText}>Pick an Image</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.buttonText, {textAlign: "center"}]}>OR</Text>
+        <Text style={[styles.buttonText, { textAlign: "center" }]}>OR</Text>
 
         <TouchableOpacity style={styles.button} onPress={() => handleImagePick(true)}>
           <Text style={styles.buttonText}>Take a Picture</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Conditionally display the image if imageUri is not empty */}
       {imageUri && (
         <Image 
           source={{ uri: imageUri }} 
@@ -161,7 +167,7 @@ const CreateRouteScreen = () => {
       />
 
       <TextInput
-        style={[styles.textInput, { marginBottom: 30}]}
+        style={[styles.textInput, { marginBottom: 30 }]}
         placeholder="Difficulty"
         value={difficulty}
         onChangeText={setDifficulty}
@@ -181,6 +187,9 @@ const CreateRouteScreen = () => {
           Please fill in all fields before submitting.
         </Text>
       )}
+
+      {/* Loading Modal */}
+      <LoadingModal visible={loading} message="Submitting..." />
     </ScrollView>
   );
 };

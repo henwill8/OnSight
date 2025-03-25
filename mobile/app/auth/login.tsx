@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
-import { setItemAsync } from "expo-secure-store";
-import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
 import config from "@/config";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { fetchWithTimeout } from "@/utils/api";
+import LoadingModal from '@/components/ui/LoadingModal';
 
 const landingPage = "/(tabs)/home";
 
@@ -11,18 +12,20 @@ export default function LoginScreen() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // Track loading state
 
   const handleLogin = async () => {
     console.log("Attempting login for user:", username);
+    setLoading(true); // Show loading modal
 
     try {
-      const response = await fetch(config.API_URL + "/auth/login", {
+      const response = await fetchWithTimeout(config.API_URL + "/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
-      });
+      }, 5000);
 
       const contentType = response.headers.get("Content-Type");
       if (!contentType || !contentType.includes("application/json")) {
@@ -42,6 +45,8 @@ export default function LoginScreen() {
     } catch (error) {
       console.error("Error logging in:", error);
       Alert.alert("Error", "An error occurred while logging in");
+    } finally {
+      setLoading(false); // Hide loading modal
     }
   };
 
@@ -71,16 +76,19 @@ export default function LoginScreen() {
           <Text style={[globalStyles.link, { textAlign: "center" }]}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Loading Modal */}
+      <LoadingModal visible={loading} message="Loading..." />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Ensures the container takes up all available space
+    flex: 1,
     padding: 40,
-    alignItems: "center", // Centers content horizontally
-    justifyContent: "center", // Centers content vertically
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.backgroundPrimary,
   },
   innerContainer: {

@@ -1,31 +1,31 @@
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
-import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
 import config from '@/config';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { fetchWithTimeout } from "@/utils/api";
+import LoadingModal from '@/components/ui/LoadingModal';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // Track loading state
 
   const handleRegister = async () => {
     console.log("Attempting to register user:", username);
+    setLoading(true); // Show loading modal
 
     try {
       console.log("Sending registration request to the server...");
-      const response = await fetch(config.API_URL + "/auth/register", {
+      const response = await fetchWithTimeout(config.API_URL + "/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-        }),
-      });
+        body: JSON.stringify({ username, email, password }),
+      }, 5000);
 
       const data = await response.json();
 
@@ -40,6 +40,8 @@ export default function RegisterScreen() {
     } catch (error) {
       console.error("Error during registration:", error);
       Alert.alert("Error", "An error occurred while registering");
+    } finally {
+      setLoading(false); // Hide loading modal
     }
   };
 
@@ -76,6 +78,10 @@ export default function RegisterScreen() {
           <Text style={[globalStyles.link, { textAlign: "center" }]}>Already have an account? Login here</Text>
         </TouchableOpacity>
       </View>
+
+      
+      {/* Loading Modal */}
+      <LoadingModal visible={loading} message="Registering..." />
     </View>
   );
 }
@@ -83,14 +89,14 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center", // Centers content horizontally
-    justifyContent: "center", // Centers content vertically
-    backgroundColor: COLORS.backgroundPrimary, // You can replace this with your color
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.backgroundPrimary,
   },
   innerContainer: {
-    width: "75%", // Adjust the width as per your requirement
+    width: "75%",
     alignItems: "center",
-    justifyContent: "center", // Ensures content is centered within inner container
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
@@ -99,7 +105,7 @@ const styles = StyleSheet.create({
     color: "white",
   },
   input: {
-    width: "100%", // Takes full width of inner container
+    width: "100%",
     padding: 10,
     marginBottom: 10,
     borderWidth: 1,
@@ -108,14 +114,14 @@ const styles = StyleSheet.create({
     color: "white",
   },
   button: {
-    backgroundColor: COLORS.primary, // Ensure COLORS.primary exists in your theme
+    backgroundColor: COLORS.primary,
     padding: 15,
     borderRadius: 5,
-    width: "100%", // Takes full width of inner container
+    width: "100%",
     alignItems: "center",
   },
   buttonText: {
-    color: COLORS.textPrimary, // Ensure COLORS.textPrimary exists in your theme
+    color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: "bold",
   },

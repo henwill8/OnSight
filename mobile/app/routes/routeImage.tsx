@@ -8,6 +8,7 @@ import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/c
 import config from '@/config';
 import { getFileType } from '@/components/FileUtils';
 import ViewShot from 'react-native-view-shot';
+import LoadingModal from '@/components/ui/LoadingModal';
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
@@ -98,12 +99,12 @@ const RouteImage: React.FC = () => {
         body: formData
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        handleError(`Server error: ${response.status}`);
+        handleError(`Server error: ${response.status}, ${data.message}`);
         return;
       }
-
-      const data = await response.json();
 
       if (data?.imageSize && Array.isArray(data.predictions)) {
         console.log(`Received ${data.predictions.length} predictions`);
@@ -235,14 +236,7 @@ const RouteImage: React.FC = () => {
         <Text style={styles.exportButtonText}>Save</Text>
       </TouchableOpacity>
 
-      <Modal transparent={true} visible={!dataReceived} animationType="fade">
-        <View style={styles.overlay}>
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.loadingText}>Detecting Climbing Holds...{"\n"}(may take up to 10 seconds)</Text>
-          </View>
-        </View>
-      </Modal>
+      <LoadingModal visible={!dataReceived} message={"Detecting Climbing Holds...\n(may take up to 10 seconds)"}/>
     </View>
   );
 };
