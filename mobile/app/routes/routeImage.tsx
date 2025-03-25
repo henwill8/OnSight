@@ -9,6 +9,7 @@ import config from '@/config';
 import { getFileType } from '@/components/FileUtils';
 import ViewShot from 'react-native-view-shot';
 import LoadingModal from '@/components/ui/LoadingModal';
+import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
 
 type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
@@ -69,11 +70,11 @@ const RouteImage: React.FC = () => {
         await new Promise((resolve) => setTimeout(resolve, 500)); // Add a small delay to ensure rendering
 
         // Capture the entire zoomable view
-        const uri = await await viewShotRef.current.capture();
+        const uri = await viewShotRef.current.capture?.();
   
         console.log("Captured image URI: ", uri);
         router.back(); // Go back to previous screen
-        router.setParams({ exportedUri: encodeURIComponent(uri) }); // Pass URI to router params
+        router.setParams({ exportedUri: encodeURIComponent(uri || "") }); // Pass URI to router params
       } catch (error) {
         console.error("Error exporting image: ", error);
         Alert.alert("Export Failed", "There was an error exporting the image.");
@@ -81,11 +82,22 @@ const RouteImage: React.FC = () => {
     }
   };
 
+  const handleJobDone = (statusData: any) => {
+    console.log(`Received ${statusData.result.length} predictions`, statusData.result);
+    setPredictions(statusData.result);
+    setDataReceived(true);
+    setImageDimensions(statusData.imageSize);
+  };
+
+  const handleJobError = (statusData: any) => {
+    handleError(`Job failed: ${statusData.error}`);
+  };
+
+  // Main function to send image to the server
   const sendImageToServer = useCallback(async (uri: string) => {
     console.log("Sending to server...");
 
     const formData = new FormData();
-
     const { extension, mimeType } = getFileType(uri);
     formData.append("image", {
       uri,
@@ -94,10 +106,11 @@ const RouteImage: React.FC = () => {
     } as any);
 
     try {
-      const response = await fetch(config.API_URL + '/api/predict', {
+      // Predictions can take a long variable amount of time so a job is created that the client pings
+      const response = await fetchWithTimeout(config.API_URL + '/api/predict', {
         method: "POST",
-        body: formData
-      });
+        body: formData,
+      }, 10000); // TODO: Image upload takes a while and can time out, probably downscale images on client (ideally just run model on phone... sigh)
 
       const data = await response.json();
 
@@ -105,17 +118,16 @@ const RouteImage: React.FC = () => {
         handleError(`Server error: ${response.status}, ${data.message}`);
         return;
       }
-
-      if (data?.imageSize && Array.isArray(data.predictions)) {
-        console.log(`Received ${data.predictions.length} predictions`);
-        setPredictions(data.predictions);
-        setDataReceived(true);
-        setImageDimensions(data.imageSize);
-      } else {
-        handleError("Unexpected response format");
+  
+      if (!data.jobId) {
+        handleError("Unexpected response format: No jobId received");
+        return;
       }
-    } catch (error) {
-      handleError(`Error uploading image: ${error}`);
+  
+      pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError);
+      
+    } catch (error: any) {
+      handleError(`Error uploading image: ${error.message}`);
     }
   }, []);
 
@@ -136,12 +148,12 @@ const RouteImage: React.FC = () => {
         return (
           <ClimbingHoldButton
             key={index}
-            style={{ // position is already absolute
+            style={[{ // position is already absolute
               left: x * scaleX,
               top: y * scaleY,
               width: width * scaleX,
               height: height * scaleY,
-            }}
+            }]}
             showUnselectedHolds={showBoundingBoxes}
           />
         );

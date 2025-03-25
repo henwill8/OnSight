@@ -1,3 +1,4 @@
+import config from '@/config';
 
 export async function fetchWithTimeout(
   url: string,
@@ -25,3 +26,47 @@ export async function fetchWithTimeout(
     throw error;
   }
 }
+
+// Function to fetch job status with timeout
+const fetchJobStatus = async (jobId: string, intervalLength: number) => {
+  try {
+    const statusResponse = await fetchWithTimeout(`${config.API_URL}/api/job-status/${jobId}`, { method: "GET" }, intervalLength);
+    const statusData = await statusResponse.json();
+
+    if (!statusResponse.ok) {
+      console.error(`Error fetching job status: ${statusResponse.status}, ${statusData.message}`);
+      return null;
+    }
+
+    return statusData;
+  } catch (error: any) {
+    console.error(`Error checking job status: ${error.message}`);
+    return null;
+  }
+};
+
+export const pollJobStatus = async (jobId: string, intervalLength: number, handleJobDone: any, handleJobError: any) => {
+  try {
+    let statusData = await fetchJobStatus(jobId, intervalLength);
+
+    if (!statusData) return; // Stop if we couldn't get status data
+
+    while (statusData.status !== "done" && statusData.status !== "error") {
+      console.log(`Job status: ${statusData.status}`);
+      await new Promise(resolve => setTimeout(resolve, intervalLength));
+
+      statusData = await fetchJobStatus(jobId, intervalLength); // Fetch new status data
+    }
+
+    // Handle the job status once it's either "done" or "error"
+    if (statusData.status === "done") {
+      handleJobDone(statusData);
+    } else if (statusData.status === "error") {
+      handleJobError(statusData);
+    }
+
+  } catch (error: any) {
+    console.error("Error in job polling:", error);
+    handleJobError({ error: error.message }); // Handle error
+  }
+};
