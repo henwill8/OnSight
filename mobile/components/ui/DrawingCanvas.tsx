@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { View, PanResponder, GestureResponderEvent, PanResponderGestureState, ViewStyle } from "react-native";
-import { Canvas, Color, Path } from "@shopify/react-native-skia";
+import { Canvas, Path } from "@shopify/react-native-skia";
+
+interface Segment {
+  x: number;
+  y: number;
+}
 
 interface IPath {
-  segments: string[];
+  segments: Segment[];
   color?: string;
 }
 
@@ -41,7 +46,7 @@ const Draw: React.FC<DrawProps> = forwardRef(({ color = 'black', style, enabled 
     setPaths((prevPaths) => [
       ...prevPaths,
       {
-        segments: [`M ${e.nativeEvent.locationX} ${e.nativeEvent.locationY}`],
+        segments: [{ x: e.nativeEvent.locationX, y: e.nativeEvent.locationY }],
         color: colorRef.current,
       },
     ]);
@@ -62,12 +67,26 @@ const Draw: React.FC<DrawProps> = forwardRef(({ color = 'black', style, enabled 
       const index = prevPaths.length - 1;
       const newPaths = [...prevPaths];
 
+      const newSegment = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY };
+
       if (newPaths[index]?.segments) {
-        newPaths[index].segments.push(`L ${e.nativeEvent.locationX} ${e.nativeEvent.locationY}`);
+        newPaths[index].segments.push(newSegment);
       }
 
       return newPaths;
     });
+  };
+
+  const calculateDistance = (segments: Segment[]): number => {
+    let totalDistance = 0;
+    for (let i = 1; i < segments.length; i++) {
+      const prev = segments[i - 1];
+      const current = segments[i];
+      const dx = current.x - prev.x;
+      const dy = current.y - prev.y;
+      totalDistance += Math.sqrt(dx * dx + dy * dy); // Euclidean distance
+    }
+    return totalDistance;
   };
 
   const handleEnd = () => {
@@ -78,7 +97,10 @@ const Draw: React.FC<DrawProps> = forwardRef(({ color = 'black', style, enabled 
       const index = prevPaths.length - 1;
       const newPaths = [...prevPaths];
 
-      if (newPaths[index]?.segments.length < 10) {
+      const pathLength = calculateDistance(newPaths[index]?.segments || []);
+
+      // Remove path if the total length is below the threshold (e.g., 10 pixels)
+      if (pathLength < 10) {
         newPaths.pop();
       }
 
@@ -104,15 +126,21 @@ const Draw: React.FC<DrawProps> = forwardRef(({ color = 'black', style, enabled 
       pointerEvents={enabled ? "auto" : "none"}
     >
       <Canvas style={{ flex: 1 }}>
-        {paths.map((p, index) => (
-          <Path
-            key={index}
-            path={p.segments.join(" ")}
-            strokeWidth={2}
-            style="stroke"
-            color={p.color}
-          />
-        ))}
+        {paths.map((p, index) => {
+          const pathString = p.segments
+            .map((segment, idx) => (idx === 0 ? `M ${segment.x} ${segment.y}` : `L ${segment.x} ${segment.y}`))
+            .join(" ");
+
+          return (
+            <Path
+              key={index}
+              path={pathString}
+              strokeWidth={2}
+              style="stroke"
+              color={p.color}
+            />
+          );
+        })}
       </Canvas>
     </View>
   );
