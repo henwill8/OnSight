@@ -28,9 +28,9 @@ export async function fetchWithTimeout(
 }
 
 // Function to fetch job status with timeout
-const fetchJobStatus = async (jobId: string, intervalLength: number) => {
+const fetchJobStatus = async (jobId: string) => {
   try {
-    const statusResponse = await fetchWithTimeout(`${config.API_URL}/api/job-status/${jobId}`, { method: "GET" }, intervalLength);
+    const statusResponse = await fetchWithTimeout(`${config.API_URL}/api/job-status/${jobId}`, { method: "GET" }, 5000);
     const statusData = await statusResponse.json();
 
     if (!statusResponse.ok) {
@@ -47,7 +47,7 @@ const fetchJobStatus = async (jobId: string, intervalLength: number) => {
 
 export const pollJobStatus = async (jobId: string, intervalLength: number, handleJobDone: any, handleJobError: any) => {
   try {
-    let statusData = await fetchJobStatus(jobId, intervalLength);
+    let statusData = await fetchJobStatus(jobId);
 
     if (!statusData) return; // Stop if we couldn't get status data
 
@@ -55,7 +55,7 @@ export const pollJobStatus = async (jobId: string, intervalLength: number, handl
       console.log(`Job status: ${statusData.status}`);
       await new Promise(resolve => setTimeout(resolve, intervalLength));
 
-      statusData = await fetchJobStatus(jobId, intervalLength); // Fetch new status data
+      statusData = await fetchJobStatus(jobId); // Fetch new status data
     }
 
     // Handle the job status once it's either "done" or "error"
