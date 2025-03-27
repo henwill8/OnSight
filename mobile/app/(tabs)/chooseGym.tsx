@@ -149,7 +149,7 @@ const ChooseGym: React.FC = () => {
       />
 
       {/* Loading Modal */}
-      {loading && <LoadingModal />}
+      <LoadingModal visible={loading} message='Creating gym...'/>
     </View>
   );
 };
