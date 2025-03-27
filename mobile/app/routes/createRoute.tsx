@@ -73,8 +73,8 @@ const CreateRouteScreen = () => {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           uri,
-          [{ resize: { height: 800 } }],
-          { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+          [{ resize: { height: 1080 } }],
+          { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
         );
 
         router.push({

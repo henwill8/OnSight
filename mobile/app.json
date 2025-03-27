@@ -16,6 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "buildType": "apk",
       "package": "com.henwill8.OnSight"
     },
     "web": {
