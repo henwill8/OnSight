@@ -12,6 +12,8 @@ import { getFileType } from '@/components/FileUtils';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
 
+const MAX_PIXELS = 1920 * 1080000;
+
 const CreateRouteScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
@@ -29,7 +31,13 @@ const CreateRouteScreen = () => {
   useFocusEffect(
     useCallback(() => {
       if (exportedUri) {
-        setImageUri(exportedUri);
+        if (Array.isArray(exportedUri)) {
+          // Handle the case where it's an array of strings
+          setImageUri(exportedUri[0] || null);
+        } else {
+          // Handle the case where it's a single string
+          setImageUri(exportedUri || null);
+        }
       }
     }, [exportedUri])
   );
@@ -53,6 +61,36 @@ const CreateRouteScreen = () => {
     setCanSubmit(!!difficulty && !!imageUri);
   }, [difficulty, imageUri]);
 
+  const resizeImageByPixelLimit = async (uri: string) => {
+    // Get the original image dimensions
+    const { width, height } = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
+  
+    const totalPixels = width * height;
+  
+    if (totalPixels <= MAX_PIXELS) {
+      return {
+        uri: uri,
+        width: width,
+        height: height,
+      };
+    }
+  
+    // Calculate scale factor to bring total pixels under the limit
+    const scaleFactor = Math.sqrt(MAX_PIXELS / totalPixels);
+  
+    const newWidth = Math.floor(width * scaleFactor);
+    const newHeight = Math.floor(height * scaleFactor);
+  
+    return await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: newWidth, height: newHeight } }],
+      {
+        compress: 1,
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+    );
+  };
+
   const handleImagePick = useCallback(async (useCamera: boolean) => {
     const permission = useCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
@@ -71,16 +109,13 @@ const CreateRouteScreen = () => {
       const uri = pickerResult.assets[0].uri;
   
       try {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          uri,
-          [{ resize: { height: 1080 } }],
-          { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
-        );
+        // Enable this if image size for upload becomes a problem
+        // const resizedImage = await resizeImageByPixelLimit(uri);
 
         router.push({
           pathname: '/routes/routeImage',
           params: {
-            imageUri: encodeURIComponent(manipResult.uri),
+            imageUri: encodeURIComponent(uri),
             name,
             description,
             difficulty
@@ -96,7 +131,7 @@ const CreateRouteScreen = () => {
   const handleSubmit = async () => {
     if (!imageUri) return console.error('Image URI is missing');
     
-    setLoading(true);  // Show the loading modal
+    setLoading(true);
 
     try {
       const gymId = await getItemAsync("gymId");
@@ -131,7 +166,7 @@ const CreateRouteScreen = () => {
       console.error('Error fetching the image:', error);
       Alert.alert('Error', 'An error occurred while creating the route');
     } finally {
-      setLoading(false);  // Hide the loading modal
+      setLoading(false);
     }
   };
 
