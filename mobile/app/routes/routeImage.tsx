@@ -67,8 +67,6 @@ const RouteImage: React.FC = () => {
 
     if (viewShotRef.current) {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Add a small delay to ensure rendering
-
         // Capture the entire zoomable view
         const uri = await viewShotRef.current.capture?.();
   
@@ -124,7 +122,7 @@ const RouteImage: React.FC = () => {
         return;
       }
   
-      pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError);
+      pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError, 1000);
       
     } catch (error: any) {
       handleError(`Error uploading image: ${error.message}`);

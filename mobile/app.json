@@ -34,6 +34,15 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "_comment": "TODO: Switch to only enabling this when in dev build"
+          }
+        }
       ]
     ],
     "experiments": {
