@@ -122,7 +122,7 @@ const RouteImage: React.FC = () => {
         return;
       }
   
-      pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError, 1000);
+      pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError, 10000);
       
     } catch (error: any) {
       handleError(`Error uploading image: ${error.message}`);
