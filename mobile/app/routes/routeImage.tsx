@@ -143,14 +143,16 @@ const RouteImage: React.FC = () => {
         const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
         const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
 
+        const sizeOffset = 4;
+
         return (
           <ClimbingHoldButton
             key={index}
             style={[{ // position is already absolute
-              left: x * scaleX,
-              top: y * scaleY,
-              width: width * scaleX,
-              height: height * scaleY,
+              left: x * scaleX - sizeOffset / 2,
+              top: y * scaleY - sizeOffset / 2,
+              width: width * scaleX + sizeOffset,
+              height: height * scaleY + sizeOffset,
             }]}
             showUnselectedHolds={showBoundingBoxes}
           />
