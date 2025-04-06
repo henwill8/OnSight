@@ -1,17 +1,17 @@
 import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react';
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
-import ClimbingHoldButton from '@/components/ui/ClimbingHoldButton';
+import ClimbingHoldOverlay from '@/components/ui/ClimbingHoldOverlay';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
 import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/constants/theme';
+import { HOLD_SELECTION, ClimbingHold } from '@/constants/holdSelection';
 import config from '@/config';
 import { getFileType } from '@/components/FileUtils';
 import ViewShot from 'react-native-view-shot';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
 
-type Prediction = [number, number, number, number];
 type ImageSize = { width: number; height: number };
 
 const RouteImage: React.FC = () => {
@@ -21,7 +21,7 @@ const RouteImage: React.FC = () => {
   const { imageUri } = useLocalSearchParams();
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
-  const [predictions, setPredictions] = useState<Prediction[]>([]); // Bounding boxes data
+  const [climbingHolds, setClimbingHolds] = useState<ClimbingHold[]>([]); // Bounding boxes data
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null); // Image size
   const [dataReceived, setDataReceived] = useState(false); // Whether data has been received
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false); // Show bounding boxes state
@@ -81,10 +81,20 @@ const RouteImage: React.FC = () => {
   };
 
   const handleJobDone = (statusData: any) => {
-    console.log(`Received ${statusData.result.predictions.length} predictions`);
-    setPredictions(statusData.result.predictions);
+    const results = statusData.result;
+    const predictions = results.predictions;
+  
+    console.log(`Received ${predictions.length} predictions`);
+  
+    // Map the received climbingHolds to a ClimbingHold list with a default value for hold selection state
+    const predictedClimbingHolds: ClimbingHold[] = predictions.map((coordinates: any) => ({
+      coordinates: coordinates,
+      holdSelectionState: HOLD_SELECTION.UNSELECTED,
+    }));
+  
+    setClimbingHolds(predictedClimbingHolds);
     setDataReceived(true);
-    setImageDimensions(statusData.result.imageSize);
+    setImageDimensions(results.imageSize);
   };
 
   const handleJobError = (statusData: any) => {
@@ -135,29 +145,42 @@ const RouteImage: React.FC = () => {
     Alert.alert("Predictions Failed!", "Hold predictions failed, but you can still draw.");
   };
 
-  const renderBoundingBoxes = () => {
-    return predictions
-      .sort((a, b) => (b[2] * b[3]) - (a[2] * a[3])) // Smallest areas on top
-      .map((box, index) => {
-        const [x, y, width, height] = box;
-        const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
-        const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
+  const renderClimbingHoldOverlay = () => {
+    const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
+    const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
+  
+    const scaledAndSortedHolds = [...climbingHolds]
+      .map((climbingHold) => ({
+        ...climbingHold,
+        coordinates: climbingHold.coordinates.map((coord, i) =>
+          i % 2 === 0 ? coord * scaleX : coord * scaleY
+        ),
+      }))
+      .sort((a, b) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
+  
+    return (
+      <ClimbingHoldOverlay
+        climbingHolds={scaledAndSortedHolds}
+        showUnselectedHolds={showBoundingBoxes}
+      />
+    );
+  };
 
-        const sizeOffset = 4;
+  // Function to calculate the area of a polygon using the shoelace theorem
+  const calculatePolygonArea = (coordinates: number[]) => {
+    let area = 0;
+    const n = coordinates.length / 2; // Number of points in the polygon
 
-        return (
-          <ClimbingHoldButton
-            key={index}
-            style={[{ // position is already absolute
-              left: x * scaleX - sizeOffset / 2,
-              top: y * scaleY - sizeOffset / 2,
-              width: width * scaleX + sizeOffset,
-              height: height * scaleY + sizeOffset,
-            }]}
-            showUnselectedHolds={showBoundingBoxes}
-          />
-        );
-      });
+    for (let i = 0; i < n; i++) {
+      const x1 = coordinates[2 * i];
+      const y1 = coordinates[2 * i + 1];
+      const x2 = coordinates[2 * ((i + 1) % n)];
+      const y2 = coordinates[2 * ((i + 1) % n) + 1];
+
+      area += x1 * y2 - x2 * y1;
+    }
+
+    return Math.abs(area) / 2;
   };
 
   const screenWidth = Dimensions.get("window").width;
@@ -222,7 +245,7 @@ const RouteImage: React.FC = () => {
                 height: scaledImageDimensions!.height,
               }}
             />
-            {renderBoundingBoxes()}
+            {renderClimbingHoldOverlay()}
             <DrawingCanvas
               ref={drawingCanvasRef} // Reference to DrawingCanvas
               enabled={!!selectedColor} // Disable drawing if no color is selected
