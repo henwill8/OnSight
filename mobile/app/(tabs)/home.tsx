@@ -6,6 +6,7 @@ import config from '@/config';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { AntDesign } from '@expo/vector-icons';
+import { fetchWithTimeout } from '@/utils/api';
 
 interface Route {
   id: string;
@@ -55,16 +56,41 @@ const HomeScreen = () => {
         setLoading(false);
         return;
       }
-
+    
       setLoading(true);
-
+    
       try {
         console.log(`Fetching routes for gym ID: ${gymId}`);
         const response = await fetch(`${config.API_URL}/api/get-routes/${gymId}`);
         if (!response.ok) throw new Error('Failed to fetch routes');
-
+    
         const data = await response.json();
-        setRoutes(data);
+    
+        const routesWithSignedUrls = await Promise.all(
+          data.map(async (route: any) => {
+            try {
+              const signedUrlRes = await fetchWithTimeout(
+                route.image_url,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+    
+              if (!signedUrlRes.ok) throw new Error('Failed to get signed URL');
+    
+              const { url: signedUrl } = await signedUrlRes.json();
+              return { ...route, image_url: signedUrl };
+            } catch (err) {
+              console.error(`Error getting signed URL for image: ${route.image_url}`, err);
+              return { ...route, signedImageUrl: null };
+            }
+          })
+        );
+    
+        setRoutes(routesWithSignedUrls);
       } catch (error) {
         console.error('Error fetching routes:', error);
         setRoutes([]);
@@ -79,7 +105,7 @@ const HomeScreen = () => {
   }, [gymId, gymIdLoading]);
 
   const handleRoutePress = (route: Route) => {
-    router.push(`/routes/routeDetail?route=${JSON.stringify(route)}`);
+    router.push(`/routes/routeDetail?route=${encodeURIComponent(JSON.stringify(route))}`);
   };
 
   const handleAddRoute = () => {

@@ -156,7 +156,7 @@ const CreateRouteScreen = () => {
 
       const data = await response.json();
       if (response.ok) {
-        Alert.alert('Success', 'Route created successfully!');
+        Alert.alert('Success', 'Route created successfully!'); // TODO: switch away from alerts to have more control over styling
         router.replace("/(tabs)/home");
       } else {
         console.error('Error creating route:', data.error);

@@ -12,7 +12,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ visible, message }) => {
     <Modal transparent={true} animationType="fade" visible={visible}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={COLORS.textPrimary} />
           {message && <Text style={styles.loadingText}>{message}</Text>}
         </View>
       </View>
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.backgroundSecondary,
     padding: 20,
     borderRadius: 10,
     alignItems: 'center',
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: COLORS.primary,
+    color: COLORS.textPrimary,
   },
 });
 
