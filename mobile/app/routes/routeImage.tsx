@@ -4,8 +4,8 @@ import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import ClimbingHoldOverlay from '@/components/ui/ClimbingHoldOverlay';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import DrawingCanvas from "@/components/ui/DrawingCanvas";
-import { COLORS, SHADOWS, SIZES, HOLD_SELECTION_COLORS, globalStyles } from '@/constants/theme';
-import { HOLD_SELECTION, ClimbingHold } from '@/constants/holdSelection';
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { HOLD_SELECTION, HOLD_SELECTION_COLORS, ClimbingHold } from '@/constants/holdSelection';
 import config from '@/config';
 import { getFileType } from '@/components/FileUtils';
 import ViewShot from 'react-native-view-shot';
@@ -21,7 +21,7 @@ const RouteImage: React.FC = () => {
   const { imageUri } = useLocalSearchParams();
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
-  const [climbingHolds, setClimbingHolds] = useState<ClimbingHold[]>([]); // Bounding boxes data
+  const climbingHoldsRef = useRef<ClimbingHold[]>([]);
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null); // Image size
   const [dataReceived, setDataReceived] = useState(false); // Whether data has been received
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false); // Show bounding boxes state
@@ -90,9 +90,10 @@ const RouteImage: React.FC = () => {
     const predictedClimbingHolds: ClimbingHold[] = predictions.map((coordinates: any) => ({
       coordinates: coordinates,
       holdSelectionState: HOLD_SELECTION.UNSELECTED,
+      scaled: false
     }));
-  
-    setClimbingHolds(predictedClimbingHolds);
+    
+    climbingHoldsRef.current = predictedClimbingHolds;
     setDataReceived(true);
     setImageDimensions(results.imageSize);
   };
@@ -146,21 +147,29 @@ const RouteImage: React.FC = () => {
   };
 
   const renderClimbingHoldOverlay = () => {
+    if (!climbingHoldsRef.current || climbingHoldsRef.current.length === 0)
+      return null;
+
     const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
     const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
-  
-    const scaledAndSortedHolds = [...climbingHolds]
-      .map((climbingHold) => ({
-        ...climbingHold,
-        coordinates: climbingHold.coordinates.map((coord, i) =>
-          i % 2 === 0 ? coord * scaleX : coord * scaleY
-        ),
-      }))
-      .sort((a, b) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
-  
+
+    if(!climbingHoldsRef.current[0].scaled) {
+      const scaledAndSortedHolds = [...climbingHoldsRef.current]
+        .map((climbingHold) => ({
+          ...climbingHold,
+          coordinates: climbingHold.coordinates.map((coord, i) =>
+            i % 2 === 0 ? coord * scaleX : coord * scaleY
+          ),
+          scaled: true,
+        }))
+        .sort((a, b) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
+
+      climbingHoldsRef.current = scaledAndSortedHolds;
+    }
+
     return (
       <ClimbingHoldOverlay
-        climbingHolds={scaledAndSortedHolds}
+        climbingHoldsRef={climbingHoldsRef}
         showUnselectedHolds={showBoundingBoxes}
       />
     );

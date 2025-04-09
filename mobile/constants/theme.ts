@@ -25,12 +25,6 @@ export const SHADOWS = {
   shadowRadius: 4,
 };
 
-export const HOLD_SELECTION_COLORS = {
-  intermediate: "rgba(0, 68, 255, 1)",
-  start: "rgba(0, 255, 0, 1)",
-  end: "rgba(216, 0, 0, 1)"
-}
-
 export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
