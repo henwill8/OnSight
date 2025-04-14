@@ -61,13 +61,14 @@ const CreateRouteScreen = () => {
     setCanSubmit(!!difficulty && !!imageUri);
   }, [difficulty, imageUri]);
 
-  const resizeImageByPixelLimit = async (uri: string) => {
+  const resizeImageToMaxDimension = async (uri: string) => {
+    const MAX_DIMENSION = 1024;
+  
     // Get the original image dimensions
     const { width, height } = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
   
-    const totalPixels = width * height;
-  
-    if (totalPixels <= MAX_PIXELS) {
+    // If both dimensions are already under the limit, return as-is
+    if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
       return {
         uri: uri,
         width: width,
@@ -75,8 +76,10 @@ const CreateRouteScreen = () => {
       };
     }
   
-    // Calculate scale factor to bring total pixels under the limit
-    const scaleFactor = Math.sqrt(MAX_PIXELS / totalPixels);
+    // Determine scale factor to make the largest dimension 1024
+    const scaleFactor = width > height
+      ? MAX_DIMENSION / width
+      : MAX_DIMENSION / height;
   
     const newWidth = Math.floor(width * scaleFactor);
     const newHeight = Math.floor(height * scaleFactor);
@@ -110,12 +113,12 @@ const CreateRouteScreen = () => {
   
       try {
         // Enable this if image size for upload becomes a problem
-        // const resizedImage = await resizeImageByPixelLimit(uri);
+        const resizedImage = await resizeImageToMaxDimension(uri);
 
         router.push({
           pathname: '/routes/routeImage',
           params: {
-            imageUri: encodeURIComponent(uri),
+            imageUri: encodeURIComponent(resizedImage.uri),
             name,
             description,
             difficulty
