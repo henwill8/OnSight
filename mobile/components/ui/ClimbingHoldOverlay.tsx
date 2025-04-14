@@ -90,6 +90,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
             fill="none"
             stroke={strokeColor}
             strokeWidth={2}
+            strokeLinejoin="round"
             onPressIn={() => handlePolygonPress(hold)}
           />
         );
