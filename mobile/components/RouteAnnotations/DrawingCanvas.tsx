@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import React, { useRef, useReducer, useEffect, useImperativeHandle, forwardRef } from "react";
 import {
   View,
   PanResponder,
@@ -16,19 +16,30 @@ interface DrawProps {
   onAddPath?: (newPath: IPath) => void;
   color?: string;
   style?: ViewStyle;
+  canDraw?: boolean;
   interactable?: boolean;
 }
 
-const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "black", style, interactable = true }) => {
+const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = true, color = "black", style, interactable = true }) => {
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+
   const isDrawing = useRef(false);
   const colorRef = useRef(color);
+  const scaleXRef = useRef(scaleX);
+  const scaleYRef = useRef(scaleY);
   const currentPathRef = useRef<IPath | null>(null);
-
-  console.log(interactable)
 
   useEffect(() => {
     colorRef.current = color;
   }, [color]);
+
+  useEffect(() => {
+    scaleXRef.current = scaleX;
+  }, [scaleX]);
+  
+  useEffect(() => {
+    scaleYRef.current = scaleY;
+  }, [scaleY]);
 
   const calculateDistance = (segments: Segment[]): number => {
     let totalDistance = 0;
@@ -50,10 +61,8 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "b
 
     const { locationX, locationY } = e.nativeEvent;
 
-    console.log("start draw")
-
     const newPath: IPath = {
-      segments: [{ x: locationX / scaleX, y: locationY / scaleY }], // Divide by scale to get the coordinates in the size of the actual image, not the scaled image
+      segments: [{ x: locationX / scaleXRef.current, y: locationY / scaleYRef.current }], // Divide by scale to get the coordinates in the size of the actual image, not the scaled image
       color: colorRef.current
     };
 
@@ -65,13 +74,19 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "b
     e: GestureResponderEvent,
     gestureState: PanResponderGestureState
   ) => {
-    if (!isDrawing.current || gestureState.numberActiveTouches !== 1) return;
+    if (gestureState.numberActiveTouches > 1) {
+      handleEnd();
+      return;
+    }
+
+    if (!isDrawing.current) return;
 
     const { locationX, locationY } = e.nativeEvent;
     const currentPath = currentPathRef.current;
 
     if (currentPath) {
-      currentPath.segments.push({ x: locationX / scaleX, y: locationY / scaleY }); // same reasoning for scaling as above
+      currentPath.segments.push({ x: locationX / scaleXRef.current, y: locationY / scaleYRef.current }); // same reasoning for scaling as above
+      forceUpdate();
     }
   };
 
@@ -92,8 +107,18 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "b
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: (evt, gestureState) => {
+        // Only try to claim responder for single-touch events when in drawing mode
+        return gestureState.numberActiveTouches === 1 && interactable && canDraw && colorRef.current != null;;
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only handle single-touch movements
+        return gestureState.numberActiveTouches === 1 && (isDrawing.current || interactable);
+      },
+      // Give up responder when a second touch is detected
+      onPanResponderTerminationRequest: (evt, gestureState) => {
+        return gestureState.numberActiveTouches > 1;
+      },
       onPanResponderGrant: handleStart,
       onPanResponderMove: handleMove,
       onPanResponderRelease: handleEnd,

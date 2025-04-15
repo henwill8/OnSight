@@ -166,7 +166,7 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
         onAddPath={addDrawingPath}
         scaleX={scaleX}
         scaleY={scaleY}
-        interactable={interactable && drawingCanvasProps.canDraw}
+        interactable={interactable}
         {...drawingCanvasProps}
       />
     </View>

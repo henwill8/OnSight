@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
+import { ReactNativeZoomableView } from 'react-native-zoomable-view';
 import RouteAnnotations, { RouteAnnotationsRef, ClimbingHold } from "@/components/RouteAnnotations/RouteAnnotations";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
@@ -240,6 +240,16 @@ const RouteImage: React.FC = () => {
           initialZoom={1.0}
           bindToBorders={true}
           style={{ width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY }}
+          panEnabled={selectedColor == null}
+          disableMomentum={selectedColor != null}
+          onStartShouldSetPanResponder={(evt, gestureState) => {
+            // dont let zoomable view become pan responder if the player is drawing
+            return selectedColor == null || gestureState.numberActiveTouches > 1
+          }}
+          onMoveShouldSetPanResponderCapture={(evt, gestureState) => {
+            // If gesture starts as single touch, but becomes multi-touch, take control
+            return gestureState.numberActiveTouches > 1;
+          }}
         >
           {/* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */}
           <ViewShot
@@ -252,8 +262,9 @@ const RouteImage: React.FC = () => {
               style={{
                 top: 0,
                 borderRadius: SIZES.borderRadius,
-                width: imageDimensions.width * scaleX, // idk why but just setting size to 100% doesnt work so I have to be redundant here
-                height: imageDimensions.height * scaleY,
+                width: '100%',
+                height: '100%',
+                flex: 1
               }}
             />
             <RouteAnnotations
@@ -261,8 +272,8 @@ const RouteImage: React.FC = () => {
               style={{
                 top: 0,
                 borderRadius: SIZES.borderRadius,
-                width: imageDimensions.width * scaleX,
-                height: imageDimensions.height * scaleY,
+                width: '100%',
+                height: '100%',
                 position:"absolute"
               }}
               scaleX={scaleX}
