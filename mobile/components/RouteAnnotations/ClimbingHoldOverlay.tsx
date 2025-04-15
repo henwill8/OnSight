@@ -1,4 +1,5 @@
 import React, { useReducer } from "react";
+import { View, ViewStyle } from "react-native";
 import { Svg, Polygon, Rect, Mask } from "react-native-svg";
 import { SIZES } from "@/constants/theme";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
@@ -13,7 +14,14 @@ interface ClimbingHoldOverlayProps {
   onHoldStateChange?: (index: number, newState: HOLD_SELECTION) => void;
 }
 
-const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({ data, scaleX, scaleY, showUnselectedHolds = false, interactable = true, onHoldStateChange }) => {
+const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
+  data,
+  scaleX,
+  scaleY,
+  showUnselectedHolds = false,
+  interactable = true,
+  onHoldStateChange,
+}) => {
   const [, forceUpdate] = useReducer(x => x + 1, 0); // Dummy state to force re-render
 
   const colorMap: Record<HOLD_SELECTION, string> = {
@@ -39,26 +47,32 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({ data, scaleX,
     onHoldStateChange?.(index, newState);
   };
 
+  // Generate polygon paths once for all holds
+  const polygonPaths = data.map((hold) =>
+    hold.coordinates
+      .map((c, i) => (i % 2 === 0 ? `${c * scaleX},` : `${c * scaleY}`))
+      .join(" ")
+  );
+
   const selectedHolds = data.filter(
     (hold) => hold.holdSelectionState !== HOLD_SELECTION.UNSELECTED
   );
-
-  const polygonPaths = selectedHolds.map((hold) => {
-    const coordsString = hold.coordinates
-      .map((c, i) => (i % 2 === 0 ? `${c},` : c))
-      .join(" ");
-    return coordsString;
-  });
 
   const shouldRenderGrayBackground = selectedHolds.length > 0;
 
   return (
     <Svg width="100%" height="100%" style={{ position: "absolute" }}>
+      {/* Mask for selected holds */}
       <Mask id="mask1">
         <Rect x="0" y="0" width="100%" height="100%" fill="white" />
-        {polygonPaths.map((coords, index) => (
-          <Polygon key={index} points={coords} fill="black" />
-        ))}
+        {polygonPaths.map((coords, index) => {
+          const hold = data[index];
+          // Only add to mask if hold is selected
+          if (hold.holdSelectionState !== HOLD_SELECTION.UNSELECTED) {
+            return <Polygon key={index} points={coords} fill="black" />;
+          }
+          return null;
+        })}
       </Mask>
 
       {shouldRenderGrayBackground && (
@@ -75,10 +89,9 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({ data, scaleX,
         />
       )}
 
-      {data.map((hold, index) => {
-        const coordsString = hold.coordinates
-          .map((c, i) => (i % 2 === 0 ? `${c * scaleX},` : `${c * scaleY}`))
-          .join(" ");
+      {/* Render all holds as polygons */}
+      {polygonPaths.map((coordsString, index) => {
+        const hold = data[index];
         const strokeColor = colorMap[hold.holdSelectionState];
 
         return (

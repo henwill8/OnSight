@@ -2,11 +2,10 @@ import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ClimbingHoldOverlay from '@/components/RouteAnnotations/ClimbingHoldOverlay';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
-import DrawingCanvas from "@/components/RouteAnnotations/DrawingCanvas";
+import RouteAnnotations, { RouteAnnotationsRef, ClimbingHold } from "@/components/RouteAnnotations/RouteAnnotations";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
-import { HOLD_SELECTION, HOLD_SELECTION_COLORS, ClimbingHold } from '@/constants/holdSelection';
+import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
 import config from '@/config';
 import { getFileType } from '@/utils/FileUtils';
 import ViewShot from 'react-native-view-shot';
@@ -22,13 +21,15 @@ const RouteImage: React.FC = () => {
   const { imageUri } = useLocalSearchParams();
   const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
 
-  const climbingHoldsRef = useRef<ClimbingHold[]>([]);
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null); // Image size
+  const [scaleX, setScaleX] = useState<number>(1); // Values used to scale the image to the screen size
+  const [scaleY, setScaleY] = useState<number>(1);
+
   const [dataReceived, setDataReceived] = useState(false); // Whether data has been received
-  const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(false); // Show bounding boxes state
+  const [showUnselectedHolds, setShowUnselectedHolds] = useState<boolean>(false); // Show bounding boxes state
   const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
 
-  const drawingCanvasRef = useRef(null);
+  const routeAnnotationRef = useRef<RouteAnnotationsRef>(null);
   const viewShotRef = useRef<ViewShot>(null);
   
   useLayoutEffect(() => {
@@ -52,7 +53,7 @@ const RouteImage: React.FC = () => {
   }, [imageUriString]);
 
   const handleToggleBoundingBoxes = () => {
-    setShowBoundingBoxes(prev => !prev);
+    setShowUnselectedHolds(prev => !prev);
   };
 
   const handleColorSelect = (color: string) => {
@@ -64,7 +65,7 @@ const RouteImage: React.FC = () => {
   };
 
   const handleExport = async () => {
-    setShowBoundingBoxes(false);
+    setShowUnselectedHolds(false);
 
     if (viewShotRef.current) {
       try {
@@ -81,6 +82,30 @@ const RouteImage: React.FC = () => {
     }
   };
 
+  const handleUndo = () => {
+    // // Call the undo function of the DrawingCanvas
+    // if (drawingCanvasRef.current) {
+    //   drawingCanvasRef.current.undo();
+    // }
+  };
+
+  // Function to calculate the area of a polygon using the shoelace theorem
+  const calculatePolygonArea = (coordinates: number[]) => {
+    let area = 0;
+    const n = coordinates.length / 2; // Number of points in the polygon
+
+    for (let i = 0; i < n; i++) {
+      const x1 = coordinates[2 * i];
+      const y1 = coordinates[2 * i + 1];
+      const x2 = coordinates[2 * ((i + 1) % n)];
+      const y2 = coordinates[2 * ((i + 1) % n) + 1];
+
+      area += x1 * y2 - x2 * y1;
+    }
+
+    return Math.abs(area) / 2;
+  };
+
   const handleJobDone = (statusData: any) => {
     const results = statusData.result;
     const predictions = results.predictions;
@@ -88,15 +113,16 @@ const RouteImage: React.FC = () => {
     console.log(`Received ${predictions.length} predictions`);
   
     // Map the received climbingHolds to a ClimbingHold list with a default value for hold selection state
-    const predictedClimbingHolds: ClimbingHold[] = predictions.map((coordinates: any) => ({
-      coordinates: coordinates,
-      holdSelectionState: HOLD_SELECTION.UNSELECTED,
-      scaled: false
-    }));
+    const predictedClimbingHolds: ClimbingHold[] = predictions
+      .map((coordinates: any) => ({
+        coordinates: coordinates,
+        holdSelectionState: HOLD_SELECTION.UNSELECTED,
+      }))
+      .sort((a: ClimbingHold, b: ClimbingHold) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
     
-    climbingHoldsRef.current = predictedClimbingHolds;
     setDataReceived(true);
     setImageDimensions(results.imageSize);
+    routeAnnotationRef.current?.loadPredictedClimbingHolds(predictedClimbingHolds);
   };
 
   const handleJobError = (statusData: any) => {
@@ -147,58 +173,12 @@ const RouteImage: React.FC = () => {
     Alert.alert("Predictions Failed!", "Hold predictions failed, but you can still draw.");
   };
 
-  const renderClimbingHoldOverlay = () => {
-    if (!climbingHoldsRef.current || climbingHoldsRef.current.length === 0)
-      return null;
-
-    const scaleX = scaledImageDimensions!.width / imageDimensions!.width;
-    const scaleY = scaledImageDimensions!.height / imageDimensions!.height;
-
-    if(!climbingHoldsRef.current[0].scaled) {
-      const scaledAndSortedHolds = [...climbingHoldsRef.current]
-        .map((climbingHold) => ({
-          ...climbingHold,
-          coordinates: climbingHold.coordinates.map((coord, i) =>
-            i % 2 === 0 ? coord * scaleX : coord * scaleY
-          ),
-          scaled: true,
-        }))
-        .sort((a, b) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
-
-      climbingHoldsRef.current = scaledAndSortedHolds;
-    }
-
-    return (
-      <ClimbingHoldOverlay
-        climbingHoldsRef={climbingHoldsRef}
-        showUnselectedHolds={showBoundingBoxes}
-      />
-    );
-  };
-
-  // Function to calculate the area of a polygon using the shoelace theorem
-  const calculatePolygonArea = (coordinates: number[]) => {
-    let area = 0;
-    const n = coordinates.length / 2; // Number of points in the polygon
-
-    for (let i = 0; i < n; i++) {
-      const x1 = coordinates[2 * i];
-      const y1 = coordinates[2 * i + 1];
-      const x2 = coordinates[2 * ((i + 1) % n)];
-      const y2 = coordinates[2 * ((i + 1) % n) + 1];
-
-      area += x1 * y2 - x2 * y1;
-    }
-
-    return Math.abs(area) / 2;
-  };
-
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
 
   const insets = useSafeAreaInsets();
 
-  // Calculate available screen space (accounting for UI elements)
+  // Calculate available screen space
   const calculateOptimalImageDimensions = useCallback(() => {
     if (!imageDimensions) return null;
     
@@ -211,6 +191,8 @@ const RouteImage: React.FC = () => {
     // Try fitting by width first
     let width = availableWidth;
     let height = width / aspectRatio;
+
+    console.log(width, height)
     
     // If height exceeds available space, fit by height instead
     if (height > availableHeight) {
@@ -218,17 +200,20 @@ const RouteImage: React.FC = () => {
       width = height * aspectRatio;
     }
     
-    return { width, height };
+    return { newScaleX: width / imageDimensions.width, newScaleY: height / imageDimensions.height };
   }, [imageDimensions, screenWidth, screenHeight, insets]);
+  
+  useEffect(() => {
+    if (!imageDimensions) return;
 
-  const scaledImageDimensions = calculateOptimalImageDimensions();
+    const scaled = calculateOptimalImageDimensions();
 
-  const handleUndo = () => {
-    // Call the undo function of the DrawingCanvas
-    if (drawingCanvasRef.current) {
-      drawingCanvasRef.current.undo();
-    }
-  };
+    console.log(imageDimensions)
+    console.log(scaled)
+
+    setScaleX(scaled?.newScaleX || 1);
+    setScaleY(scaled?.newScaleY || 1);
+  }, [imageDimensions]);
 
   return (
     <View style={styles.container}>
@@ -247,46 +232,51 @@ const RouteImage: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {scaledImageDimensions && (
+      {imageDimensions && (
         <ReactNativeZoomableView
           maxZoom={10.0}
           minZoom={0.5}
           zoomStep={0.5}
           initialZoom={1.0}
           bindToBorders={true}
-          style={{ width: scaledImageDimensions.width, height: scaledImageDimensions.height }}
+          style={{ width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY }}
         >
           {/* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */}
-          <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 0.9 }} style={{ position: 'relative', width: scaledImageDimensions!.width, height: scaledImageDimensions!.height }}>
+          <ViewShot
+            ref={viewShotRef}
+            options={{ format: "jpg", quality: 0.9 }}
+            style={{ position: 'relative', width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY }}
+          >
             <Image
               source={{ uri: imageUriString }}
               style={{
                 top: 0,
                 borderRadius: SIZES.borderRadius,
-                width: scaledImageDimensions!.width,
-                height: scaledImageDimensions!.height,
+                width: imageDimensions.width * scaleX, // idk why but just setting size to 100% doesnt work so I have to be redundant here
+                height: imageDimensions.height * scaleY,
               }}
             />
-            {renderClimbingHoldOverlay()}
-            <DrawingCanvas
-              ref={drawingCanvasRef} // Reference to DrawingCanvas
-              enabled={!!selectedColor} // Disable drawing if no color is selected
-              color={selectedColor || "gray"}
+            <RouteAnnotations
+              ref={routeAnnotationRef}
               style={{
-                position: "absolute",
                 top: 0,
-                left: 0,
-                width: scaledImageDimensions!.width,
-                height: scaledImageDimensions!.height,
-                zIndex: 10,
+                borderRadius: SIZES.borderRadius,
+                width: imageDimensions.width * scaleX,
+                height: imageDimensions.height * scaleY,
+                position:"absolute"
               }}
+              scaleX={scaleX}
+              scaleY={scaleY}
+              interactable={true}
+              canDraw={selectedColor != null}
+              showUnselectedHolds={showUnselectedHolds}
             />
           </ViewShot>
         </ReactNativeZoomableView>
       )}
 
       <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
-        <Text style={styles.toggleButtonText}>{showBoundingBoxes ? "Hide" : "Show"} Unselected Holds</Text>
+        <Text style={styles.toggleButtonText}>{showUnselectedHolds ? "Hide" : "Show"} Unselected Holds</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.exportButton} onPress={handleExport}>

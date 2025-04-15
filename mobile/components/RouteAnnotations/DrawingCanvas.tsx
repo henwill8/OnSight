@@ -48,6 +48,8 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "b
 
     const { locationX, locationY } = e.nativeEvent;
 
+    console.log("start draw")
+
     const newPath: IPath = {
       segments: [{ x: locationX / scaleX, y: locationY / scaleY }], // Divide by scale to get the coordinates in the size of the actual image, not the scaled image
       color: colorRef.current
@@ -99,7 +101,7 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "b
 
   return (
     <View
-      style={style}
+      style={{ width: '100%', height: '100%' }}
       {...(interactable ? panResponder.panHandlers : {})}
       pointerEvents={interactable ? "auto" : "none"}
     >
