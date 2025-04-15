@@ -1,13 +1,14 @@
 import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react';
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
-import ClimbingHoldOverlay from '@/components/ui/ClimbingHoldOverlay';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ClimbingHoldOverlay from '@/components/RouteAnnotations/ClimbingHoldOverlay';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
-import DrawingCanvas from "@/components/ui/DrawingCanvas";
+import DrawingCanvas from "@/components/RouteAnnotations/DrawingCanvas";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS, ClimbingHold } from '@/constants/holdSelection';
 import config from '@/config';
-import { getFileType } from '@/components/FileUtils';
+import { getFileType } from '@/utils/FileUtils';
 import ViewShot from 'react-native-view-shot';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
@@ -195,20 +196,32 @@ const RouteImage: React.FC = () => {
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
 
-  const scaledImageDimensions = imageDimensions
-    ? (() => {
-        const aspectRatio = imageDimensions.width / imageDimensions.height;
-        let width = screenWidth;
-        let height = screenWidth / aspectRatio;
+  const insets = useSafeAreaInsets();
 
-        if (height > screenHeight * 0.8) {
-          height = screenHeight * 0.8;
-          width = height * aspectRatio;
-        }
+  // Calculate available screen space (accounting for UI elements)
+  const calculateOptimalImageDimensions = useCallback(() => {
+    if (!imageDimensions) return null;
+    
+    const aspectRatio = imageDimensions.width / imageDimensions.height;
+    
+    // Account for UI elements and safe areas
+    const availableHeight = screenHeight - insets.top - insets.bottom - 160; // Subtract space for buttons
+    const availableWidth = screenWidth - insets.left - insets.right;
+    
+    // Try fitting by width first
+    let width = availableWidth;
+    let height = width / aspectRatio;
+    
+    // If height exceeds available space, fit by height instead
+    if (height > availableHeight) {
+      height = availableHeight;
+      width = height * aspectRatio;
+    }
+    
+    return { width, height };
+  }, [imageDimensions, screenWidth, screenHeight, insets]);
 
-        return { width, height };
-      })()
-    : null;
+  const scaledImageDimensions = calculateOptimalImageDimensions();
 
   const handleUndo = () => {
     // Call the undo function of the DrawingCanvas

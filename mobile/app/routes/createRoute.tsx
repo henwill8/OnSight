@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import RNPickerSelect from 'react-native-picker-select';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from "@/config";
-import { getFileType } from '@/components/FileUtils';
+import { getFileType } from '@/utils/FileUtils';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
 

@@ -1,24 +1,19 @@
 import React, { useReducer } from "react";
 import { Svg, Polygon, Rect, Mask } from "react-native-svg";
 import { SIZES } from "@/constants/theme";
-import { HOLD_SELECTION, HOLD_SELECTION_COLORS, ClimbingHold } from "@/constants/holdSelection";
-
-const selectionOrder = [
-  HOLD_SELECTION.UNSELECTED,
-  HOLD_SELECTION.INTERMEDIATE,
-  HOLD_SELECTION.START,
-  HOLD_SELECTION.END,
-];
+import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
+import { ClimbingHold } from "./RouteAnnotations";
 
 interface ClimbingHoldOverlayProps {
-  climbingHoldsRef: React.RefObject<ClimbingHold[]>;
+  data: ClimbingHold[];
+  scaleX: number;
+  scaleY: number;
   showUnselectedHolds?: boolean;
+  interactable?: boolean;
+  onHoldStateChange?: (index: number, newState: HOLD_SELECTION) => void;
 }
 
-const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
-  climbingHoldsRef,
-  showUnselectedHolds = false,
-}) => {
+const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({ data, scaleX, scaleY, showUnselectedHolds = false, interactable = true, onHoldStateChange }) => {
   const [, forceUpdate] = useReducer(x => x + 1, 0); // Dummy state to force re-render
 
   const colorMap: Record<HOLD_SELECTION, string> = {
@@ -28,19 +23,26 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
     [HOLD_SELECTION.END]: HOLD_SELECTION_COLORS.end,
   };
 
-  const handlePolygonPress = (hold: ClimbingHold) => {
-    const currentIndex = selectionOrder.indexOf(hold.holdSelectionState);
-    const nextIndex = (currentIndex + 1) % selectionOrder.length;
-    hold.holdSelectionState = selectionOrder[nextIndex];
-    forceUpdate(); // Trigger re-render
+  const handlePolygonPress = (hold: ClimbingHold, index: number) => {
+    if (!interactable) return;
+
+    const selectionValues = Object.values(HOLD_SELECTION);
+    const currentIndex = selectionValues.indexOf(hold.holdSelectionState);
+    const nextIndex = (currentIndex + 1) % selectionValues.length;
+    const newState = selectionValues[nextIndex] as HOLD_SELECTION;
+
+    // Local update for immediate feedback
+    hold.holdSelectionState = newState;
+    forceUpdate(); // force re-render to show the changed state
+
+    // Notify parent of the change
+    onHoldStateChange?.(index, newState);
   };
 
-  // Filter out unselected holds for polygons
-  const selectedHolds = climbingHoldsRef.current.filter(
+  const selectedHolds = data.filter(
     (hold) => hold.holdSelectionState !== HOLD_SELECTION.UNSELECTED
   );
 
-  // Create a mask to "cut out" the area of the polygons from the gray background
   const polygonPaths = selectedHolds.map((hold) => {
     const coordsString = hold.coordinates
       .map((c, i) => (i % 2 === 0 ? `${c},` : c))
@@ -48,12 +50,10 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
     return coordsString;
   });
 
-  // If there are no selected holds, don't render the gray background
   const shouldRenderGrayBackground = selectedHolds.length > 0;
 
   return (
     <Svg width="100%" height="100%" style={{ position: "absolute" }}>
-      {/* Mask to hide areas covered by polygons (excluding unselected ones) */}
       <Mask id="mask1">
         <Rect x="0" y="0" width="100%" height="100%" fill="white" />
         {polygonPaths.map((coords, index) => (
@@ -61,7 +61,6 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
         ))}
       </Mask>
 
-      {/* Apply the mask to the gray background */}
       {shouldRenderGrayBackground && (
         <Rect
           x="0"
@@ -76,10 +75,9 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
         />
       )}
 
-      {/* Polygons representing climbing holds */}
-      {climbingHoldsRef.current.map((hold, index) => {
+      {data.map((hold, index) => {
         const coordsString = hold.coordinates
-          .map((c, i) => (i % 2 === 0 ? `${c},` : c))
+          .map((c, i) => (i % 2 === 0 ? `${c * scaleX},` : `${c * scaleY}`))
           .join(" ");
         const strokeColor = colorMap[hold.holdSelectionState];
 
@@ -91,7 +89,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
             stroke={strokeColor}
             strokeWidth={2}
             strokeLinejoin="round"
-            onPressIn={() => handlePolygonPress(hold)}
+            onPressIn={() => handlePolygonPress(hold, index)}
           />
         );
       })}

@@ -1,9 +1,10 @@
 
+// Numbers used for ordering
 export enum HOLD_SELECTION {
-  UNSELECTED,
-  INTERMEDIATE,
-  START,
-  END
+  UNSELECTED = "unselected",
+  INTERMEDIATE = "intermediate",
+  START = "start",
+  END = "end"
 }
 
 export const HOLD_SELECTION_COLORS = {
@@ -11,9 +12,3 @@ export const HOLD_SELECTION_COLORS = {
   start: "rgba(0, 255, 0, 1)",
   end: "rgba(216, 0, 0, 1)"
 }
-
-export type ClimbingHold = {
-  coordinates: number[],
-  holdSelectionState: HOLD_SELECTION,
-  scaled: boolean
-};
