@@ -24,6 +24,8 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, color = "b
   const colorRef = useRef(color);
   const currentPathRef = useRef<IPath | null>(null);
 
+  console.log(interactable)
+
   useEffect(() => {
     colorRef.current = color;
   }, [color]);

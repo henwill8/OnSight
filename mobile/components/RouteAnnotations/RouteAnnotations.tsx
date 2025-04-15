@@ -8,6 +8,7 @@ import { View, ViewStyle } from "react-native";
 import DrawingCanvas from "@/components/RouteAnnotations/DrawingCanvas";
 import ClimbingHoldOverlay from "@/components/RouteAnnotations/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
+import { Color } from "@shopify/react-native-skia";
 
 export interface ClimbingHold {
   coordinates: number[];
@@ -41,9 +42,16 @@ interface RouteAnnotationsProps {
   scaleX: number;
   scaleY: number;
   interactable?: boolean;
-  canDraw?: boolean;
-  showUnselectedHolds?: boolean;
   style?: ViewStyle;
+
+  climbingHoldOverlayProps?: Partial<{
+    showUnselectedHolds: boolean;
+  }>;
+
+  drawingCanvasProps?: Partial<{
+    canDraw?: boolean;
+    color?: string;
+  }>;
 }
 
 export interface RouteAnnotationsRef {
@@ -52,7 +60,17 @@ export interface RouteAnnotationsRef {
   loadPredictedClimbingHolds: (climbingHolds: ClimbingHold[]) => void;
 }
 
-const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnotationsProps> = ({ scaleX, scaleY, interactable = true, canDraw = false, showUnselectedHolds = false, style }, ref) => {
+const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnotationsProps> = (
+  {
+    scaleX,
+    scaleY,
+    interactable = false,
+    style,
+    climbingHoldOverlayProps = {},
+    drawingCanvasProps = {},
+  },
+  ref
+) => {
   const [annotationData, setAnnotationData] = useState<AnnotationsData>({
     climbingHolds: [],
     drawingPaths: [],
@@ -68,7 +86,7 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
 
     setChangeHistory((prev) => [
       ...prev,
-      { type: "ADD_PATH", data: [] }, // Don't need any data as we can assume it was the most recently created path that should be removed
+      { type: "ADD_PATH", data: [] },
     ]);
   };
 
@@ -107,7 +125,7 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
 
   const loadAnnotationJSON = (json: string) => {
     try {
-      const parsed = JSON.parse(json)
+      const parsed = JSON.parse(json);
 
       if (parsed.annotations && parsed.history) {
         setAnnotationData(parsed.annotations);
@@ -121,16 +139,16 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   };
 
   const loadPredictedClimbingHolds = (climbingHolds: ClimbingHold[]) => {
-    setAnnotationData(prev => ({
+    setAnnotationData((prev) => ({
       ...prev,
-      climbingHolds: climbingHolds,
+      climbingHolds,
     }));
   };
 
   useImperativeHandle(ref, () => ({
     exportAnnotationJSON,
     loadAnnotationJSON,
-    loadPredictedClimbingHolds
+    loadPredictedClimbingHolds,
   }));
 
   return (
@@ -138,17 +156,18 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
       <ClimbingHoldOverlay
         data={annotationData.climbingHolds}
         onHoldStateChange={updateClimbingHold}
-        interactable={interactable}
         scaleX={scaleX}
         scaleY={scaleY}
-        showUnselectedHolds={showUnselectedHolds}
+        interactable={interactable}
+        {...climbingHoldOverlayProps}
       />
       <DrawingCanvas
         data={annotationData.drawingPaths}
         onAddPath={addDrawingPath}
-        interactable={interactable && canDraw}
         scaleX={scaleX}
         scaleY={scaleY}
+        interactable={interactable && drawingCanvasProps.canDraw}
+        {...drawingCanvasProps}
       />
     </View>
   );

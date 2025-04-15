@@ -268,8 +268,13 @@ const RouteImage: React.FC = () => {
               scaleX={scaleX}
               scaleY={scaleY}
               interactable={true}
-              canDraw={selectedColor != null}
-              showUnselectedHolds={showUnselectedHolds}
+              climbingHoldOverlayProps={{
+                showUnselectedHolds: showUnselectedHolds,
+              }}
+              drawingCanvasProps={{
+                canDraw: selectedColor != null,
+                color: selectedColor || "black"
+              }}
             />
           </ViewShot>
         </ReactNativeZoomableView>
