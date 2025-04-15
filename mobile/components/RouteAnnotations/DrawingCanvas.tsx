@@ -130,7 +130,7 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = 
     <View
       style={{ width: '100%', height: '100%' }}
       {...(interactable ? panResponder.panHandlers : {})}
-      pointerEvents={interactable ? "auto" : "none"}
+      pointerEvents={interactable && canDraw ? "auto" : "none"}
     >
       <Canvas style={{ flex: 1 }}>
         {[...data, ...(currentPathRef.current ? [currentPathRef.current] : [])].map((p, index) => {

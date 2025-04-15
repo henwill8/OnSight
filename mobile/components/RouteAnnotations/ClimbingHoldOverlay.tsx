@@ -61,7 +61,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   const shouldRenderGrayBackground = selectedHolds.length > 0;
 
   return (
-    <Svg width="100%" height="100%" style={{ position: "absolute" }}>
+    <Svg width="100%" height="100%" style={{ position: "absolute" }} pointerEvents={interactable ? "auto" : "none"}>
       {/* Mask for selected holds */}
       <Mask id="mask1">
         <Rect x="0" y="0" width="100%" height="100%" fill="white" />

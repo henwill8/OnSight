@@ -251,7 +251,7 @@ const RouteImage: React.FC = () => {
             return gestureState.numberActiveTouches > 1;
           }}
         >
-          {/* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */}
+          /* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */
           <ViewShot
             ref={viewShotRef}
             options={{ format: "jpg", quality: 0.9 }}
