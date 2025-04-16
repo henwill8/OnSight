@@ -11,6 +11,7 @@ import config from "@/config";
 import { getFileType } from '@/utils/FileUtils';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
+import RouteAnnotations from "@/components/RouteAnnotations/RouteAnnotations";
 
 const MAX_PIXELS = 1920 * 1080000;
 
@@ -22,24 +23,27 @@ const CreateRouteScreen = () => {
   const [description, setDescription] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [annotationsData, setAnnotationsData] = useState<string | null>(null);
+
   const [canSubmit, setCanSubmit] = useState(false);
   const [gymName, setGymName] = useState<string>('');
   const [loading, setLoading] = useState(false);  // State for loading modal
 
-  const { exportedUri } = useLocalSearchParams();
+  const { exportedUri, annotationsJSON } = useLocalSearchParams();
 
   useFocusEffect(
     useCallback(() => {
       if (exportedUri) {
-        if (Array.isArray(exportedUri)) {
-          // Handle the case where it's an array of strings
-          setImageUri(exportedUri[0] || null);
-        } else {
-          // Handle the case where it's a single string
-          setImageUri(exportedUri || null);
-        }
+        setImageUri(Array.isArray(exportedUri) ? exportedUri[0] : exportedUri || null);
       }
-    }, [exportedUri])
+  
+      if (annotationsJSON) {
+        const normalizedJSON = Array.isArray(annotationsJSON)
+          ? annotationsJSON[0]
+          : annotationsJSON;
+        setAnnotationsData(normalizedJSON);
+      }
+    }, [exportedUri, annotationsJSON])
   );
 
   useLayoutEffect(() => {
@@ -143,7 +147,8 @@ const CreateRouteScreen = () => {
       formData.append("name", name);  
       formData.append("description", description);  
       formData.append("difficulty", difficulty || "");  
-      formData.append("gym_id", gymId || "");  
+      formData.append("gym_id", gymId || "");
+      formData.append("annotationsJSON", Array.isArray(annotationsJSON) ? annotationsJSON.join(",") : annotationsJSON);
 
       const { extension, mimeType } = getFileType(imageUri);
       formData.append("image", {
@@ -193,9 +198,11 @@ const CreateRouteScreen = () => {
       </View>
 
       {imageUri && (
-        <Image 
-          source={{ uri: imageUri }} 
-          style={styles.imagePreview} 
+        <RouteAnnotations
+          style={styles.imagePreview}
+          imageURI={imageUri}
+          dataJSON={annotationsData || ""}
+          interactable={false}
         />
       )}
 

@@ -1,18 +1,12 @@
-import React, { useRef, useReducer, useEffect, useImperativeHandle, forwardRef } from "react";
-import {
-  View,
-  PanResponder,
-  GestureResponderEvent,
-  PanResponderGestureState,
-  ViewStyle
-} from "react-native";
+import React, { useRef, useReducer, useEffect } from "react";
+import { View, PanResponder, GestureResponderEvent, PanResponderGestureState, ViewStyle } from "react-native";
 import { Canvas, Path } from "@shopify/react-native-skia";
 import { IPath, Segment } from "./RouteAnnotations";
+import { FittedImageRectOutput } from "@/utils/ImageUtils"; // Assuming this is the correct import
 
 interface DrawProps {
   data: IPath[];
-  scaleX: number;
-  scaleY: number;
+  fittedImageRect: FittedImageRectOutput; // Fitted image rect as a prop
   onAddPath?: (newPath: IPath) => void;
   color?: string;
   style?: ViewStyle;
@@ -20,13 +14,21 @@ interface DrawProps {
   interactable?: boolean;
 }
 
-const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = true, color = "black", style, interactable = true }) => {
+const Draw: React.FC<DrawProps> = ({
+  data,
+  fittedImageRect,
+  onAddPath,
+  color = "black",
+  style,
+  canDraw = true,
+  interactable = true
+}) => {
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
   const isDrawing = useRef(false);
   const colorRef = useRef(color);
-  const scaleXRef = useRef(scaleX);
-  const scaleYRef = useRef(scaleY);
+  const fittedImageRectRef = useRef(fittedImageRect);
+  
   const currentPathRef = useRef<IPath | null>(null);
 
   useEffect(() => {
@@ -34,12 +36,8 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = 
   }, [color]);
 
   useEffect(() => {
-    scaleXRef.current = scaleX;
-  }, [scaleX]);
-  
-  useEffect(() => {
-    scaleYRef.current = scaleY;
-  }, [scaleY]);
+    fittedImageRectRef.current = fittedImageRect;
+  }, [fittedImageRect]);
 
   const calculateDistance = (segments: Segment[]): number => {
     let totalDistance = 0;
@@ -60,10 +58,16 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = 
     if (gestureState.numberActiveTouches !== 1 || !interactable) return;
 
     const { locationX, locationY } = e.nativeEvent;
+    const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
 
     const newPath: IPath = {
-      segments: [{ x: locationX / scaleXRef.current, y: locationY / scaleYRef.current }], // Divide by scale to get the coordinates in the size of the actual image, not the scaled image
-      color: colorRef.current
+      segments: [
+        {
+          x: (locationX - offsetX) / scaleX, // Adjust based on scale and offset
+          y: (locationY - offsetY) / scaleY, // Adjust based on scale and offset
+        },
+      ],
+      color: colorRef.current,
     };
 
     currentPathRef.current = newPath;
@@ -82,10 +86,14 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = 
     if (!isDrawing.current) return;
 
     const { locationX, locationY } = e.nativeEvent;
+    const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
     const currentPath = currentPathRef.current;
 
     if (currentPath) {
-      currentPath.segments.push({ x: locationX / scaleXRef.current, y: locationY / scaleYRef.current }); // same reasoning for scaling as above
+      currentPath.segments.push({
+        x: (locationX - offsetX) / scaleX, // Adjust based on scale and offset
+        y: (locationY - offsetY) / scaleY, // Adjust based on scale and offset
+      });
       forceUpdate();
     }
   };
@@ -109,7 +117,7 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = 
     PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => {
         // Only try to claim responder for single-touch events when in drawing mode
-        return gestureState.numberActiveTouches === 1 && interactable && canDraw && colorRef.current != null;;
+        return gestureState.numberActiveTouches === 1 && interactable && canDraw && colorRef.current != null;
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         // Only handle single-touch movements
@@ -122,30 +130,29 @@ const Draw: React.FC<DrawProps> = ({ data, scaleX, scaleY, onAddPath, canDraw = 
       onPanResponderGrant: handleStart,
       onPanResponderMove: handleMove,
       onPanResponderRelease: handleEnd,
-      onPanResponderTerminate: handleEnd
+      onPanResponderTerminate: handleEnd,
     })
   ).current;
 
   return (
     <View
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: "100%", height: "100%" }}
       {...(interactable ? panResponder.panHandlers : {})}
       pointerEvents={interactable && canDraw ? "auto" : "none"}
     >
       <Canvas style={{ flex: 1 }}>
         {[...data, ...(currentPathRef.current ? [currentPathRef.current] : [])].map((p, index) => {
+          const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
+
           const pathString = p.segments
-            .map((s, i) => (i === 0 ? `M ${s.x * scaleX} ${s.y * scaleY}` : `L ${s.x * scaleX} ${s.y * scaleY}`))
+            .map((s, i) => {
+              const x = s.x * scaleX + offsetX; // Apply scale and offset
+              const y = s.y * scaleY + offsetY; // Apply scale and offset
+              return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+            })
             .join(" ");
-          return (
-            <Path
-              key={index}
-              path={pathString}
-              strokeWidth={2}
-              style="stroke"
-              color={p.color}
-            />
-          );
+
+          return <Path key={index} path={pathString} strokeWidth={2} style="stroke" color={p.color} />;
         })}
       </Canvas>
     </View>

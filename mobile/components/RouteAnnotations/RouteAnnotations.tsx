@@ -1,13 +1,16 @@
 import React, {
   useState,
+  useMemo,
+  useEffect,
   useImperativeHandle,
   forwardRef,
   ForwardRefRenderFunction,
 } from "react";
-import { View, ViewStyle } from "react-native";
+import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode } from "react-native";
 import DrawingCanvas from "@/components/RouteAnnotations/DrawingCanvas";
 import ClimbingHoldOverlay from "@/components/RouteAnnotations/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
+import { getFittedImageRect } from "@/utils/ImageUtils";
 
 export interface ClimbingHold {
   coordinates: number[];
@@ -38,10 +41,12 @@ interface ChangeLogEntry {
 }
 
 interface RouteAnnotationsProps {
-  scaleX: number;
-  scaleY: number;
+  imageURI: string;
   interactable?: boolean;
+  dataJSON?: string;
   style?: ViewStyle;
+  
+  imageProps?: Partial<ImageProps>;
 
   climbingHoldOverlayProps?: Partial<{
     showUnselectedHolds: boolean;
@@ -62,10 +67,11 @@ export interface RouteAnnotationsRef {
 
 const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnotationsProps> = (
   {
-    scaleX,
-    scaleY,
+    imageURI,
     interactable = false,
+    dataJSON = "",
     style,
+    imageProps = {},
     climbingHoldOverlayProps = {},
     drawingCanvasProps = {},
   },
@@ -77,6 +83,32 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   });
 
   const [changeHistory, setChangeHistory] = useState<ChangeLogEntry[]>([]);
+
+  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    Image.getSize(imageURI, (width, height) => {
+      setImageSize({ width, height });
+    });
+  }, [imageURI]);
+
+  const onContainerLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setContainerSize({ width, height });
+  };
+
+  const fittedImage = useMemo(() => {
+    if (!imageSize || !containerSize) return null;
+
+    return getFittedImageRect({
+      containerWidth: containerSize.width,
+      containerHeight: containerSize.height,
+      imageWidth: imageSize.width,
+      imageHeight: imageSize.height,
+      resizeMode: imageProps.resizeMode as ImageResizeMode,
+    });
+  }, [imageSize, containerSize]);
 
   const addDrawingPath = (newPath: IPath) => {
     setAnnotationData((prev) => ({
@@ -159,12 +191,13 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
       annotations: annotationData,
       history: changeHistory,
     };
-    return JSON.stringify(exportData, null, 2);
+    return JSON.stringify(exportData, null);
   };
 
   const loadAnnotationJSON = (json: string) => {
     try {
       const parsed = JSON.parse(json);
+      console.log(parsed)
 
       if (parsed.annotations && parsed.history) {
         setAnnotationData(parsed.annotations);
@@ -184,6 +217,12 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
     }));
   };
 
+  useEffect(() => {
+    if (dataJSON !== "") {
+      loadAnnotationJSON(dataJSON);
+    }
+  }, [dataJSON]);
+
   useImperativeHandle(ref, () => ({
     undo,
     exportAnnotationJSON,
@@ -192,23 +231,50 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   }));
 
   return (
-    <View style={style}>
-      <ClimbingHoldOverlay
-        data={annotationData.climbingHolds}
-        onHoldStateChange={updateClimbingHold}
-        scaleX={scaleX}
-        scaleY={scaleY}
-        interactable={interactable}
-        {...climbingHoldOverlayProps}
-      />
-      <DrawingCanvas
-        data={annotationData.drawingPaths}
-        onAddPath={addDrawingPath}
-        scaleX={scaleX}
-        scaleY={scaleY}
-        interactable={interactable}
-        {...drawingCanvasProps}
-      />
+    <View style={[style, { position: 'relative', overflow: 'hidden' }]} onLayout={onContainerLayout}>
+      {fittedImage != null && (
+        <>
+          <Image
+            source={{ uri: imageURI }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: containerSize?.width,
+              height: containerSize?.height,
+            }}
+            {...imageProps}
+          />
+          <ClimbingHoldOverlay
+            data={annotationData.climbingHolds}
+            onHoldStateChange={updateClimbingHold}
+            fittedImageRect={fittedImage}
+            interactable={interactable}
+            {...climbingHoldOverlayProps}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+          <DrawingCanvas
+            data={annotationData.drawingPaths}
+            onAddPath={addDrawingPath}
+            fittedImageRect={fittedImage}
+            interactable={interactable}
+            {...drawingCanvasProps}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        </>
+      )}
     </View>
   );
 };

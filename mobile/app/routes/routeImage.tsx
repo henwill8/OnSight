@@ -30,7 +30,6 @@ const RouteImage: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
 
   const routeAnnotationRef = useRef<RouteAnnotationsRef>(null);
-  const viewShotRef = useRef<ViewShot>(null);
   
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -67,18 +66,15 @@ const RouteImage: React.FC = () => {
   const handleExport = async () => {
     setShowUnselectedHolds(false);
 
-    if (viewShotRef.current) {
-      try {
-        // Capture the entire zoomable view
-        const uri = await viewShotRef.current.capture?.();
-  
-        console.log("Captured image URI: ", uri);
-        router.back(); // Go back to previous screen
-        router.setParams({ exportedUri: encodeURIComponent(uri || "") }); // Pass URI to router params
-      } catch (error) {
-        console.error("Error exporting image: ", error);
-        Alert.alert("Export Failed", "There was an error exporting the image.");
-      }
+    try {  
+      router.back(); // Go back to previous screen
+      router.setParams({
+        exportedUri: encodeURIComponent(imageUriString || ""),
+        annotationsJSON: routeAnnotationRef.current?.exportAnnotationJSON()
+      });
+    } catch (error) {
+      console.error("Error exporting image: ", error);
+      Alert.alert("Export Failed", "There was an error exporting the image.");
     }
   };
 
@@ -233,7 +229,7 @@ const RouteImage: React.FC = () => {
           zoomStep={0.5}
           initialZoom={1.0}
           bindToBorders={true}
-          style={{ width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY }}
+          style={{ width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY, borderRadius: SIZES.borderRadius }}
           panEnabled={selectedColor == null}
           disableMomentum={selectedColor != null}
           onStartShouldSetPanResponder={(evt, gestureState) => {
@@ -245,43 +241,23 @@ const RouteImage: React.FC = () => {
             return gestureState.numberActiveTouches > 1;
           }}
         >
-          {/* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */}
-          <ViewShot
-            ref={viewShotRef}
-            options={{ format: "jpg", quality: 0.9 }}
-            style={{ position: 'relative', width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY }}
-          >
-            <Image
-              source={{ uri: imageUriString }}
-              style={{
-                top: 0,
-                borderRadius: SIZES.borderRadius,
-                width: '100%',
-                height: '100%',
-                flex: 1
-              }}
-            />
-            <RouteAnnotations
-              ref={routeAnnotationRef}
-              style={{
-                top: 0,
-                borderRadius: SIZES.borderRadius,
-                width: '100%',
-                height: '100%',
-                position:"absolute"
-              }}
-              scaleX={scaleX}
-              scaleY={scaleY}
-              interactable={true}
-              climbingHoldOverlayProps={{
-                showUnselectedHolds: showUnselectedHolds,
-              }}
-              drawingCanvasProps={{
-                canDraw: selectedColor != null,
-                color: selectedColor || "black"
-              }}
-            />
-          </ViewShot>
+          <RouteAnnotations
+            ref={routeAnnotationRef}
+            style={{
+              borderRadius: SIZES.borderRadius,
+              width: imageDimensions.width * scaleX,
+              height: imageDimensions.height * scaleY,
+            }}
+            imageURI={imageUriString}
+            interactable={true}
+            climbingHoldOverlayProps={{
+              showUnselectedHolds: showUnselectedHolds,
+            }}
+            drawingCanvasProps={{
+              canDraw: selectedColor != null,
+              color: selectedColor || "black"
+            }}
+          />
         </ReactNativeZoomableView>
       )}
 
