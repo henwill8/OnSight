@@ -1,7 +1,7 @@
 import React, { useRef, useReducer, useEffect } from "react";
 import { View, PanResponder, GestureResponderEvent, PanResponderGestureState, ViewStyle } from "react-native";
 import { Canvas, Path } from "@shopify/react-native-skia";
-import { IPath, Segment } from "./RouteAnnotations";
+import { IPath, Segment } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/ImageUtils"; // Assuming this is the correct import
 
 interface DrawProps {
@@ -28,7 +28,7 @@ const Draw: React.FC<DrawProps> = ({
   const isDrawing = useRef(false);
   const colorRef = useRef(color);
   const fittedImageRectRef = useRef(fittedImageRect);
-  
+
   const currentPathRef = useRef<IPath | null>(null);
 
   useEffect(() => {
@@ -152,7 +152,7 @@ const Draw: React.FC<DrawProps> = ({
             })
             .join(" ");
 
-          return <Path key={index} path={pathString} strokeWidth={2} style="stroke" color={p.color} />;
+          return <Path key={index} path={pathString} strokeWidth={4 * scaleX} style="stroke" color={p.color} />;
         })}
       </Canvas>
     </View>

@@ -7,8 +7,8 @@ import React, {
   ForwardRefRenderFunction,
 } from "react";
 import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode } from "react-native";
-import DrawingCanvas from "@/components/RouteAnnotations/DrawingCanvas";
-import ClimbingHoldOverlay from "@/components/RouteAnnotations/ClimbingHoldOverlay";
+import DrawingCanvas from "@/components/RouteImage/DrawingCanvas";
+import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
 import { getFittedImageRect } from "@/utils/ImageUtils";
 
@@ -40,10 +40,11 @@ interface ChangeLogEntry {
   data: any;
 }
 
-interface RouteAnnotationsProps {
+interface RouteImageProps {
   imageURI: string;
   interactable?: boolean;
   dataJSON?: string;
+  dataURL?: string;
   style?: ViewStyle;
   
   imageProps?: Partial<ImageProps>;
@@ -58,18 +59,19 @@ interface RouteAnnotationsProps {
   }>;
 }
 
-export interface RouteAnnotationsRef {
+export interface RouteImageRef {
   undo: () => void;
   exportAnnotationJSON: () => string;
   loadAnnotationJSON: (json: string) => void;
   loadPredictedClimbingHolds: (climbingHolds: ClimbingHold[]) => void;
 }
 
-const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnotationsProps> = (
+const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   {
     imageURI,
     interactable = false,
     dataJSON = "",
+    dataURL = "",
     style,
     imageProps = {},
     climbingHoldOverlayProps = {},
@@ -197,7 +199,6 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   const loadAnnotationJSON = (json: string) => {
     try {
       const parsed = JSON.parse(json);
-      console.log(parsed)
 
       if (parsed.annotations && parsed.history) {
         setAnnotationData(parsed.annotations);
@@ -220,8 +221,19 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   useEffect(() => {
     if (dataJSON !== "") {
       loadAnnotationJSON(dataJSON);
+    } else if (dataURL !== "") {
+      (async () => {
+        try {
+          const response = await fetch(dataURL);
+          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+          const jsonText = await response.text();
+          loadAnnotationJSON(jsonText);
+        } catch (err) {
+          console.error("Failed to fetch or load annotation data from URL:", err);
+        }
+      })();
     }
-  }, [dataJSON]);
+  }, [dataJSON, dataURL]);
 
   useImperativeHandle(ref, () => ({
     undo,
@@ -279,4 +291,4 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   );
 };
 
-export default forwardRef(RouteAnnotations);
+export default forwardRef(RouteImage);

@@ -3,18 +3,17 @@ import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, Touchab
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReactNativeZoomableView } from 'react-native-zoomable-view';
-import RouteAnnotations, { RouteAnnotationsRef, ClimbingHold } from "@/components/RouteAnnotations/RouteAnnotations";
+import RouteImage, { RouteImageRef, ClimbingHold } from "@/components/RouteImage/RouteImage";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
 import config from '@/config';
 import { getFileType } from '@/utils/FileUtils';
-import ViewShot from 'react-native-view-shot';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
 
 type ImageSize = { width: number; height: number };
 
-const RouteImage: React.FC = () => {
+const RouteImageCreator: React.FC = () => {
   const router = useRouter();
   const navigation = useNavigation();
 
@@ -29,7 +28,7 @@ const RouteImage: React.FC = () => {
   const [showUnselectedHolds, setShowUnselectedHolds] = useState<boolean>(false); // Show bounding boxes state
   const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
 
-  const routeAnnotationRef = useRef<RouteAnnotationsRef>(null);
+  const routeAnnotationRef = useRef<RouteImageRef>(null);
   
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -241,7 +240,7 @@ const RouteImage: React.FC = () => {
             return gestureState.numberActiveTouches > 1;
           }}
         >
-          <RouteAnnotations
+          <RouteImage
             ref={routeAnnotationRef}
             style={{
               borderRadius: SIZES.borderRadius,
@@ -363,4 +362,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RouteImage;
+export default RouteImageCreator;

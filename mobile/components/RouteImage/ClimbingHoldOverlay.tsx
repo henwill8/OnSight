@@ -3,7 +3,7 @@ import { Svg, Polygon, Rect, Mask } from "react-native-svg";
 import { View, ViewStyle } from "react-native";
 import { SIZES } from "@/constants/theme";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
-import { ClimbingHold } from "./RouteAnnotations";
+import { ClimbingHold } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/ImageUtils"; // Assuming this is the correct import
 
 interface ClimbingHoldOverlayProps {
@@ -102,6 +102,8 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
         {/* Render all holds as polygons */}
         {polygonPaths.map((coordsString, index) => {
           const hold = data[index];
+          if (hold.holdSelectionState == HOLD_SELECTION.UNSELECTED && !interactable) return;
+
           const strokeColor = colorMap[hold.holdSelectionState];
 
           return (
@@ -110,7 +112,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
               points={coordsString}
               fill="none"
               stroke={strokeColor}
-              strokeWidth={2}
+              strokeWidth={4 * scaleX}
               strokeLinejoin="round"
               onPressIn={() => handlePolygonPress(hold, index)}
             />

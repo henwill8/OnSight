@@ -11,7 +11,7 @@ import config from "@/config";
 import { getFileType } from '@/utils/FileUtils';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
-import RouteAnnotations from "@/components/RouteAnnotations/RouteAnnotations";
+import RouteImage from "@/components/RouteImage/RouteImage";
 
 const MAX_PIXELS = 1920 * 1080000;
 
@@ -120,7 +120,7 @@ const CreateRouteScreen = () => {
         const resizedImage = await resizeImageToMaxDimension(uri);
 
         router.push({
-          pathname: '/routes/routeImage',
+          pathname: '/routes/routeImageCreator',
           params: {
             imageUri: encodeURIComponent(resizedImage.uri),
             name,
@@ -148,7 +148,7 @@ const CreateRouteScreen = () => {
       formData.append("description", description);  
       formData.append("difficulty", difficulty || "");  
       formData.append("gym_id", gymId || "");
-      formData.append("annotationsJSON", Array.isArray(annotationsJSON) ? annotationsJSON.join(",") : annotationsJSON);
+      formData.append("annotations", annotationsData || "");
 
       const { extension, mimeType } = getFileType(imageUri);
       formData.append("image", {
@@ -198,7 +198,7 @@ const CreateRouteScreen = () => {
       </View>
 
       {imageUri && (
-        <RouteAnnotations
+        <RouteImage
           style={styles.imagePreview}
           imageURI={imageUri}
           dataJSON={annotationsData || ""}

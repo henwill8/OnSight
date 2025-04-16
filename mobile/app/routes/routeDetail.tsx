@@ -3,14 +3,8 @@ import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 're
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { ReactNativeZoomableView } from 'react-native-zoomable-view';
 import { COLORS, SIZES, SHADOWS, globalStyles } from '@/constants/theme';
-
-interface Route {
-  id: string;
-  name: string;
-  description: string;
-  difficulty: number;
-  image_url: string;
-}
+import RouteImage from "@/components/RouteImage/RouteImage";
+import { Route } from '@/app/(tabs)/home';
 
 const RouteDetail = () => {
   const navigation = useNavigation();
@@ -95,8 +89,9 @@ const RouteDetail = () => {
             bindToBorders={true}
             style={{ width: scaledImageDimensions.width, height: scaledImageDimensions.height }}
           >
-            <Image
-              source={{ uri: routeDetails.image_url }}
+            <RouteImage
+              imageURI={routeDetails.image_url}
+              dataURL={routeDetails.annotations_url}
               style={{
                 width: scaledImageDimensions.width,
                 height: scaledImageDimensions.height,

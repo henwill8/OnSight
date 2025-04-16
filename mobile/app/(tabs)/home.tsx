@@ -7,13 +7,15 @@ import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { AntDesign } from '@expo/vector-icons';
 import { fetchWithTimeout } from '@/utils/api';
+import RouteImage from '@/components/RouteImage/RouteImage';
 
-interface Route {
+export interface Route {
   id: string;
   name: string;
   description: string;
   difficulty: number;
   image_url: string;
+  annotations_url: string;
 }
 
 const HomeScreen = () => {
@@ -69,7 +71,7 @@ const HomeScreen = () => {
         const routesWithSignedUrls = await Promise.all(
           data.map(async (route: any) => {
             try {
-              const signedUrlRes = await fetchWithTimeout(
+              const imageUrlRes = await fetchWithTimeout(
                 route.image_url,
                 {
                   method: 'GET',
@@ -79,10 +81,23 @@ const HomeScreen = () => {
                 }
               );
     
-              if (!signedUrlRes.ok) throw new Error('Failed to get signed URL');
+              if (!imageUrlRes.ok) throw new Error('Failed to get signed URL');
+
+              const annotationsUrlRes = await fetchWithTimeout(
+                route.annotations_url,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
     
-              const { url: signedUrl } = await signedUrlRes.json();
-              return { ...route, image_url: signedUrl };
+              if (!annotationsUrlRes.ok) throw new Error('Failed to get signed URL');
+    
+              const { url: imageUrl } = await imageUrlRes.json();
+              const { url: annotationsUrl } = await annotationsUrlRes.json();
+              return { ...route, image_url: imageUrl, annotations_url: annotationsUrl };
             } catch (err) {
               console.error(`Error getting signed URL for image: ${route.image_url}`, err);
               return { ...route, signedImageUrl: null };
@@ -138,7 +153,13 @@ const HomeScreen = () => {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
-                  <Image source={{ uri: item.image_url }} style={styles.routeImage} resizeMode="cover" />
+                  <RouteImage
+                    imageURI={item.image_url}
+                    dataURL={item.annotations_url}
+                    style={styles.routeImage}
+
+                    imageProps={{ resizeMode: "cover" }}
+                  />
                   <View style={styles.routeInfo}>
                     <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
                     <Text style={styles.routeDescription}>{item.description || 'No Description'}</Text>
