@@ -93,10 +93,14 @@ const HomeScreen = () => {
                 }
               );
     
-              if (!annotationsUrlRes.ok) throw new Error('Failed to get signed URL');
-    
               const { url: imageUrl } = await imageUrlRes.json();
-              const { url: annotationsUrl } = await annotationsUrlRes.json();
+
+              let annotationsUrl = "";
+              if (annotationsUrlRes.ok) {
+                const { url } = await annotationsUrlRes.json();
+                annotationsUrl = url;
+              }
+
               return { ...route, image_url: imageUrl, annotations_url: annotationsUrl };
             } catch (err) {
               console.error(`Error getting signed URL for image: ${route.image_url}`, err);
