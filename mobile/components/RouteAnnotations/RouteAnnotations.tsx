@@ -8,7 +8,6 @@ import { View, ViewStyle } from "react-native";
 import DrawingCanvas from "@/components/RouteAnnotations/DrawingCanvas";
 import ClimbingHoldOverlay from "@/components/RouteAnnotations/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
-import { Color } from "@shopify/react-native-skia";
 
 export interface ClimbingHold {
   coordinates: number[];
@@ -55,6 +54,7 @@ interface RouteAnnotationsProps {
 }
 
 export interface RouteAnnotationsRef {
+  undo: () => void;
   exportAnnotationJSON: () => string;
   loadAnnotationJSON: (json: string) => void;
   loadPredictedClimbingHolds: (climbingHolds: ClimbingHold[]) => void;
@@ -90,29 +90,68 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
     ]);
   };
 
-  const updateClimbingHold = (index: number, newState: HOLD_SELECTION) => {
+  const updateClimbingHold = (index: number, newState: HOLD_SELECTION, prevState: HOLD_SELECTION) => {
     setAnnotationData((prev) => {
       const updatedHolds = [...prev.climbingHolds];
+  
       if (updatedHolds[index]) {
         updatedHolds[index] = {
           ...updatedHolds[index],
           holdSelectionState: newState,
         };
       }
-
+  
+      setChangeHistory((prevHistory) => [
+        ...prevHistory,
+        {
+          type: "UPDATE_HOLD_STATE",
+          data: { index, prevState },
+        },
+      ]);
+  
       return {
         ...prev,
         climbingHolds: updatedHolds,
       };
     });
+  };
 
-    setChangeHistory((prev) => [
-      ...prev,
-      {
-        type: "UPDATE_HOLD_STATE",
-        data: { index, newState },
-      },
-    ]);
+  const undo = () => {
+    if (changeHistory.length === 0) return;
+  
+    const lastChange = changeHistory[changeHistory.length - 1];
+  
+    switch (lastChange.type) {
+      case "ADD_PATH": {
+        setAnnotationData((prev) => ({
+          ...prev,
+          drawingPaths: prev.drawingPaths.slice(0, -1),
+        }));
+        break;
+      }
+      case "UPDATE_HOLD_STATE": {
+        const { index, prevState } = lastChange.data;
+
+        setAnnotationData((prev) => {
+          const updatedHolds = [...prev.climbingHolds];
+          if (updatedHolds[index]) {
+            // Revert to previous state if stored, or UNSELECTED if not
+            updatedHolds[index] = {
+              ...updatedHolds[index],
+              holdSelectionState: prevState ?? HOLD_SELECTION.UNSELECTED,
+            };
+          }
+
+          return {
+            ...prev,
+            climbingHolds: updatedHolds,
+          };
+        });
+        break;
+      }
+    }
+  
+    setChangeHistory(changeHistory.slice(0, -1));
   };
 
   const exportAnnotationJSON = () => {
@@ -146,6 +185,7 @@ const RouteAnnotations: ForwardRefRenderFunction<RouteAnnotationsRef, RouteAnnot
   };
 
   useImperativeHandle(ref, () => ({
+    undo,
     exportAnnotationJSON,
     loadAnnotationJSON,
     loadPredictedClimbingHolds,

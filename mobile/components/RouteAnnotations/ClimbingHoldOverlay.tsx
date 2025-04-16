@@ -1,5 +1,4 @@
-import React, { useReducer } from "react";
-import { View, ViewStyle } from "react-native";
+import React, { useState, useReducer } from "react";
 import { Svg, Polygon, Rect, Mask } from "react-native-svg";
 import { SIZES } from "@/constants/theme";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
@@ -11,7 +10,7 @@ interface ClimbingHoldOverlayProps {
   scaleY: number;
   showUnselectedHolds?: boolean;
   interactable?: boolean;
-  onHoldStateChange?: (index: number, newState: HOLD_SELECTION) => void;
+  onHoldStateChange?: (index: number, newState: HOLD_SELECTION, prevState: HOLD_SELECTION) => void;
 }
 
 const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
@@ -37,14 +36,16 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
     const selectionValues = Object.values(HOLD_SELECTION);
     const currentIndex = selectionValues.indexOf(hold.holdSelectionState);
     const nextIndex = (currentIndex + 1) % selectionValues.length;
+
     const newState = selectionValues[nextIndex] as HOLD_SELECTION;
+    const prevState = hold.holdSelectionState;
 
     // Local update for immediate feedback
     hold.holdSelectionState = newState;
     forceUpdate(); // force re-render to show the changed state
 
     // Notify parent of the change
-    onHoldStateChange?.(index, newState);
+    onHoldStateChange?.(index, newState, prevState);
   };
 
   // Generate polygon paths once for all holds
@@ -96,7 +97,6 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
 
         return (
           <Polygon
-            key={index}
             points={coordsString}
             fill="none"
             stroke={strokeColor}

@@ -83,10 +83,9 @@ const RouteImage: React.FC = () => {
   };
 
   const handleUndo = () => {
-    // // Call the undo function of the DrawingCanvas
-    // if (drawingCanvasRef.current) {
-    //   drawingCanvasRef.current.undo();
-    // }
+    if(routeAnnotationRef.current) {
+      routeAnnotationRef.current.undo();
+    }
   };
 
   // Function to calculate the area of a polygon using the shoelace theorem
@@ -191,8 +190,6 @@ const RouteImage: React.FC = () => {
     // Try fitting by width first
     let width = availableWidth;
     let height = width / aspectRatio;
-
-    console.log(width, height)
     
     // If height exceeds available space, fit by height instead
     if (height > availableHeight) {
@@ -207,9 +204,6 @@ const RouteImage: React.FC = () => {
     if (!imageDimensions) return;
 
     const scaled = calculateOptimalImageDimensions();
-
-    console.log(imageDimensions)
-    console.log(scaled)
 
     setScaleX(scaled?.newScaleX || 1);
     setScaleY(scaled?.newScaleY || 1);
@@ -251,7 +245,7 @@ const RouteImage: React.FC = () => {
             return gestureState.numberActiveTouches > 1;
           }}
         >
-          /* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */
+          {/* This second container is necessary for some reason, idk why you cant just have the zoomable view position be relative */}
           <ViewShot
             ref={viewShotRef}
             options={{ format: "jpg", quality: 0.9 }}
