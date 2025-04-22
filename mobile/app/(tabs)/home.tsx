@@ -14,8 +14,8 @@ export interface Route {
   name: string;
   description: string;
   difficulty: number;
-  image_url: string;
-  annotations_url: string;
+  imageUrl: string;
+  annotationsUrl: string;
 }
 
 const HomeScreen = () => {
@@ -72,7 +72,7 @@ const HomeScreen = () => {
           data.map(async (route: any) => {
             try {
               const imageUrlRes = await fetchWithTimeout(
-                route.image_url,
+                route.imageUrl,
                 {
                   method: 'GET',
                   headers: {
@@ -84,7 +84,7 @@ const HomeScreen = () => {
               if (!imageUrlRes.ok) throw new Error('Failed to get signed URL');
 
               const annotationsUrlRes = await fetchWithTimeout(
-                route.annotations_url,
+                route.annotationsUrl,
                 {
                   method: 'GET',
                   headers: {
@@ -101,9 +101,9 @@ const HomeScreen = () => {
                 annotationsUrl = url;
               }
 
-              return { ...route, image_url: imageUrl, annotations_url: annotationsUrl };
+              return { ...route, imageUrl: imageUrl, annotationsUrl: annotationsUrl };
             } catch (err) {
-              console.error(`Error getting signed URL for image: ${route.image_url}`, err);
+              console.error(`Error getting signed URL for image: ${route.imageUrl}`, err);
               return { ...route, signedImageUrl: null };
             }
           })
@@ -158,8 +158,8 @@ const HomeScreen = () => {
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
                   <RouteImage
-                    imageURI={item.image_url}
-                    dataURL={item.annotations_url}
+                    imageURI={item.imageUrl}
+                    dataURL={item.annotationsUrl}
                     style={styles.routeImage}
 
                     imageProps={{ resizeMode: "cover" }}

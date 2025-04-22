@@ -13,8 +13,6 @@ import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
 import RouteImage from "@/components/RouteImage/RouteImage";
 
-const MAX_PIXELS = 1920 * 1080000;
-
 const CreateRouteScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
@@ -147,8 +145,9 @@ const CreateRouteScreen = () => {
       formData.append("name", name);  
       formData.append("description", description);  
       formData.append("difficulty", difficulty || "");  
-      formData.append("gym_id", gymId || "");
+      formData.append("gymId", gymId || "");
       formData.append("annotations", annotationsData || "");
+      formData.append("locationId", ""); // TODO: update to actually represent the location
 
       const { extension, mimeType } = getFileType(imageUri);
       formData.append("image", {

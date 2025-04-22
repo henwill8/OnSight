@@ -32,7 +32,7 @@ const RouteDetail = () => {
   }, [routeString]);
 
   // Get image size
-  const imageUriString = routeDetails?.image_url;
+  const imageUriString = routeDetails?.imageUrl;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
 
@@ -90,8 +90,8 @@ const RouteDetail = () => {
             style={{ width: scaledImageDimensions.width, height: scaledImageDimensions.height }}
           >
             <RouteImage
-              imageURI={routeDetails.image_url}
-              dataURL={routeDetails.annotations_url}
+              imageURI={routeDetails.imageUrl}
+              dataURL={routeDetails.annotationsUrl}
               style={{
                 width: scaledImageDimensions.width,
                 height: scaledImageDimensions.height,
