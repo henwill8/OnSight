@@ -238,6 +238,8 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
           console.error("Failed to fetch or load annotation data from URL:", err);
         }
       })();
+    } else {
+      setAnnotationsLoaded(true);  // No data to load, so set as loaded
     }
   }, [dataJSON, dataURL]);
 
