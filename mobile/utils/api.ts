@@ -4,28 +4,41 @@ import { API_PATHS } from '@/constants/paths';
 export async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
-  timeout: number = 5000
+  timeout: number = 5000,
+  retries: number = 3,
+  retryDelay: number = 100 // milliseconds between retries
 ): Promise<Response> {
-  console.log(`[fetchWithTimeout] Starting request to ${url} with timeout: ${timeout}ms`);
-  
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
 
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timer);
-    return response;
-  } catch (error: any) {
-    clearTimeout(timer);
+    console.log(`[fetchWithTimeout] Attempt ${attempt}/${retries} to ${url} with timeout: ${timeout}ms`);
 
-    if (error.name === "AbortError" || error.message.includes("aborted")) {
-      console.error(`[fetchWithTimeout] Request to ${url} was aborted due to timeout.`);
-      throw new Error("Request timed out");
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      return response;
+    } catch (error: any) {
+      clearTimeout(timer);
+
+      const isTimeout = error.name === "AbortError" || error.message.includes("aborted");
+      console.warn(`[fetchWithTimeout] Attempt ${attempt} failed: ${isTimeout ? "timeout" : error.message}`);
+
+      if (attempt === retries) {
+        throw new Error(isTimeout ? "Request timed out" : `Fetch failed: ${error.message}`);
+      }
+
+      // Don't retry if timeout occurred
+      if (isTimeout) {
+        throw error;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
-
-    console.error(`[fetchWithTimeout] Request to ${url} failed:`, error);
-    throw error;
   }
+
+  // This should technically never run
+  throw new Error("fetchWithTimeout: exhausted retries without success.");
 }
 
 // Function to fetch job status with timeout

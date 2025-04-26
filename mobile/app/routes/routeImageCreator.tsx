@@ -104,8 +104,6 @@ const RouteImageCreator: React.FC = () => {
   const handleJobDone = (statusData: any) => {
     const results = statusData.result;
     const predictions = results.predictions;
-
-    console.log(results)
   
     console.log(`Received ${predictions.length} predictions`);
   
