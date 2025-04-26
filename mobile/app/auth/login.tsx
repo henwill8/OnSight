@@ -5,6 +5,7 @@ import config from "@/config";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
+import { API_PATHS } from "@/constants/paths";
 
 const landingPage = "/(tabs)/home";
 
@@ -19,7 +20,7 @@ export default function LoginScreen() {
     setLoading(true); // Show loading modal
 
     try {
-      const response = await fetchWithTimeout(config.API_URL + "/auth/login", {
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.LOGIN, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

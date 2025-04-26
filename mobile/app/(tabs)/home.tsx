@@ -8,6 +8,7 @@ import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { AntDesign } from '@expo/vector-icons';
 import { fetchWithTimeout } from '@/utils/api';
 import RouteImage from '@/components/RouteImage/RouteImage';
+import { API_PATHS } from "@/constants/paths";
 
 export interface Route {
   id: string;
@@ -22,6 +23,7 @@ const HomeScreen = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [gymId, setGymId] = useState<string | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
   const [gymIdLoading, setGymIdLoading] = useState<boolean>(true);
   const [currentGymName, setCurrentGymName] = useState<string>('');
 
@@ -62,8 +64,7 @@ const HomeScreen = () => {
       setLoading(true);
     
       try {
-        console.log(`Fetching routes for gym ID: ${gymId}`);
-        const response = await fetch(`${config.API_URL}/api/get-routes/${gymId}`);
+        const response = await fetch(config.API_URL + API_PATHS.GET_ROUTES + `?gymId=${gymId}` + (locationId ? `&locationId=${locationId}` : ""));
         if (!response.ok) throw new Error('Failed to fetch routes');
     
         const data = await response.json();

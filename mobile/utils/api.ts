@@ -1,4 +1,5 @@
 import config from '@/config';
+import { API_PATHS } from '@/constants/paths';
 
 export async function fetchWithTimeout(
   url: string,
@@ -30,7 +31,7 @@ export async function fetchWithTimeout(
 // Function to fetch job status with timeout
 const fetchJobStatus = async (jobId: string, timeout: number) => {
   try {
-    const statusResponse = await fetchWithTimeout(`${config.API_URL}/api/job-status/${jobId}`, { method: "GET" }, timeout);
+    const statusResponse = await fetchWithTimeout(config.API_URL + API_PATHS.JOB_STATUS(jobId), { method: "GET" }, timeout);
     const statusData = await statusResponse.json();
 
     if (!statusResponse.ok) {

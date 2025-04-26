@@ -5,6 +5,7 @@ import config from '@/config';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
+import { API_PATHS } from "@/constants/paths";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function RegisterScreen() {
 
     try {
       console.log("Sending registration request to the server...");
-      const response = await fetchWithTimeout(config.API_URL + "/auth/register", {
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.REGISTER, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -12,6 +12,7 @@ import { getFileType } from '@/utils/FileUtils';
 import { fetchWithTimeout } from "@/utils/api";
 import LoadingModal from '@/components/ui/LoadingModal';
 import RouteImage from "@/components/RouteImage/RouteImage";
+import { API_PATHS } from "@/constants/paths";
 
 const CreateRouteScreen = () => {
   const router = useRouter();
@@ -156,7 +157,7 @@ const CreateRouteScreen = () => {
         type: mimeType,
       } as any);
 
-      const response = await fetchWithTimeout(config.API_URL + '/api/create-route', {
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_ROUTE, {
         method: "POST",
         body: formData,
       }, 5000);

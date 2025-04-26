@@ -10,6 +10,7 @@ import config from '@/config';
 import { getFileType } from '@/utils/FileUtils';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
+import { API_PATHS } from "@/constants/paths";
 
 type ImageSize = { width: number; height: number };
 
@@ -103,6 +104,8 @@ const RouteImageCreator: React.FC = () => {
   const handleJobDone = (statusData: any) => {
     const results = statusData.result;
     const predictions = results.predictions;
+
+    console.log(results)
   
     console.log(`Received ${predictions.length} predictions`);
   
@@ -137,7 +140,7 @@ const RouteImageCreator: React.FC = () => {
 
     try {
       // Predictions can take a long variable amount of time so a job is created that the client pings
-      const response = await fetchWithTimeout(config.API_URL + '/api/predict', {
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.PREDICT, {
         method: "POST",
         body: formData,
       }, 10000);

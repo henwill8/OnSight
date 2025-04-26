@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import config from "@/config";
 import { fetchWithTimeout } from "@/utils/api";
+import { API_PATHS } from "@/constants/paths";
 
 export default function Index() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function Index() {
       console.log("Checking authentication status...");
 
       try {
-        const response = await fetchWithTimeout(config.API_URL + "/auth/verify-token", {
+        const response = await fetchWithTimeout(config.API_URL + API_PATHS.VERIFY_TOKEN, {
           method: "GET",
           credentials: "include", // Ensures cookies are sent with the request
         }, 5000);

@@ -6,6 +6,7 @@ import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from '@/config';
 import LoadingModal from '@/components/ui/LoadingModal';  // Import LoadingModal
 import { fetchWithTimeout } from "@/utils/api";  // Import fetchWithTimeout
+import { API_PATHS } from "@/constants/paths";  // Import API paths
 
 const ChooseGym: React.FC = () => {
   const [gyms, setGyms] = useState<any[]>([]);
@@ -22,7 +23,7 @@ const ChooseGym: React.FC = () => {
   const fetchGyms = async () => {
     setLoading(true);  // Start loading
     try {
-      const response = await fetchWithTimeout(`${config.API_URL}/api/list-gyms`, {
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.LIST_GYMS, {
         method: 'GET',
       }, 5000);  // Timeout set to 5 seconds
 
@@ -54,7 +55,7 @@ const ChooseGym: React.FC = () => {
 
     setLoading(true);  // Start loading
     try {
-      const response = await fetchWithTimeout(`${config.API_URL}/api/create-gym`, {
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_GYM, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
