@@ -11,6 +11,7 @@ import DrawingCanvas from "@/components/RouteImage/DrawingCanvas";
 import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
 import { getFittedImageRect } from "@/utils/ImageUtils";
+import { ActivityIndicator } from "react-native";
 
 export interface ClimbingHold {
   coordinates: number[];
@@ -88,6 +89,9 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
 
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null);
+
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [annotationsLoaded, setAnnotationsLoaded] = useState(false);
 
   useEffect(() => {
     Image.getSize(imageURI, (width, height) => {
@@ -206,6 +210,8 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
       } else {
         console.warn("Invalid annotation JSON format");
       }
+
+      setAnnotationsLoaded(true);
     } catch (err) {
       console.error("Failed to load annotation JSON:", err);
     }
@@ -244,19 +250,28 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
 
   return (
     <View style={[style, { position: 'relative', overflow: 'hidden' }]} onLayout={onContainerLayout}>
-      {fittedImage != null && (
+      <Image
+        source={{ uri: imageURI }}
+        onLoad={() => setImageLoaded(true)}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: containerSize?.width,
+          height: containerSize?.height,
+          opacity: (imageLoaded && annotationsLoaded) ? 1 : 0,  // Hide it until both images and annotations are loaded
+        }}
+        {...imageProps}
+      />
+      
+      {(!imageLoaded || !annotationsLoaded) && (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#888" />
+        </View>
+      )}
+  
+      {(imageLoaded && annotationsLoaded) && fittedImage != null && (
         <>
-          <Image
-            source={{ uri: imageURI }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: containerSize?.width,
-              height: containerSize?.height,
-            }}
-            {...imageProps}
-          />
           <ClimbingHoldOverlay
             data={annotationData.climbingHolds}
             onHoldStateChange={updateClimbingHold}
