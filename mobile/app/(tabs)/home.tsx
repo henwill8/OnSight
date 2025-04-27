@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
-import config from '@/config';
-import { useRouter } from 'expo-router';
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { useRouter, useNavigation } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-import { fetchWithTimeout } from '@/utils/api';
-import RouteImage from '@/components/RouteImage/RouteImage';
-import { API_PATHS } from "@/constants/paths";
 
+// Local imports
+import config from '@/config';
+import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { fetchWithTimeout } from '@/utils/api';
+import { API_PATHS } from "@/constants/paths";
+import RouteImage from '@/components/RouteImage/RouteImage';
+
+// Types
 export interface Route {
   id: string;
   name: string;
@@ -19,8 +22,16 @@ export interface Route {
   annotationsUrl: string;
 }
 
+export interface Location {
+  id: string;
+  name: string;
+}
+
 const HomeScreen = () => {
+  // State management
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [childLocations, setChildLocations] = useState<Location[]>([]);
+  const [breadcrumb, setBreadcrumb] = useState<Location[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [gymId, setGymId] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
@@ -28,169 +39,258 @@ const HomeScreen = () => {
   const [currentGymName, setCurrentGymName] = useState<string>('');
 
   const router = useRouter();
+  const navigation = useNavigation();
 
+  // Load gym data when screen is focused
   useFocusEffect(
     useCallback(() => {
       fetchCurrentGymName();
+      loadGymId();
     }, [])
   );
 
+  // Helper functions for data fetching
   const fetchCurrentGymName = async () => {
     const currentGymName = await getItemAsync("gymName");
     setCurrentGymName(currentGymName || "");
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      const loadGymId = async () => {
-        const id = await getItemAsync('gymId');
-        console.log(`Loaded gym ID: ${id}`);
-        setGymId(id);
-        setGymIdLoading(false);
-      };
-      loadGymId();
-    }, [])
-  );
+  const loadGymId = async () => {
+    const id = await getItemAsync('gymId');
+    setGymId(id);
+    setGymIdLoading(false);
+  };
 
   useEffect(() => {
-    const fetchRoutes = async () => {
-      if (!gymId) {
-        console.error('No gym ID found');
-        setRoutes([]);
-        setLoading(false);
-        return;
-      }
-    
-      setLoading(true);
-    
-      try {
-        const response = await fetch(config.API_URL + API_PATHS.GET_ROUTES + `?gymId=${gymId}` + (locationId ? `&locationId=${locationId}` : ""));
-        if (!response.ok) throw new Error('Failed to fetch routes');
-    
-        const data = await response.json();
-    
-        const routesWithSignedUrls = await Promise.all(
-          data.map(async (route: any) => {
-            try {
-              const imageUrlRes = await fetchWithTimeout(
-                route.imageUrl,
-                {
-                  method: 'GET',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                }
-              );
-    
-              if (!imageUrlRes.ok) throw new Error('Failed to get signed URL');
-
-              const annotationsUrlRes = await fetchWithTimeout(
-                route.annotationsUrl,
-                {
-                  method: 'GET',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                }
-              );
-    
-              const { url: imageUrl } = await imageUrlRes.json();
-
-              let annotationsUrl = "";
-              if (annotationsUrlRes.ok) {
-                const { url } = await annotationsUrlRes.json();
-                annotationsUrl = url;
-              }
-
-              return { ...route, imageUrl: imageUrl, annotationsUrl: annotationsUrl };
-            } catch (err) {
-              console.error(`Error getting signed URL for image: ${route.imageUrl}`, err);
-              return { ...route, signedImageUrl: null };
-            }
-          })
-        );
-    
-        setRoutes(routesWithSignedUrls);
-      } catch (error) {
-        console.error('Error fetching routes:', error);
-        setRoutes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!gymIdLoading && gymId) {
-      fetchRoutes();
+    if (currentGymName) {
+      navigation.setOptions({ headerTitle: currentGymName ? currentGymName : "No Gym Selected" });
     }
-  }, [gymId, gymIdLoading]);
+  }, [currentGymName, navigation]);
 
+  // Main data fetching effect
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        if (!gymId) return;
+
+        setLoading(true);
+        try {
+          await Promise.all([
+            fetchRoutes(),
+            fetchChildLocations(),
+            fetchBreadcrumb()
+          ]);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setRoutes([]);
+          setChildLocations([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (!gymIdLoading && gymId) {
+        fetchData();
+      }
+    }, [gymId, locationId, gymIdLoading])
+  );
+
+  // Specific data fetching functions
+  const fetchRoutes = async () => {
+    const routesUrl = `${config.API_URL}${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ""}`;
+    const routesRes = await fetch(routesUrl);
+    
+    if (!routesRes.ok) throw new Error('Failed to fetch routes');
+    const routeData = await routesRes.json();
+
+    const routesWithSignedUrls = await Promise.all(
+      routeData.map(async (route: any) => {
+        try {
+          const imageUrlRes = await fetchWithTimeout(route.imageUrl, { 
+            method: 'GET', 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+          
+          const annotationsUrlRes = await fetchWithTimeout(route.annotationsUrl, { 
+            method: 'GET', 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+
+          const { url: imageUrl } = await imageUrlRes.json();
+          let annotationsUrl = "";
+
+          if (annotationsUrlRes.ok) {
+            const { url } = await annotationsUrlRes.json();
+            annotationsUrl = url;
+          }
+
+          return { ...route, imageUrl, annotationsUrl };
+        } catch (err) {
+          console.error(`Error getting signed URL for route: ${route.imageUrl}`, err);
+          return { ...route, signedImageUrl: null };
+        }
+      })
+    );
+    
+    setRoutes(routesWithSignedUrls);
+  };
+
+  const fetchChildLocations = async () => {
+    const childUrl = `${config.API_URL}${API_PATHS.GET_CHILD_LOCATIONS(gymId || "")}${locationId ? `?parentId=${locationId}` : ""}`;
+    const childRes = await fetch(childUrl);
+    
+    if (!childRes.ok) throw new Error('Failed to fetch child locations');
+    const childData = await childRes.json();
+    
+    setChildLocations(childData.locations || []);
+  };
+
+  const fetchBreadcrumb = async () => {
+    if (!locationId) {
+      setBreadcrumb([]);
+      return;
+    }
+    
+    const breadcrumbUrl = `${config.API_URL}${API_PATHS.GET_LOCATION_ANCESTRY(locationId)}`;
+    const breadcrumbRes = await fetch(breadcrumbUrl);
+    
+    if (!breadcrumbRes.ok) throw new Error('Failed to fetch breadcrumb');
+    const breadcrumbData = await breadcrumbRes.json();
+    
+    setBreadcrumb(breadcrumbData.ancestry || []);
+  };
+
+  // Event handlers
   const handleRoutePress = (route: Route) => {
-    router.push(`/routes/routeDetail?route=${encodeURIComponent(JSON.stringify(route))}`);
+    router.push('/routes/routeDetail');
+    router.setParams({ route: encodeURIComponent(JSON.stringify(route)) });
+  };
+
+  const handleLocationPress = (location: Location) => {
+    setLocationId(location.id);
+  };
+
+  const handleBreadcrumbPress = (locationIndex: number) => {
+    if (locationIndex === -1) {
+      setLocationId(null); // back to gym root
+    } else {
+      setLocationId(breadcrumb[locationIndex].id);
+    }
   };
 
   const handleAddRoute = () => {
     router.push('/routes/createRoute');
+    router.setParams({ locationId: locationId });
   };
 
+  // Render components
+  const renderBreadcrumb = () => (
+    <ScrollView 
+      horizontal 
+      showsHorizontalScrollIndicator={false} 
+      style={styles.breadcrumbContainer}
+      contentContainerStyle={styles.breadcrumbContent}
+    >
+      <TouchableOpacity onPress={() => handleBreadcrumbPress(-1)}>
+        <Text style={styles.breadcrumbItem}>Home</Text>
+      </TouchableOpacity>
+      {breadcrumb.map((loc, idx) => (
+        <View key={loc.id} style={styles.breadcrumbGroup}>
+          <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
+          <TouchableOpacity onPress={() => handleBreadcrumbPress(idx)}>
+            <Text style={styles.breadcrumbItem}>{loc.name}</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+    </ScrollView>
+  );
+
+  const renderChildLocations = () => {
+    if (childLocations.length === 0)
+      return;
+
+    return (
+      <View style={styles.childLocationsContainer}>
+      <FlatList
+        data={childLocations}
+        keyExtractor={(item) => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.childLocationCard}
+            onPress={() => handleLocationPress(item)}
+          >
+            <Text style={styles.childLocationName}>{item.name}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+    );
+  };
+
+  const renderRoutes = () => {
+    if (routes.length === 0) {
+      return (
+        <View style={styles.emptyRoutesContainer}>
+          <Text style={styles.emptyText}>No routes found for this location</Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={routes}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
+            <RouteImage
+              imageURI={item.imageUrl}
+              dataURL={item.annotationsUrl}
+              style={styles.routeImage}
+              imageProps={{ resizeMode: "cover" }}
+            />
+            <View style={styles.routeInfo}>
+              <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
+              <Text style={styles.routeDescription}>{item.description || 'No Description'}</Text>
+              <Text style={styles.routeDifficulty}>Difficulty: {item.difficulty}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    );
+  };
+
+  // Main render
   return (
     <View style={globalStyles.container}>
       {loading || gymIdLoading ? (
         <ActivityIndicator size="large" color="#06d6a0" />
       ) : (
-        <>
-          {currentGymName ? (
-            <Text style={[styles.text, { marginVertical: 30, textAlign: "center", fontWeight: 500, fontSize: 25 }]}>
-              {currentGymName}
-            </Text>
-          ) : (
-            <Text style={[styles.text, { marginVertical: 30, textAlign: "center" }]}>
-              No gym selected.
-            </Text>
-          )}
+        <View style={{ flex: 1 }}>
+          {/* Breadcrumb Navigation */}
+          {renderBreadcrumb()}
 
-          {routes.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No routes found for this gym</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={routes}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
-                  <RouteImage
-                    imageURI={item.imageUrl}
-                    dataURL={item.annotationsUrl}
-                    style={styles.routeImage}
+          {/* Child Locations */}
+          {renderChildLocations()}
 
-                    imageProps={{ resizeMode: "cover" }}
-                  />
-                  <View style={styles.routeInfo}>
-                    <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
-                    <Text style={styles.routeDescription}>{item.description || 'No Description'}</Text>
-                    <Text style={styles.routeDifficulty}>Difficulty: {item.difficulty}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        </>
+          {/* Routes */}
+          {renderRoutes()}
+        </View>
       )}
 
-      {currentGymName ? (
-        // Only allow users to create a route if a gym is selected
+      {/* Add Button - only show when gym is selected */}
+      {currentGymName && (
         <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
           <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
         </TouchableOpacity>
-      ) : (
-        <></>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  emptyContainer: {
+  emptyRoutesContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -198,6 +298,53 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     color: '#999',
+  },
+  breadcrumbContainer: {
+    flexDirection: 'row',
+    marginVertical: 10,
+    paddingHorizontal: 10,
+    maxHeight: 30,
+  },
+  breadcrumbContent: {
+    alignItems: 'center',
+    height: 30,
+  },
+  breadcrumbGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 30,
+  },
+  breadcrumbItem: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    marginHorizontal: 5,
+  },
+  breadcrumbSeparator: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginHorizontal: 2,
+    lineHeight: 20,
+  },
+  childLocationsContainer: {
+    height: 50,
+    marginBottom: 10,
+  },
+  childLocationCard: {
+    padding: 10,
+    backgroundColor: COLORS.primary,
+    marginRight: 10,
+    marginBottom: 10,
+    borderRadius: 8,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  childLocationName: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 20,
   },
   routeCard: {
     flexDirection: 'row',
@@ -252,10 +399,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-  },
-  text: {
-    fontSize: 18,
-    color: COLORS.textPrimary,
   },
 });
 

@@ -24,23 +24,28 @@ const CreateRouteScreen = () => {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [annotationsData, setAnnotationsData] = useState<string | null>(null);
 
+  const [locationId, setLocationId] = useState<string | null>(null);
+
   const [canSubmit, setCanSubmit] = useState(false);
   const [gymName, setGymName] = useState<string>('');
   const [loading, setLoading] = useState(false);  // State for loading modal
 
-  const { exportedUri, annotationsJSON } = useLocalSearchParams();
+  const { locationId: locationIdParam, exportedUri, annotationsJSON } = useLocalSearchParams();
+
+  console.log("Location ID Param:", locationId);
 
   useFocusEffect(
     useCallback(() => {
       if (exportedUri) {
-        setImageUri(Array.isArray(exportedUri) ? exportedUri[0] : exportedUri || null);
+        setImageUri(exportedUri as string);
       }
   
       if (annotationsJSON) {
-        const normalizedJSON = Array.isArray(annotationsJSON)
-          ? annotationsJSON[0]
-          : annotationsJSON;
-        setAnnotationsData(normalizedJSON);
+        setAnnotationsData(annotationsJSON as string);
+      }
+
+      if (locationIdParam) {
+        setLocationId(locationIdParam as string);
       }
     }, [exportedUri, annotationsJSON])
   );
@@ -148,7 +153,7 @@ const CreateRouteScreen = () => {
       formData.append("difficulty", difficulty || "");  
       formData.append("gymId", gymId || "");
       formData.append("annotations", annotationsData || "");
-      formData.append("locationId", ""); // TODO: update to actually represent the location
+      formData.append("locationId", locationId || ""); // TODO: update to actually represent the location
 
       const { extension, mimeType } = getFileType(imageUri);
       formData.append("image", {
@@ -165,7 +170,7 @@ const CreateRouteScreen = () => {
       const data = await response.json();
       if (response.ok) {
         Alert.alert('Success', 'Route created successfully!'); // TODO: switch away from alerts to have more control over styling
-        router.replace("/(tabs)/home");
+        router.back();
       } else {
         console.error('Error creating route:', data.error);
         Alert.alert('Error', 'Failed to create route');
