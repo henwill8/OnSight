@@ -32,8 +32,6 @@ const CreateRouteScreen = () => {
 
   const { locationId: locationIdParam, exportedUri, annotationsJSON } = useLocalSearchParams();
 
-  console.log("Location ID Param:", locationId);
-
   useFocusEffect(
     useCallback(() => {
       if (exportedUri) {
@@ -171,6 +169,7 @@ const CreateRouteScreen = () => {
       if (response.ok) {
         Alert.alert('Success', 'Route created successfully!'); // TODO: switch away from alerts to have more control over styling
         router.back();
+        router.setParams({ shouldReload: 1})
       } else {
         console.error('Error creating route:', data.error);
         Alert.alert('Error', 'Failed to create route');

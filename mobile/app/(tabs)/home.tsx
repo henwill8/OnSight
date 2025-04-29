@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { getItemAsync } from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 
 // Local imports
@@ -41,22 +41,27 @@ const HomeScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
 
-  // Load gym data when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      fetchCurrentGymName();
-      loadGymId();
-    }, [])
-  );
+  const { shouldReload } = useLocalSearchParams();
+
+  useFocusEffect(() => {
+    const loadGymData = async () => {
+      await fetchCurrentGymName();
+      await loadGymId();
+    };
+
+    loadGymData();
+  });
 
   // Helper functions for data fetching
   const fetchCurrentGymName = async () => {
     const currentGymName = await getItemAsync("gymName");
     setCurrentGymName(currentGymName || "");
+    console.log("Current gym name:", currentGymName);
   };
 
   const loadGymId = async () => {
     const id = await getItemAsync('gymId');
+    console.log(id, gymId);
     setGymId(id);
     setGymIdLoading(false);
   };
@@ -66,34 +71,39 @@ const HomeScreen = () => {
       navigation.setOptions({ headerTitle: currentGymName ? currentGymName : "No Gym Selected" });
     }
   }, [currentGymName, navigation]);
+  
+  // Data fetching effects (fetch on gymId change or when shouldReload is true)
+  useEffect(() => {
+    if (gymId !== null) {
+      console.log("Gym ID loaded:", gymId);
+      fetchData();
+    }
+  }, [gymId, locationId]);
 
-  // Main data fetching effect
-  useFocusEffect(
-    useCallback(() => {
-      const fetchData = async () => {
-        if (!gymId) return;
+  useEffect(() => {
+    if (shouldReload) {
+      fetchData();
 
-        setLoading(true);
-        try {
-          await Promise.all([
-            fetchRoutes(),
-            fetchChildLocations(),
-            fetchBreadcrumb()
-          ]);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          setRoutes([]);
-          setChildLocations([]);
-        } finally {
-          setLoading(false);
-        }
-      };
+      router.setParams({ shouldReload: 0 }) // Reset shouldReload after data fetch
+    }
+  }, [shouldReload]);
 
-      if (!gymIdLoading && gymId) {
-        fetchData();
+  const fetchData = async () => {
+    if (gymId) {
+      console.log("Fetching data for gymId:", gymId, "and locationId:", locationId);
+
+      setLoading(true);
+      try {
+        await Promise.all([fetchRoutes(), fetchChildLocations(), fetchBreadcrumb()]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setRoutes([]);
+        setChildLocations([]);
+      } finally {
+        setLoading(false);
       }
-    }, [gymId, locationId, gymIdLoading])
-  );
+    }
+  };
 
   // Specific data fetching functions
   const fetchRoutes = async () => {
