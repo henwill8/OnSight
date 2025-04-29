@@ -136,7 +136,7 @@ const Draw: React.FC<DrawProps> = ({
 
   return (
     <View
-      style={{ width: "100%", height: "100%" }}
+      style={style}
       {...(interactable ? panResponder.panHandlers : {})}
       pointerEvents={interactable && canDraw ? "auto" : "none"}
     >

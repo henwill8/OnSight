@@ -16,7 +16,6 @@ import { ActivityIndicator } from "react-native";
 export interface ClimbingHold {
   coordinates: number[];
   holdSelectionState: HOLD_SELECTION;
-  scaled: boolean;
 }
 
 export interface Segment {
@@ -225,22 +224,30 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   };
 
   useEffect(() => {
-    if (dataJSON !== "") {
-      loadAnnotationJSON(dataJSON);
-    } else if (dataURL !== "") {
-      (async () => {
-        try {
+    const loadData = async () => {
+      try {
+        if (dataJSON) {
+          loadAnnotationJSON(dataJSON);
+        } else if (dataURL) {
           const response = await fetch(dataURL);
           if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+          
           const jsonText = await response.text();
           loadAnnotationJSON(jsonText);
-        } catch (err) {
-          console.error("Failed to fetch or load annotation data from URL:", err);
         }
-      })();
-    } else {
-      setAnnotationsLoaded(true);  // No data to load, so set as loaded
+        setAnnotationsLoaded(true);
+      } catch (err) {
+        console.error("Failed to load annotation data:", err);
+        setAnnotationsLoaded(false);
+      }
+    };
+  
+    if (!dataJSON && !dataURL) {
+      setAnnotationsLoaded(true);  // No data to load
+      return;
     }
+  
+    loadData();
   }, [dataJSON, dataURL]);
 
   useImperativeHandle(ref, () => ({
@@ -295,9 +302,6 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
             interactable={interactable}
             {...drawingCanvasProps}
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
               width: '100%',
               height: '100%',
             }}
