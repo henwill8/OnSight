@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { getItemAsync } from 'expo-secure-store';
+import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter, useNavigation, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
@@ -54,13 +54,13 @@ const HomeScreen = () => {
 
   // Helper functions for data fetching
   const fetchCurrentGymName = async () => {
-    const currentGymName = await getItemAsync("gymName");
+    const currentGymName = await getSecureItem("gymName");
     setCurrentGymName(currentGymName || "");
     console.log("Current gym name:", currentGymName);
   };
 
   const loadGymId = async () => {
-    const id = await getItemAsync('gymId');
+    const id = await getSecureItem('gymId');
     console.log(id, gymId);
     setGymId(id);
     setGymIdLoading(false);

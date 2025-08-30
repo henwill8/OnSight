@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, FlatList, TextInput, Alert, TouchableOpacity } from 'react-native';
-import { setItemAsync, getItemAsync } from 'expo-secure-store';
+import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
 import { StyleSheet } from 'react-native';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from '@/config';
@@ -43,7 +43,7 @@ const ChooseGym: React.FC = () => {
   };
 
   const fetchCurrentGymName = async () => {
-    const currentGymName = await getItemAsync("gymName");
+    const currentGymName = await getSecureItem("gymName");
     setCurrentGymName(currentGymName || "");
   };
 
@@ -87,8 +87,8 @@ const ChooseGym: React.FC = () => {
   const renderGymItem = ({ item }: { item: any }) => {
     const handlePress = async () => {
       try {
-        await setItemAsync("gymId", item.id);
-        await setItemAsync("gymName", item.name);
+        await setSecureItem("gymId", item.id);
+        await setSecureItem("gymName", item.name);
         setCurrentGymName(item.name);
         console.log(`Gym ID ${item.id} selected.`);
       } catch (error) {

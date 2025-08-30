@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react';
-import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReactNativeZoomableView } from 'react-native-zoomable-view';
@@ -128,13 +128,23 @@ const RouteImageCreator: React.FC = () => {
   const sendImageToServer = useCallback(async (uri: string) => {
     console.log("Sending to server...");
 
-    const formData = new FormData();
     const { extension, mimeType } = getFileType(uri);
-    formData.append("image", {
-      uri,
-      name: `photo.${extension}`,
-      type: mimeType,
-    } as any);
+    const formData = new FormData();
+
+    if (Platform.OS === "web") {
+      // For web, fetch the file as a blob
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const file = new File([blob], `photo.${extension}`, { type: mimeType });
+      formData.append("image", file);
+    } else {
+      // For React Native
+      formData.append("image", {
+        uri,
+        name: `photo.${extension}`,
+        type: mimeType,
+      } as any);
+    }
 
     try {
       // Predictions can take a long variable amount of time so a job is created that the client pings

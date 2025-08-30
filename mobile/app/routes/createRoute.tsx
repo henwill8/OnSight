@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback, useLayoutEffect } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image, Modal, ActivityIndicator } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image, Modal, ActivityIndicator, Platform } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
-import { setItemAsync, getItemAsync } from 'expo-secure-store';
+import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
 import { useFocusEffect } from '@react-navigation/native';
 import RNPickerSelect from 'react-native-picker-select';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
@@ -59,7 +59,7 @@ const CreateRouteScreen = () => {
   }, [navigation]);
 
   const fetchCurrentGymName = async () => {
-    const currentGymName = await getItemAsync("gymName");
+    const currentGymName = await getSecureItem("gymName");
     setGymName(currentGymName || "");
   };
 
@@ -143,7 +143,7 @@ const CreateRouteScreen = () => {
     setLoading(true);
 
     try {
-      const gymId = await getItemAsync("gymId");
+      const gymId = await getSecureItem("gymId");
 
       const formData = new FormData();
       formData.append("name", name);  
@@ -154,11 +154,20 @@ const CreateRouteScreen = () => {
       formData.append("locationId", locationId || ""); // TODO: update to actually represent the location
 
       const { extension, mimeType } = getFileType(imageUri);
-      formData.append("image", {
-        uri: imageUri,
-        name: `photo.${extension}`,
-        type: mimeType,
-      } as any);
+      if (Platform.OS === "web") {
+        // For web, fetch the file as a blob
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const file = new File([blob], `photo.${extension}`, { type: mimeType });
+        formData.append("image", file);
+      } else {
+        // For React Native
+        formData.append("image", {
+          imageUri,
+          name: `photo.${extension}`,
+          type: mimeType,
+        } as any);
+      }
 
       const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_ROUTE, {
         method: "POST",

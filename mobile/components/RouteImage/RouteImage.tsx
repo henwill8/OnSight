@@ -7,7 +7,7 @@ import React, {
   ForwardRefRenderFunction,
 } from "react";
 import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode } from "react-native";
-import DrawingCanvas from "@/components/RouteImage/DrawingCanvas";
+import DrawWrapper from "@/components/RouteImage/DrawingCanvasWrapper";
 import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
 import { getFittedImageRect } from "@/utils/ImageUtils";
@@ -295,7 +295,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
               height: '100%',
             }}
           />
-          <DrawingCanvas
+          <DrawWrapper
             data={annotationData.drawingPaths}
             onAddPath={addDrawingPath}
             fittedImageRect={fittedImage}
