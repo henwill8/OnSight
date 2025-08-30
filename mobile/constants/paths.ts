@@ -20,3 +20,5 @@ export const API_PATHS = {
   JOB_STATUS: (jobsId: string) => `/api/jobs/${jobsId}`,
   GET_ASSET: (key: string) => `/api/assets/${key}`,
 };
+
+// TODO: create a remapping list for paths that change
