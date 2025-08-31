@@ -1,5 +1,6 @@
 import config from '@/config';
 import { API_PATHS } from '@/constants/paths';
+import { router } from 'expo-router';
 
 export async function fetchWithTimeout(
   url: string,
@@ -17,6 +18,13 @@ export async function fetchWithTimeout(
     try {
       const response = await fetch(url, { ...options, signal: controller.signal, credentials: 'include' });
       clearTimeout(timer);
+
+      if (response.status === 401 || response.status === 403) {
+        console.warn(`[fetchWithTimeout] Unauthorized (${response.status}), redirecting to /auth/login`);
+        router.replace('/auth/login');
+        return response;
+      }
+
       return response;
     } catch (error: any) {
       clearTimeout(timer);
@@ -37,7 +45,6 @@ export async function fetchWithTimeout(
     }
   }
 
-  // This should technically never run
   throw new Error("fetchWithTimeout: exhausted retries without success.");
 }
 

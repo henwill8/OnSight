@@ -5,7 +5,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
 import { useFocusEffect } from '@react-navigation/native';
-import RNPickerSelect from 'react-native-picker-select';
+import RNPickerSelect from 'react-native-picker-select'; // TODO: reimplement
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import config from "@/config";
 import { getFileType } from '@/utils/FileUtils';
