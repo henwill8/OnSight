@@ -1,6 +1,6 @@
 import React, { useReducer, useMemo } from "react";
 import { Svg, Rect, Mask, Path } from "react-native-svg";
-import { View, ViewStyle } from "react-native";
+import { View, ViewStyle, Platform } from "react-native";
 import { SIZES } from "@/constants/theme";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
 import { ClimbingHold } from "./RouteImage";
@@ -189,6 +189,27 @@ const createSmoothPath = (coords: number[], smoothingFactor: number): string => 
   return path;
 };
 
+// Point in polygon test for hit detection on web
+const pointInPolygon = (point: [number, number], polygon: number[]): boolean => {
+  const x = point[0];
+  const y = point[1];
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 2; i < polygon.length; i += 2) {
+    const xi = polygon[i];
+    const yi = polygon[i + 1];
+    const xj = polygon[j];
+    const yj = polygon[j + 1];
+    
+    if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+    j = i;
+  }
+  
+  return inside;
+};
+
 const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   data,
   fittedImageRect,
@@ -201,17 +222,21 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
 }) => {
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
-  const { smoothPaths, shouldRenderGrayBackground } = useMemo(() => {
+  // Generate a random mask ID for this instance
+  const maskId = useMemo(() => `holdMask_${Math.random().toString(36).substr(2, 9)}`, []);
+
+  const { smoothPaths, scaledCoordinates, shouldRenderGrayBackground } = useMemo(() => {
     const { scaleX, scaleY, offsetX, offsetY } = fittedImageRect;
 
-    const smoothPaths = data.map((hold) => {
-      // First scale and translate the coordinates
-      const scaledCoords = hold.coordinates.map((c, i) => 
+    const scaledCoordinates = data.map((hold) => 
+      hold.coordinates.map((c, i) => 
         i % 2 === 0 ? c * scaleX + offsetX : c * scaleY + offsetY
-      );
-      
+      )
+    );
+
+    const smoothPaths = scaledCoordinates.map((coords) => {
       // Simplify the polygon to reduce the number of points
-      const simplifiedCoords = simplifyPolygon(scaledCoords, simplifyTolerance * scaleX);
+      const simplifiedCoords = simplifyPolygon(coords, simplifyTolerance * scaleX);
       
       // Convert simplified points to a smooth path
       return createSmoothPath(simplifiedCoords, smoothingFactor);
@@ -221,7 +246,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
       (hold) => hold.holdSelectionState !== HOLD_SELECTION.UNSELECTED
     );
 
-    return { smoothPaths, shouldRenderGrayBackground };
+    return { smoothPaths, scaledCoordinates, shouldRenderGrayBackground };
   }, [data, fittedImageRect, simplifyTolerance, smoothingFactor]);
 
   const colorMap: Record<HOLD_SELECTION, string> = {
@@ -246,21 +271,48 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
     onHoldStateChange?.(index, newState, prevState);
   };
 
+  // Web-specific click handler
+  const handleWebClick = (event: any) => {
+    if (!interactable) return;
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Check each hold to see if the click point is inside
+    for (let i = data.length - 1; i >= 0; i--) { // iterate backwards to prioritize smallest holds
+      const hold = data[i];
+      
+      if (pointInPolygon([x, y], scaledCoordinates[i])) {
+        handlePolygonPress(hold, i);
+        break;
+      }
+    }
+  };
+
   const { scaleX } = fittedImageRect; // Used to scale the stroke width
 
   return (
     <View style={style}>
-      <Svg width="100%" height="100%" style={{ position: "absolute" }} pointerEvents={interactable ? "auto" : "none"}>
-        <Mask id="mask1">
-          <Rect x="0" y="0" width="100%" height="100%" fill="white" />
-          {smoothPaths.map((pathData, index) => {
-            const hold = data[index];
-            if (hold.holdSelectionState !== HOLD_SELECTION.UNSELECTED) {
-              return <Path key={index} d={pathData} fill="black" />;
-            }
-            return null;
-          })}
-        </Mask>
+      <Svg 
+        width="100%" 
+        height="100%" 
+        style={{ position: "absolute" }} 
+        pointerEvents={interactable ? "auto" : "none"}
+        onPress={Platform.OS === 'web' ? handleWebClick : undefined}
+      >
+        <defs>
+          <Mask id={maskId} x="0" y="0" width="100%" height="100%">
+            <Rect x="0" y="0" width="100%" height="100%" fill="white" />
+            {smoothPaths.map((pathData, index) => {
+              const hold = data[index];
+              if (hold.holdSelectionState !== HOLD_SELECTION.UNSELECTED) {
+                return <Path key={index} d={pathData} fill="black" />;
+              }
+              return null;
+            })}
+          </Mask>
+        </defs>
 
         {shouldRenderGrayBackground && (
           <Rect
@@ -269,10 +321,8 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
             width="100%"
             height="100%"
             fill="rgb(0, 0, 0)"
-            opacity={0.2}
-            mask="url(#mask1)"
-            rx={SIZES.borderRadius}
-            ry={SIZES.borderRadius}
+            opacity={0.5}
+            mask={`url(#${maskId})`}
           />
         )}
 
@@ -291,7 +341,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
               strokeWidth={4 * scaleX}
               strokeLinejoin="round"
               strokeLinecap="round"
-              onPressIn={() => handlePolygonPress(hold, index)}
+              onPressIn={Platform.OS !== 'web' ? () => handlePolygonPress(hold, index) : undefined}
             />
           );
         })}

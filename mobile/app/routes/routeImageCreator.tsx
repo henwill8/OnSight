@@ -239,15 +239,27 @@ const RouteImageCreator: React.FC = () => {
           zoomStep={0.5}
           initialZoom={1.0}
           bindToBorders={true}
-          style={{ width: imageDimensions.width * scaleX, height: imageDimensions.height * scaleY, borderRadius: SIZES.borderRadius }}
-          panEnabled={selectedColor == null}
+          style={{ 
+            width: imageDimensions.width * scaleX, 
+            height: imageDimensions.height * scaleY, 
+            borderRadius: SIZES.borderRadius 
+          }}
+          // Disable pan/zoom entirely on web when not drawing
+          panEnabled={Platform.OS === 'web' ? selectedColor != null : selectedColor == null}
+          zoomEnabled={Platform.OS === 'web' ? selectedColor != null : true}
           disableMomentum={selectedColor != null}
           onStartShouldSetPanResponder={(evt, gestureState) => {
-            // dont let zoomable view become pan responder if the player is drawing
-            return selectedColor == null || gestureState.numberActiveTouches > 1
+            if (Platform.OS === 'web') {
+              // On web, only allow pan responder when drawing
+              return selectedColor != null;
+            }
+            // On mobile, original logic
+            return selectedColor != null || gestureState.numberActiveTouches > 1;
           }}
           onMoveShouldSetPanResponderCapture={(evt, gestureState) => {
-            // If gesture starts as single touch, but becomes multi-touch, take control
+            if (Platform.OS === 'web') {
+              return false; // Don't capture on web
+            }
             return gestureState.numberActiveTouches > 1;
           }}
         >
