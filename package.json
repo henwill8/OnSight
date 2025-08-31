@@ -7,7 +7,8 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
+    "build:web": "npx expo export --platform web",
+    "serve:web": "npx serve dist",
     "test": "jest --watchAll",
     "lint": "expo lint"
   },
@@ -52,8 +53,9 @@
     "react-native-screens": "~4.10.0",
     "react-native-svg": "15.11.2",
     "react-native-view-shot": "~4.0.3",
+    "react-native-web": "^0.20.0",
     "react-native-zoomable-view": "git+https://github.com/henwill8/react-native-zoomable-view.git",
-    "react-native-web": "^0.20.0"
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "@types/mime-types": "^2.1.4",
