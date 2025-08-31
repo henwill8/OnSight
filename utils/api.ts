@@ -15,7 +15,7 @@ export async function fetchWithTimeout(
     console.log(`[fetchWithTimeout] Attempt ${attempt}/${retries} to ${url} with timeout: ${timeout}ms`);
 
     try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
+      const response = await fetch(url, { ...options, signal: controller.signal, credentials: 'include' });
       clearTimeout(timer);
       return response;
     } catch (error: any) {
