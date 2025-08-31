@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:web": "npx expo export --platform web",
-    "serve:web": "npx serve dist -s -p $PORT -l tcp://0.0.0.0:$PORT",
+    "serve:web": "npx serve dist -s -p $PORT --host 0.0.0.0",
     "test": "jest --watchAll",
     "lint": "expo lint"
   },
