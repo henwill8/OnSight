@@ -81,24 +81,15 @@ const RouteDetail = () => {
       <View style={styles.imageContainer}>
         {/* Image */}
         {scaledImageDimensions && (
-          <ReactNativeZoomableView
-            maxZoom={10.0}
-            minZoom={0.5}
-            zoomStep={0.5}
-            initialZoom={1.0}
-            bindToBorders={true}
-            style={{ width: scaledImageDimensions.width, height: scaledImageDimensions.height }}
-          >
-            <RouteImage
-              imageURI={routeDetails.imageUrl}
-              dataURL={routeDetails.annotationsUrl}
-              style={{
-                width: scaledImageDimensions.width,
-                height: scaledImageDimensions.height,
-                borderRadius: SIZES.borderRadius,
-              }}
-            />
-          </ReactNativeZoomableView>
+          <RouteImage
+            imageURI={routeDetails.imageUrl}
+            dataURL={routeDetails.annotationsUrl}
+            style={{
+              width: scaledImageDimensions.width,
+              height: scaledImageDimensions.height,
+              borderRadius: SIZES.borderRadius,
+            }}
+          />
         )}
       </View>
 

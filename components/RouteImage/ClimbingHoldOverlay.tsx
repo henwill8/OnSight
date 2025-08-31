@@ -271,35 +271,56 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
     onHoldStateChange?.(index, newState, prevState);
   };
 
-  // Web-specific click handler
-  const handleWebClick = (event: any) => {
-    if (!interactable) return;
-    
+  const clickThreshold = 5; // max pixels movement to still count as a click
+  let pointerStart: { x: number; y: number } | null = null;
+
+  const handlePointerDown = (event: any) => {
+    pointerStart = { x: event.clientX, y: event.clientY };
+  };
+
+  const handlePointerMove = (event: any) => {
+    if (!pointerStart) return;
+
+    const dx = event.clientX - pointerStart.x;
+    const dy = event.clientY - pointerStart.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > clickThreshold) {
+      pointerStart = null; // cancel click
+    }
+  };
+
+  const handlePointerUp = (event: any) => {
+    if (!pointerStart) return; // movement exceeded threshold, ignore
+
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    // Check each hold to see if the click point is inside
-    for (let i = data.length - 1; i >= 0; i--) { // iterate backwards to prioritize smallest holds
+    const x = (event.clientX - rect.left) / (rect.width / fittedImageRect.width);
+    const y = (event.clientY - rect.top) / (rect.height / fittedImageRect.height);
+
+    // handle your polygon hit detection
+    for (let i = data.length - 1; i >= 0; i--) {
       const hold = data[i];
-      
       if (pointInPolygon([x, y], scaledCoordinates[i])) {
         handlePolygonPress(hold, i);
         break;
       }
     }
+
+    pointerStart = null; // reset
   };
 
   const { scaleX } = fittedImageRect; // Used to scale the stroke width
 
   return (
-    <View style={style}>
+    <View style={style}  pointerEvents={interactable ? "auto" : "none"}>
       <Svg 
         width="100%" 
         height="100%" 
         style={{ position: "absolute" }} 
         pointerEvents={interactable ? "auto" : "none"}
-        onPress={Platform.OS === 'web' ? handleWebClick : undefined}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
       >
         <defs>
           <Mask id={maskId} x="0" y="0" width="100%" height="100%">
@@ -341,7 +362,6 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
               strokeWidth={4 * scaleX}
               strokeLinejoin="round"
               strokeLinecap="round"
-              onPressIn={Platform.OS !== 'web' ? () => handlePolygonPress(hold, index) : undefined}
             />
           );
         })}

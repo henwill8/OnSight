@@ -190,7 +190,7 @@ const RouteImageCreator: React.FC = () => {
     const aspectRatio = imageDimensions.width / imageDimensions.height;
     
     // Account for UI elements and safe areas
-    const availableHeight = screenHeight - insets.top - insets.bottom - 160; // Subtract space for buttons
+    const availableHeight = screenHeight - insets.top - insets.bottom - 220; // Subtract space for buttons
     const availableWidth = screenWidth - insets.left - insets.right;
     
     // Try fitting by width first
@@ -233,59 +233,28 @@ const RouteImageCreator: React.FC = () => {
       </View>
 
       {imageDimensions && (
-        <ReactNativeZoomableView
-          maxZoom={10.0}
-          minZoom={0.5}
-          zoomStep={0.5}
-          initialZoom={1.0}
-          bindToBorders={true}
-          style={{ 
-            width: imageDimensions.width * scaleX, 
-            height: imageDimensions.height * scaleY, 
-            borderRadius: SIZES.borderRadius 
+        <RouteImage
+          ref={routeAnnotationRef}
+          style={{
+            borderRadius: SIZES.borderRadius,
+            width: imageDimensions.width * scaleX,
+            height: imageDimensions.height * scaleY,
           }}
-          // Disable pan/zoom entirely on web when not drawing
-          panEnabled={Platform.OS === 'web' ? selectedColor != null : selectedColor == null}
-          zoomEnabled={Platform.OS === 'web' ? selectedColor != null : true}
-          disableMomentum={selectedColor != null}
-          onStartShouldSetPanResponder={(evt, gestureState) => {
-            if (Platform.OS === 'web') {
-              // On web, only allow pan responder when drawing
-              return selectedColor != null;
-            }
-            // On mobile, original logic
-            return selectedColor != null || gestureState.numberActiveTouches > 1;
+          imageURI={imageUriString}
+          interactable={true}
+          climbingHoldOverlayProps={{
+            showUnselectedHolds: showUnselectedHolds,
           }}
-          onMoveShouldSetPanResponderCapture={(evt, gestureState) => {
-            if (Platform.OS === 'web') {
-              return false; // Don't capture on web
-            }
-            return gestureState.numberActiveTouches > 1;
+          drawingCanvasProps={{
+            canDraw: selectedColor != null,
+            color: selectedColor || "black"
           }}
-        >
-          <RouteImage
-            ref={routeAnnotationRef}
-            style={{
-              borderRadius: SIZES.borderRadius,
-              width: imageDimensions.width * scaleX,
-              height: imageDimensions.height * scaleY,
-            }}
-            imageURI={imageUriString}
-            interactable={true}
-            climbingHoldOverlayProps={{
-              showUnselectedHolds: showUnselectedHolds,
-            }}
-            drawingCanvasProps={{
-              canDraw: selectedColor != null,
-              color: selectedColor || "black"
-            }}
-          />
-        </ReactNativeZoomableView>
+        />
       )}
 
-      <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
+      {/* <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
         <Text style={styles.toggleButtonText}>{showUnselectedHolds ? "Hide" : "Show"} Unselected Holds</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
         <Text style={styles.exportButtonText}>Save</Text>

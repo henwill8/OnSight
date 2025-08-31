@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { useRouter } from "expo-router";
-// import { WithSkiaWeb } from "@shopify/react-native-skia/lib/module/web";
-// import DrawWrapper from "@/components/RouteImage/DrawingCanvasWrapper";
-// import { DrawProps } from "@/components/RouteImage/DrawingCanvas";
 import config from "@/config";
 import { fetchWithTimeout } from "@/utils/api";
 import { API_PATHS } from "@/constants/paths";
@@ -35,13 +32,4 @@ export default function Index() {
   }, [router]);
 
   if (!isAuthed) return null;
-
-  // return (
-  //   <WithSkiaWeb
-  //     getComponent={() => import("@/components/RouteImage/DrawingCanvasWrapper")}
-  //     componentProps={{} as any} // ✅ pass a valid DrawProps object
-  //     fallback={<Text>Loading Skia...</Text>}
-  //     opts={{ wasmUrl: "/wasm/canvaskit.wasm"} as any}
-  //   />
-  // );
 }

@@ -1,13 +1,10 @@
 import React, { useRef, useReducer, useEffect } from "react";
 import {
   View,
-  PanResponder,
-  GestureResponderEvent,
-  PanResponderGestureState,
   ViewStyle,
   Platform,
 } from "react-native";
-import { Canvas, Path } from "@shopify/react-native-skia";
+import { Svg, Path } from "react-native-svg";
 import { IPath, Segment } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/ImageUtils";
 
@@ -21,7 +18,7 @@ export interface DrawProps {
   interactable?: boolean;
 }
 
-const Draw: React.FC<DrawProps> = ({
+const DrawingCanvas: React.FC<DrawProps> = ({
   data,
   fittedImageRect,
   onAddPath,
@@ -57,10 +54,18 @@ const Draw: React.FC<DrawProps> = ({
     return total;
   };
 
-  const handleStart = (x: number, y: number) => {
+  const eventToPoint = (event: any) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / (rect.width / fittedImageRectRef.current.width);
+    const y = (event.clientY - rect.top) / (rect.height / fittedImageRectRef.current.height);
+    return { x, y };
+  }
+
+  const handleStart = (event: any) => {
     if (!interactable) return;
 
     const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
+    const { x, y } = eventToPoint(event);
 
     const newPath: IPath = {
       segments: [
@@ -73,14 +78,17 @@ const Draw: React.FC<DrawProps> = ({
     isDrawing.current = true;
   };
 
-  const handleMove = (x: number, y: number) => {
+  const handleMove = (event: any) => {
     if (!isDrawing.current) return;
 
     const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
+    const { x, y } = eventToPoint(event);
     const currentPath = currentPathRef.current;
 
     if (currentPath) {
-      currentPath.segments.push({ x: (x - offsetX) / scaleX, y: (y - offsetY) / scaleY });
+      currentPath.segments.push(
+        { x: (x - offsetX) / scaleX, y: (y - offsetY) / scaleY }
+      );
       forceUpdate();
     }
   };
@@ -97,48 +105,37 @@ const Draw: React.FC<DrawProps> = ({
     }
   };
 
-  // Mobile PanResponder
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: (_, gestureState) =>
-        gestureState.numberActiveTouches === 1 && interactable && canDraw && colorRef.current != null,
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        gestureState.numberActiveTouches === 1 && (isDrawing.current || interactable),
-      onPanResponderGrant: (e, _) => handleStart(e.nativeEvent.locationX, e.nativeEvent.locationY),
-      onPanResponderMove: (e, _) => handleMove(e.nativeEvent.locationX, e.nativeEvent.locationY),
-      onPanResponderRelease: handleEnd,
-      onPanResponderTerminate: handleEnd,
-    })
-  ).current;
-
-  // Web pointer events
-  const webHandlers =
-    Platform.OS === "web"
-      ? {
-          onPointerDown: (e: any) => handleStart(e.nativeEvent.offsetX, e.nativeEvent.offsetY),
-          onPointerMove: (e: any) => handleMove(e.nativeEvent.offsetX, e.nativeEvent.offsetY),
-          onPointerUp: handleEnd,
-          onPointerLeave: handleEnd,
-        }
-      : {};
-
   return (
-    <View
-      style={style}
-      {...(Platform.OS === "web" ? webHandlers : panResponder.panHandlers)}
-      pointerEvents={interactable && canDraw ? "auto" : "none"}
-    >
-      <Canvas style={{ flex: 1 }}>
+    <View style={style} pointerEvents={interactable && canDraw ? "auto" : "none"}>
+      <Svg 
+        width="100%" 
+        height="100%" 
+        style={{ position: "absolute" }}
+        pointerEvents={interactable && canDraw ? "auto" : "none"}
+        onPointerDown={canDraw ? handleStart : undefined}
+        onPointerMove={canDraw ? handleMove : undefined}
+        onPointerUp={canDraw ? handleEnd : undefined}
+      >
         {[...data, ...(currentPathRef.current ? [currentPathRef.current] : [])].map((p, index) => {
           const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
           const pathString = p.segments
-            .map((s, i) => `${i === 0 ? "M" : "L"} ${s.x * scaleX + offsetX} ${s.y * scaleY + offsetY}`)
+            .map((s, i) => `${i === 0 ? "M" : "L"} ${ s.x * scaleX + offsetX} ${s.y * scaleY + offsetY}`)
             .join(" ");
-          return <Path key={index} path={pathString} strokeWidth={4 * scaleX} style="stroke" color={p.color} />;
+
+          return (
+            <Path
+              key={index}
+              d={pathString}
+              fill="none"
+              stroke={p.color}
+              strokeWidth={4 * scaleX}
+              strokeLinecap="round"
+            />
+          );
         })}
-      </Canvas>
+      </Svg>
     </View>
   );
 };
 
-export default Draw;
+export default DrawingCanvas;
