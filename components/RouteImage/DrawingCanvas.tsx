@@ -2,11 +2,11 @@ import React, { useRef, useReducer, useEffect } from "react";
 import {
   View,
   ViewStyle,
-  Platform,
 } from "react-native";
 import { Svg, Path } from "react-native-svg";
 import { IPath, Segment } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/ImageUtils";
+import { crossPlatformTouchHandler } from "@/utils/touchHandler";
 
 export interface DrawProps {
   data: IPath[];
@@ -54,22 +54,15 @@ const DrawingCanvas: React.FC<DrawProps> = ({
     return total;
   };
 
-  const eventToPoint = (event: any) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / (rect.width / fittedImageRectRef.current.width);
-    const y = (event.clientY - rect.top) / (rect.height / fittedImageRectRef.current.height);
-    return { x, y };
-  }
-
-  const handleStart = (event: any) => {
-    if (!interactable) return;
+  // Drawing event handlers for the cross-platform hook
+  const onDrawStart = (point: { x: number; y: number }) => {
+    if (!interactable || !canDraw) return;
 
     const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
-    const { x, y } = eventToPoint(event);
 
     const newPath: IPath = {
       segments: [
-        { x: (x - offsetX) / scaleX, y: (y - offsetY) / scaleY },
+        { x: (point.x - offsetX) / scaleX, y: (point.y - offsetY) / scaleY },
       ],
       color: colorRef.current,
     };
@@ -78,22 +71,22 @@ const DrawingCanvas: React.FC<DrawProps> = ({
     isDrawing.current = true;
   };
 
-  const handleMove = (event: any) => {
+  const onDrawMove = (point: { x: number; y: number }) => {
     if (!isDrawing.current) return;
 
     const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
-    const { x, y } = eventToPoint(event);
     const currentPath = currentPathRef.current;
 
     if (currentPath) {
-      currentPath.segments.push(
-        { x: (x - offsetX) / scaleX, y: (y - offsetY) / scaleY }
-      );
+      currentPath.segments.push({ 
+        x: (point.x - offsetX) / scaleX, 
+        y: (point.y - offsetY) / scaleY 
+      });
       forceUpdate();
     }
   };
 
-  const handleEnd = () => {
+  const onDrawEnd = (point: { x: number; y: number }) => {
     if (!isDrawing.current) return;
 
     const currentPath = currentPathRef.current;
@@ -105,21 +98,27 @@ const DrawingCanvas: React.FC<DrawProps> = ({
     }
   };
 
+  // Use the cross-platform touch handler
+  const { eventHandlers, pointerEvents } = crossPlatformTouchHandler(
+    interactable && canDraw,
+    onDrawStart,
+    onDrawMove,
+    onDrawEnd
+  );
+
   return (
-    <View style={style} pointerEvents={interactable && canDraw ? "auto" : "none"}>
+    <View style={style} pointerEvents={pointerEvents}>
       <Svg 
         width="100%" 
         height="100%" 
         style={{ position: "absolute" }}
-        pointerEvents={interactable && canDraw ? "auto" : "none"}
-        onPointerDown={canDraw ? handleStart : undefined}
-        onPointerMove={canDraw ? handleMove : undefined}
-        onPointerUp={canDraw ? handleEnd : undefined}
+        pointerEvents={pointerEvents}
+        {...eventHandlers}
       >
         {[...data, ...(currentPathRef.current ? [currentPathRef.current] : [])].map((p, index) => {
           const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
           const pathString = p.segments
-            .map((s, i) => `${i === 0 ? "M" : "L"} ${ s.x * scaleX + offsetX} ${s.y * scaleY + offsetY}`)
+            .map((s, i) => `${i === 0 ? "M" : "L"} ${s.x * scaleX + offsetX} ${s.y * scaleY + offsetY}`)
             .join(" ");
 
           return (

@@ -54,6 +54,7 @@
     "react-native-svg": "15.11.2",
     "react-native-view-shot": "~4.0.3",
     "react-native-web": "^0.20.0",
+    "react-native-zoom-toolkit": "^5.0.1",
     "serve": "^14.2.4"
   },
   "devDependencies": {
