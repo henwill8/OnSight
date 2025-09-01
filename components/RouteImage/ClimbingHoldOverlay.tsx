@@ -83,32 +83,29 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
 
   // Touch handling state
   const touchStartTime = useRef<number | null>(null);
-  let touchActive = false;
+  const touchActive = useRef(false);
 
-  // Maximum duration for a valid click (ms)
   const clickTimeThreshold = 200;
 
   const onTouchStart = () => {
-    console.log("Touch Start");
-    if (touchActive) return;
+    if (touchActive.current) return;
+
     touchStartTime.current = Date.now();
-    touchActive = true;
+    touchActive.current = true;
   };
 
   const onTouchEnd = (point: { x: number; y: number }) => {
-    if (!interactable || !touchStartTime.current || !touchActive) return;
-    
-    touchActive = false;
+    if (!interactable || !touchStartTime.current || !touchActive.current) return;
+
+    touchActive.current = false;
     const duration = Date.now() - touchStartTime.current;
+    
     if (duration > clickTimeThreshold) {
       // Too long → not a click
       touchStartTime.current = null;
       return;
     }
 
-    console.log(point)
-
-    // Use the point at touch end for hit detection
     for (let i = data.length - 1; i >= 0; i--) {
       const hold = data[i];
       if (pointInPolygon([point.x, point.y], scaledCoordinates[i])) {

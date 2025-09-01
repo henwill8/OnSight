@@ -10,6 +10,7 @@ import { getFileType } from '@/utils/FileUtils';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
 import { API_PATHS } from "@/constants/paths";
+import { AntDesign, Feather } from '@expo/vector-icons';
 
 type ImageSize = { width: number; height: number };
 
@@ -216,21 +217,27 @@ const RouteImageCreator: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.colorSelectionContainer}>
+
+      {/* Right Sidebar for Color Selection */}
+      <View style={styles.sidebar}>
         {[HOLD_SELECTION_COLORS.intermediate, HOLD_SELECTION_COLORS.start, HOLD_SELECTION_COLORS.end].map((color) => (
           <TouchableOpacity
             key={color}
-            style={[styles.colorButton, { backgroundColor: color, borderWidth: selectedColor === color ? 5 : 1 }]}
+            style={[
+              styles.sidebarButton,
+              { borderColor: selectedColor === color ? "#fff" : "transparent", backgroundColor: color }
+            ]}
             onPress={() => handleColorSelect(color)}
           />
         ))}
 
-        {/* Undo Button next to the color buttons */}
-        <TouchableOpacity style={styles.undoButton} onPress={handleUndo}>
-          <Text style={styles.undoButtonText}>Undo</Text>
+        {/* Undo Button */}
+        <TouchableOpacity style={styles.sidebarUndo} onPress={handleUndo}>
+          <Feather name="rotate-ccw" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
+      {/* Image Canvas */}
       {imageDimensions && (
         <RouteImage
           ref={routeAnnotationRef}
@@ -251,12 +258,9 @@ const RouteImageCreator: React.FC = () => {
         />
       )}
 
-      {/* <TouchableOpacity style={styles.toggleButton} onPress={handleToggleBoundingBoxes}>
-        <Text style={styles.toggleButtonText}>{showUnselectedHolds ? "Hide" : "Show"} Unselected Holds</Text>
-      </TouchableOpacity> */}
-
-      <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
-        <Text style={styles.exportButtonText}>Save</Text>
+      {/* Save Button as Check Icon */}
+      <TouchableOpacity style={styles.checkButton} onPress={handleExport}>
+        <AntDesign name="check" size={32} color="#fff" />
       </TouchableOpacity>
 
       <LoadingModal visible={!dataReceived} message={"Detecting Climbing Holds...\n(may take up to 10 seconds)"}/>
@@ -350,6 +354,46 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     textAlign: "center"
+  },
+    sidebar: {
+    position: "absolute",
+    right: 20,
+    top: 100,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    alignItems: "center",
+    zIndex: 20,
+  },
+  sidebarButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginVertical: 8,
+    borderWidth: 2,
+  },
+  sidebarUndo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginTop: 12,
+    backgroundColor: "#f44336",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkButton: {
+    position: "absolute",
+    bottom: 30,
+    right: "50%",
+    transform: [{ translateX: 30 }],
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#4CAF50",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
   },
 });
 

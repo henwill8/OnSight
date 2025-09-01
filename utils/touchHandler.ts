@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { useRef } from "react";
 import { FittedImageRectOutput } from "./ImageUtils";
 
 export const crossPlatformTouchHandler = (
@@ -8,8 +9,6 @@ export const crossPlatformTouchHandler = (
   onDrawMove: (point: { x: number; y: number }) => void,
   onDrawEnd: (point: { x: number; y: number }) => void
 ) => {
-  let touchActive = false;
-  let touchEndTimeout: number | null = null;
   
   const extractPoint = (event: any) => {
     if (Platform.OS === 'web') {
@@ -35,59 +34,59 @@ export const crossPlatformTouchHandler = (
     return { x: 0, y: 0 };
   };
 
+  let touchMoveOccurring = useRef(false).current;
+
   const handleTouchStart = (event: any) => {
     if (!interactable) return;
     
     // Set touch as active and clear any pending timeout
-    touchActive = true;
-    if (touchEndTimeout) {
-      clearTimeout(touchEndTimeout);
-      touchEndTimeout = null;
-    }
-    
-    const point = extractPoint(event);
-    onDrawStart(point);
+    touchMoveOccurring = false; // Reset move flag
   };
 
   const handleTouchMove = (event: any) => {
     if (!interactable) return;
     
     const point = extractPoint(event);
+
+    // First move - trigger the start
+    if (!touchMoveOccurring) {
+      touchMoveOccurring = true;
+      onDrawStart(point);
+    }
+    
     onDrawMove(point);
   };
 
   const handleTouchEnd = (event: any) => {
-    console.log(event)
     if (!interactable) return;
     
-    const point = extractPoint(event);
-    console.log(point)
-    onDrawEnd(point);
-    
-    touchEndTimeout = setTimeout(() => {
-      touchActive = false;
-    }, 300); // 300ms delay to prevent mouse events after touch
+    // Only call onDrawEnd if there was movement
+    if (touchMoveOccurring) {
+      const point = extractPoint(event);
+      onDrawEnd(point);
+      touchMoveOccurring = false;
+    }
   };
 
   const handleMouseStart = (event: any) => {
-    if (!interactable || touchActive) return;
+    if (!interactable) return;
     
     const point = extractPoint(event);
     onDrawStart(point);
   };
 
   const handleMouseMove = (event: any) => {
-    if (!interactable || touchActive) return;
+    if (!interactable) return;
     
     const point = extractPoint(event);
     onDrawMove(point);
   };
 
   const handleMouseEnd = (event: any) => {
-    if (!interactable || touchActive) return;
+    if (!interactable) return;
     
     const point = extractPoint(event);
-    // onDrawEnd(point);
+    onDrawEnd(point);
   };
 
   const getEventHandlers = () => {

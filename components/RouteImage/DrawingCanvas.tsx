@@ -58,12 +58,11 @@ const DrawingCanvas: React.FC<DrawProps> = ({
   const onDrawStart = (point: { x: number; y: number }) => {
     if (!interactable || !canDraw) return;
 
-    const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
-
     const newPath: IPath = {
-      segments: [
-        { x: (point.x - offsetX) / scaleX, y: (point.y - offsetY) / scaleY },
-      ],
+      segments: [{
+        x: point.x,
+        y: point.y 
+      }],
       color: colorRef.current,
     };
 
@@ -74,13 +73,12 @@ const DrawingCanvas: React.FC<DrawProps> = ({
   const onDrawMove = (point: { x: number; y: number }) => {
     if (!isDrawing.current) return;
 
-    const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
     const currentPath = currentPathRef.current;
 
     if (currentPath) {
       currentPath.segments.push({ 
-        x: (point.x - offsetX) / scaleX, 
-        y: (point.y - offsetY) / scaleY 
+        x: (point.x), 
+        y: (point.y)
       });
       forceUpdate();
     }
@@ -119,7 +117,7 @@ const DrawingCanvas: React.FC<DrawProps> = ({
         {[...data, ...(currentPathRef.current ? [currentPathRef.current] : [])].map((p, index) => {
           const { scaleX, scaleY, offsetX, offsetY } = fittedImageRectRef.current;
           const pathString = p.segments
-            .map((s, i) => `${i === 0 ? "M" : "L"} ${s.x * scaleX + offsetX} ${s.y * scaleY + offsetY}`)
+            .map((s, i) => `${i === 0 ? "M" : "L"} ${s.x} ${s.y}`)
             .join(" ");
 
           return (
