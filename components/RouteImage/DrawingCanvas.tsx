@@ -101,6 +101,7 @@ const DrawingCanvas: React.FC<DrawProps> = ({
   // Use the cross-platform touch handler
   const { eventHandlers, pointerEvents } = crossPlatformTouchHandler(
     interactable && canDraw,
+    fittedImageRect,
     onDrawStart,
     onDrawMove,
     onDrawEnd

@@ -12,6 +12,7 @@ import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
 import { getFittedImageRect } from "@/utils/ImageUtils";
 import { ActivityIndicator } from "react-native";
+import Zoomable from "@/components/ui/Zoomable";
 
 export interface ClimbingHold {
   coordinates: number[];
@@ -258,60 +259,62 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   }));
 
   return (
-    <View style={[style, { position: 'relative', overflow: 'hidden' }]} onLayout={onContainerLayout}>
-      <Image
-        source={{ uri: imageURI }}
-        onLoad={() => setImageLoaded(true)}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: containerSize?.width,
-          height: containerSize?.height,
-          opacity: (imageLoaded && annotationsLoaded) ? 1 : 0,  // Hide it until both images and annotations are loaded
-        }}
-        {...imageProps}
-      />
-      
-      {(!imageLoaded || !annotationsLoaded) && (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#888" />
-        </View>
-      )}
-  
-      {(imageLoaded && annotationsLoaded) && fittedImage != null && (
-        <>
-          <ClimbingHoldOverlay
-            data={annotationData.climbingHolds}
-            onHoldStateChange={updateClimbingHold}
-            fittedImageRect={fittedImage}
-            interactable={interactable}
-            {...climbingHoldOverlayProps}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-            }}
-          />
-          <DrawingCanvas
-            data={annotationData.drawingPaths}
-            onAddPath={addDrawingPath}
-            fittedImageRect={fittedImage}
-            interactable={interactable}
-            {...drawingCanvasProps}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-            }}
-          />
-        </>
-      )}
-    </View>
+    <Zoomable style={{ flex: 1 }}>
+      <View style={[style, { position: 'relative', overflow: 'hidden' }]} onLayout={onContainerLayout}>
+        <Image
+          source={{ uri: imageURI }}
+          onLoad={() => setImageLoaded(true)}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: containerSize?.width,
+            height: containerSize?.height,
+            opacity: (imageLoaded && annotationsLoaded) ? 1 : 0,  // Hide it until both images and annotations are loaded
+          }}
+          {...imageProps}
+        />
+        
+        {(!imageLoaded || !annotationsLoaded) && (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#888" />
+          </View>
+        )}
+    
+        {(imageLoaded && annotationsLoaded) && fittedImage != null && (
+          <>
+            <ClimbingHoldOverlay
+              data={annotationData.climbingHolds}
+              onHoldStateChange={updateClimbingHold}
+              fittedImageRect={fittedImage}
+              interactable={interactable}
+              {...climbingHoldOverlayProps}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+              }}
+            />
+            <DrawingCanvas
+              data={annotationData.drawingPaths}
+              onAddPath={addDrawingPath}
+              fittedImageRect={fittedImage}
+              interactable={interactable}
+              {...drawingCanvasProps}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+              }}
+            />
+          </>
+        )}
+      </View>
+    </Zoomable>
   );
 };
 

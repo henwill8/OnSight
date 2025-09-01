@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { ReactNativeZoomableView } from 'react-native-zoomable-view';
 import { COLORS, SIZES, SHADOWS, globalStyles } from '@/constants/theme';
 import RouteImage from "@/components/RouteImage/RouteImage";
 import { Route } from '@/app/(tabs)/home';

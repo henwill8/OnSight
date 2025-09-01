@@ -1,7 +1,9 @@
 import { Platform } from "react-native";
+import { FittedImageRectOutput } from "./ImageUtils";
 
 export const crossPlatformTouchHandler = (
   interactable: boolean,
+  fittedImageRect: FittedImageRectOutput,
   onDrawStart: (point: { x: number; y: number }) => void,
   onDrawMove: (point: { x: number; y: number }) => void,
   onDrawEnd: (point: { x: number; y: number }) => void
@@ -12,14 +14,14 @@ export const crossPlatformTouchHandler = (
   const extractPoint = (event: any) => {
     if (Platform.OS === 'web') {
       // Web mouse/touch events
-      const clientX = event.clientX ?? event.touches?.[0]?.clientX;
-      const clientY = event.clientY ?? event.touches?.[0]?.clientY;
+      const clientX = event.clientX ?? event.touches?.[0]?.clientX ?? event.changedTouches?.[0]?.clientX;
+      const clientY = event.clientY ?? event.touches?.[0]?.clientY ?? event.changedTouches?.[0]?.clientY;
       
       if (clientX !== undefined && clientY !== undefined) {
         const rect = event.currentTarget.getBoundingClientRect();
         return {
-          x: clientX - rect.left,
-          y: clientY - rect.top,
+          x: (clientX - rect.left) / (rect.width / fittedImageRect.width),
+          y: (clientY - rect.top) / (rect.height / fittedImageRect.height),
         };
       }
     } else {
@@ -43,7 +45,6 @@ export const crossPlatformTouchHandler = (
       touchEndTimeout = null;
     }
     
-    event.preventDefault();
     const point = extractPoint(event);
     onDrawStart(point);
   };
@@ -51,16 +52,16 @@ export const crossPlatformTouchHandler = (
   const handleTouchMove = (event: any) => {
     if (!interactable) return;
     
-    event.preventDefault();
     const point = extractPoint(event);
     onDrawMove(point);
   };
 
   const handleTouchEnd = (event: any) => {
+    console.log(event)
     if (!interactable) return;
     
-    event.preventDefault();
     const point = extractPoint(event);
+    console.log(point)
     onDrawEnd(point);
     
     touchEndTimeout = setTimeout(() => {
@@ -86,7 +87,7 @@ export const crossPlatformTouchHandler = (
     if (!interactable || touchActive) return;
     
     const point = extractPoint(event);
-    onDrawEnd(point);
+    // onDrawEnd(point);
   };
 
   const getEventHandlers = () => {

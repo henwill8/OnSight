@@ -82,54 +82,50 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   };
 
   // Touch handling state
-  const touchStartPoint = useRef<{ x: number; y: number } | null>(null);
-  const isValidClick = useRef(true);
+  const touchStartTime = useRef<number | null>(null);
+  let touchActive = false;
 
-  const onTouchStart = (point: { x: number; y: number }) => {
-    touchStartPoint.current = point;
-    isValidClick.current = true;
-  };
+  // Maximum duration for a valid click (ms)
+  const clickTimeThreshold = 400;
 
-  const onTouchMove = (point: { x: number; y: number }) => {
-    if (!touchStartPoint.current || !isValidClick.current) return;
-
-    const dx = point.x - touchStartPoint.current.x;
-    const dy = point.y - touchStartPoint.current.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance > clickThreshold) {
-      isValidClick.current = false;
-    }
+  const onTouchStart = () => {
+    console.log("Touch Start");
+    if (touchActive) return;
+    touchStartTime.current = Date.now();
+    touchActive = true;
   };
 
   const onTouchEnd = (point: { x: number; y: number }) => {
-    if (!interactable || !isValidClick.current || !touchStartPoint.current) {
-      touchStartPoint.current = null;
-      isValidClick.current = true;
+    if (!interactable || !touchStartTime.current || !touchActive) return;
+    
+    touchActive = false;
+    const duration = Date.now() - touchStartTime.current;
+    if (duration > clickTimeThreshold) {
+      // Too long → not a click
+      touchStartTime.current = null;
       return;
     }
 
-    // Use start point for more accurate hit detection
-    const hitPoint = touchStartPoint.current;
+    console.log(point)
 
-    // Find the topmost hold that was touched (iterate backwards for z-order)
+    // Use the point at touch end for hit detection
     for (let i = data.length - 1; i >= 0; i--) {
       const hold = data[i];
-      if (pointInPolygon([hitPoint.x, hitPoint.y], scaledCoordinates[i])) {
+      if (pointInPolygon([point.x, point.y], scaledCoordinates[i])) {
         handlePolygonPress(hold, i);
         break;
       }
     }
 
-    touchStartPoint.current = null;
-    isValidClick.current = true;
+    touchStartTime.current = null;
   };
 
   // Apply cross-platform touch handling
   const { eventHandlers, pointerEvents } = crossPlatformTouchHandler(
     interactable,
+    fittedImageRect,
     onTouchStart,
-    onTouchMove,
+    (point: { x: number; y: number }) => {},
     onTouchEnd
   );
 

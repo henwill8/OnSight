@@ -2,7 +2,6 @@ import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ReactNativeZoomableView } from 'react-native-zoomable-view';
 import RouteImage, { RouteImageRef, ClimbingHold } from "@/components/RouteImage/RouteImage";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
