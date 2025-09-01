@@ -274,26 +274,33 @@ const HomeScreen = () => {
   // Main render
   return (
     <View style={globalStyles.container}>
-      {loading || gymIdLoading ? (
-        <ActivityIndicator size="large" color="#06d6a0" />
-      ) : (
-        <View style={{ flex: 1 }}>
-          {/* Breadcrumb Navigation */}
-          {renderBreadcrumb()}
-
-          {/* Child Locations */}
-          {renderChildLocations()}
-
-          {/* Routes */}
-          {renderRoutes()}
+      {!currentGymName && (
+        <View style={styles.emptyRoutesContainer}>
+          <Text style={styles.emptyText}>No gym selected. Please select a gym to view routes.</Text>
         </View>
       )}
 
-      {/* Add Button - only show when gym is selected */}
       {currentGymName && (
-        <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
-          <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
-        </TouchableOpacity>
+        <>
+          {loading || gymIdLoading ? (
+            <ActivityIndicator size="large" color="#06d6a0" />
+          ) : (
+            <View style={{ flex: 1 }}>
+              {/* Breadcrumb Navigation */}
+              {renderBreadcrumb()}
+
+              {/* Child Locations */}
+              {renderChildLocations()}
+
+              {/* Routes */}
+              {renderRoutes()}
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
+            <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
