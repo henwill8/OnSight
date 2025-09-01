@@ -86,7 +86,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   let touchActive = false;
 
   // Maximum duration for a valid click (ms)
-  const clickTimeThreshold = 400;
+  const clickTimeThreshold = 200;
 
   const onTouchStart = () => {
     console.log("Touch Start");
