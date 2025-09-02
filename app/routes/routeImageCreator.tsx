@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center"
   },
-    sidebar: {
+  sidebar: {
     position: "absolute",
     right: 20,
     top: 100,

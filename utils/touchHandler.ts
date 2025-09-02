@@ -34,12 +34,11 @@ export const crossPlatformTouchHandler = (
     return { x: 0, y: 0 };
   };
 
-  let touchMoveOccurring = useRef(false).current;
+  let touchMoveOccurring = useRef(true).current; // true as the forceUpdate in DrawingCanvas will re-render and reset this
 
   const handleTouchStart = (event: any) => {
     if (!interactable) return;
     
-    // Set touch as active and clear any pending timeout
     touchMoveOccurring = false; // Reset move flag
   };
 
@@ -64,7 +63,6 @@ export const crossPlatformTouchHandler = (
     if (touchMoveOccurring) {
       const point = extractPoint(event);
       onDrawEnd(point);
-      touchMoveOccurring = false;
     }
   };
 
