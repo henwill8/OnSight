@@ -3,7 +3,7 @@ import { Svg, Rect, Mask, Path, Defs } from "react-native-svg";
 import { View, ViewStyle } from "react-native";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
 import { ClimbingHold } from "./RouteImage";
-import { FittedImageRectOutput } from "@/utils/ImageUtils";
+import { FittedImageRectOutput } from "@/utils/imageUtils";
 import { crossPlatformTouchHandler } from "@/utils/touchHandler";
 import { simplifyPolygon, createSmoothPath, pointInPolygon } from "@/utils/geometricUtils";
 

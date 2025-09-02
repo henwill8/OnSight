@@ -1,4 +1,21 @@
 /**
+ * Calculates the area of a polygon using the shoelace theorem.
+ * Accepts a flat array of coordinates: [x1, y1, x2, y2, ...]
+ */
+export function calculatePolygonArea(coordinates: number[]): number {
+  let area = 0;
+  const n = coordinates.length / 2;
+  for (let i = 0; i < n; i++) {
+    const x1 = coordinates[2 * i];
+    const y1 = coordinates[2 * i + 1];
+    const x2 = coordinates[2 * ((i + 1) % n)];
+    const y2 = coordinates[2 * ((i + 1) % n) + 1];
+    area += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(area) / 2;
+}
+
+/**
  * Simplify a polygon using the Ramer-Douglas-Peucker algorithm
  * @param coords Flat array of [x1, y1, x2, y2, ...]
  * @param tolerance Higher values = more simplified

@@ -3,10 +3,12 @@ import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, Touchab
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RouteImage, { RouteImageRef, ClimbingHold } from "@/components/RouteImage/RouteImage";
+import { calculateOptimalImageDimensions } from '@/utils/imageUtils';
+import { calculatePolygonArea } from '@/utils/geometricUtils';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
 import config from '@/config';
-import { getFileType } from '@/utils/FileUtils';
+import { getFileType } from '@/utils/fileUtils';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
 import { API_PATHS } from "@/constants/paths";
@@ -82,23 +84,6 @@ const RouteImageCreator: React.FC = () => {
     if(routeAnnotationRef.current) {
       routeAnnotationRef.current.undo();
     }
-  };
-
-  // Function to calculate the area of a polygon using the shoelace theorem
-  const calculatePolygonArea = (coordinates: number[]) => {
-    let area = 0;
-    const n = coordinates.length / 2; // Number of points in the polygon
-
-    for (let i = 0; i < n; i++) {
-      const x1 = coordinates[2 * i];
-      const y1 = coordinates[2 * i + 1];
-      const x2 = coordinates[2 * ((i + 1) % n)];
-      const y2 = coordinates[2 * ((i + 1) % n) + 1];
-
-      area += x1 * y2 - x2 * y1;
-    }
-
-    return Math.abs(area) / 2;
   };
 
   const handleJobDone = (statusData: any) => {
@@ -183,37 +168,17 @@ const RouteImageCreator: React.FC = () => {
 
   const insets = useSafeAreaInsets();
 
-  // Calculate available screen space
-  const calculateOptimalImageDimensions = useCallback(() => {
-    if (!imageDimensions) return null;
-    
-    const aspectRatio = imageDimensions.width / imageDimensions.height;
-    
-    // Account for UI elements and safe areas
-    const availableHeight = screenHeight - insets.top - insets.bottom - 220; // Subtract space for buttons
-    const availableWidth = screenWidth - insets.left - insets.right;
-    
-    // Try fitting by width first
-    let width = availableWidth;
-    let height = width / aspectRatio;
-    
-    // If height exceeds available space, fit by height instead
-    if (height > availableHeight) {
-      height = availableHeight;
-      width = height * aspectRatio;
-    }
-    
-    return { newScaleX: width / imageDimensions.width, newScaleY: height / imageDimensions.height };
-  }, [imageDimensions, screenWidth, screenHeight, insets]);
-  
   useEffect(() => {
     if (!imageDimensions) return;
-
-    const scaled = calculateOptimalImageDimensions();
-
-    setScaleX(scaled?.newScaleX || 1);
-    setScaleY(scaled?.newScaleY || 1);
-  }, [imageDimensions]);
+    const scaled = calculateOptimalImageDimensions({
+      imageWidth: imageDimensions.width,
+      imageHeight: imageDimensions.height,
+      insets,
+      extraHeight: 220,
+    });
+    setScaleX(scaled?.scaleX || 1);
+    setScaleY(scaled?.scaleY || 1);
+  }, [imageDimensions, insets]);
 
   return (
     <View style={styles.container}>

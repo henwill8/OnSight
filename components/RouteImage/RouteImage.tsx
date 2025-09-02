@@ -10,7 +10,7 @@ import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode 
 import DrawingCanvas from "@/components/RouteImage/DrawingCanvas";
 import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
-import { getFittedImageRect } from "@/utils/ImageUtils";
+import { getFittedImageRect } from "@/utils/imageUtils";
 import { ActivityIndicator } from "react-native";
 import Zoomable from "@/components/ui/Zoomable";
 

@@ -10,6 +10,10 @@ export const API_PATHS = {
   GET_ROUTE: (routeId: string) => `/v1/routes/${routeId}`,
   GET_ROUTES: '/v1/routes', // Query params: { gymId: string, locationId: string }
 
+  CREATE_TEMPLATE: '/v1/templates/create',
+  GET_TEMPLATE: (templateId: string) => `/v1/templates/${templateId}`,
+  GET_TEMPLATES: '/v1/templates', // Query params: { gymId: string, locationId: string }
+
   LIST_GYMS: '/v1/gyms',
   CREATE_GYM: '/v1/gyms/create',
   GET_GYM: (gymId: string) => `/v1/gyms/${gymId}`,

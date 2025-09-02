@@ -1,60 +1,192 @@
 import React, { useEffect, useState, useCallback, useLayoutEffect } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Image, Modal, ActivityIndicator, Platform } from 'react-native';
+import {
+  View,
+  TextInput,
+  FlatList,
+  Text,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Modal,
+  ActivityIndicator,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
-import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
-import { useFocusEffect } from '@react-navigation/native';
-import RNPickerSelect from 'react-native-picker-select'; // TODO: reimplement
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
-import config from "@/config";
-import { getFileType } from '@/utils/FileUtils';
-import { fetchWithTimeout } from "@/utils/api";
-import LoadingModal from '@/components/ui/LoadingModal';
-import RouteImage from "@/components/RouteImage/RouteImage";
+import { useFocusEffect } from "@react-navigation/native";
+
+import { setSecureItem, getSecureItem } from "@/utils/secureStorage";
+import { resizeImageToMaxDimension } from "@/utils/imageUtils";
+import { fetchWithTimeout, createImageFormData } from "@/utils/api";
 import { API_PATHS } from "@/constants/paths";
+import { COLORS, SIZES } from "@/constants/theme";
+import config from "@/config";
+
+import LoadingModal from "@/components/ui/LoadingModal";
+import RouteImage from "@/components/RouteImage/RouteImage";
+
+interface Template {
+  imageUrl: string;
+  annotationsUrl: string;
+}
 
 const CreateRouteScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
-  
-  const [name, setName] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [difficulty, setDifficulty] = useState<string>('');
+
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [difficulty, setDifficulty] = useState<string>("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [annotationsData, setAnnotationsData] = useState<string | null>(null);
 
   const [locationId, setLocationId] = useState<string | null>(null);
+  const [gymName, setGymName] = useState<string>("");
 
   const [canSubmit, setCanSubmit] = useState(false);
-  const [gymName, setGymName] = useState<string>('');
-  const [loading, setLoading] = useState(false);  // State for loading modal
+  const [loading, setLoading] = useState(false);
 
   const { locationId: locationIdParam, exportedUri, annotationsJSON } = useLocalSearchParams();
 
-  useFocusEffect(
-    useCallback(() => {
-      if (exportedUri) {
-        setImageUri(exportedUri as string);
+  /** Fetch Templates **/
+  const fetchTemplates = useCallback(async () => {
+    setLoadingTemplates(true);
+    try {
+      const gymId = await getSecureItem("gymId");
+      const response = await fetchWithTimeout(
+        config.API_URL + API_PATHS.GET_TEMPLATES + (gymId ? `?gymId=${gymId}` : "") + (locationIdParam && gymId ? `&locationId=${locationIdParam}` : ""),
+        { method: "GET" }
+      );
+      const data = await response.json();
+      console.log(data)
+      if (response.ok) {
+        const templates: Template[] = (data || []).map(t => ({
+          imageUrl: t.imageUrl,
+          annotationsUrl: t.annotationsUrl
+        }));
+        setTemplates(templates);
+      } else {
+        console.error("Error fetching templates:", data.error);
+        Alert.alert("Error", "Failed to load templates");
       }
-  
-      if (annotationsJSON) {
-        setAnnotationsData(annotationsJSON as string);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      Alert.alert("Error", "Failed to load templates");
+    } finally {
+      setLoadingTemplates(false);
+    }
+  }, []);
+
+  /** Handle Template Select **/
+  const handleTemplateSelect = (template: Template) => {
+    router.push({
+      pathname: "/routes/routeImageCreator",
+      params: {
+        imageUri: encodeURIComponent(template.imageUrl),
+        annotationsUri: encodeURIComponent(template.annotationsUrl),
+        name,
+        description,
+        difficulty,
+      },
+    });
+    setShowTemplates(false);
+  };
+
+  /** Handle Image Pick **/
+  const handleImagePick = useCallback(
+    async (useCamera: boolean) => {
+      const permission = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permission.status !== "granted") {
+        Alert.alert("Permission Required", "You need to allow access to use this feature.");
+        return;
       }
 
-      if (locationIdParam) {
-        setLocationId(locationIdParam as string);
+      const pickerResult = useCamera
+        ? await ImagePicker.launchCameraAsync({ quality: 1 })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 1 });
+
+      if (pickerResult.assets && pickerResult.assets.length > 0) {
+        const uri = pickerResult.assets[0].uri;
+        try {
+          const resizedImage = await resizeImageToMaxDimension(uri);
+
+          router.push({
+            pathname: "/routes/routeImageCreator",
+            params: {
+              imageUri: encodeURIComponent(resizedImage.uri),
+              name,
+              description,
+              difficulty,
+            },
+          });
+        } catch (error) {
+          console.error("Error manipulating image:", error);
+          Alert.alert("Error", "Failed to process the image.");
+        }
       }
-    }, [exportedUri, annotationsJSON])
+    },
+    [name, description, difficulty, router]
+  );
+
+  /** Handle Submit **/
+  const handleSubmit = async () => {
+    if (!imageUri) return console.error("Image URI is missing");
+    setLoading(true);
+    try {
+      const gymId = await getSecureItem("gymId");
+      const formData = await createImageFormData({
+        name,
+        description,
+        difficulty,
+        gymId: gymId || "",
+        annotations: annotationsData,
+        locationId,
+        imageUri,
+      });
+      const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_ROUTE, {
+        method: "POST",
+        body: formData,
+      }, 5000);
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert("Success", "Route created successfully!");
+        router.back();
+        router.setParams({ shouldReload: 1 });
+      } else {
+        console.error("Error creating route:", data.error);
+        Alert.alert("Error", "Failed to create route");
+      }
+    } catch (error) {
+      console.error("Error creating route:", error);
+      Alert.alert("Error", "An error occurred while creating the route");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Effects **/
+  useFocusEffect(
+    useCallback(() => {
+      if (exportedUri) setImageUri(exportedUri as string);
+      if (annotationsJSON) setAnnotationsData(annotationsJSON as string);
+      if (locationIdParam) setLocationId(locationIdParam as string);
+    }, [exportedUri, annotationsJSON, locationIdParam])
   );
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Create Route",
       headerStyle: { backgroundColor: COLORS.backgroundSecondary },
-      headerTintColor: "white"
+      headerTintColor: "white",
     });
-
     fetchCurrentGymName();
   }, [navigation]);
 
@@ -67,202 +199,93 @@ const CreateRouteScreen = () => {
     setCanSubmit(!!difficulty && !!imageUri);
   }, [difficulty, imageUri]);
 
-  const resizeImageToMaxDimension = async (uri: string) => {
-    const MAX_DIMENSION = 1024;
-  
-    // Get the original image dimensions
-    const { width, height } = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
-  
-    // If both dimensions are already under the limit, return as-is
-    if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
-      return {
-        uri: uri,
-        width: width,
-        height: height,
-      };
-    }
-  
-    // Determine scale factor to make the largest dimension 1024
-    const scaleFactor = width > height
-      ? MAX_DIMENSION / width
-      : MAX_DIMENSION / height;
-  
-    const newWidth = Math.floor(width * scaleFactor);
-    const newHeight = Math.floor(height * scaleFactor);
-  
-    return await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: newWidth, height: newHeight } }],
-      {
-        compress: 1,
-        format: ImageManipulator.SaveFormat.JPEG,
-      }
-    );
-  };
-
-  const handleImagePick = useCallback(async (useCamera: boolean) => {
-    const permission = useCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-  
-    if (permission.status !== "granted") {
-      alert("Permission is required!");
-      return;
-    }
-  
-    const pickerResult = useCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 1 })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 1 });
-  
-    if (pickerResult.assets && pickerResult.assets.length > 0) {
-      const uri = pickerResult.assets[0].uri;
-  
-      try {
-        // Enable this if image size for upload becomes a problem
-        const resizedImage = await resizeImageToMaxDimension(uri);
-
-        router.push({
-          pathname: '/routes/routeImageCreator',
-          params: {
-            imageUri: encodeURIComponent(resizedImage.uri),
-            name,
-            description,
-            difficulty
-          },
-        });
-      } catch (error) {
-        console.error("Error manipulating image:", error);
-        alert("Failed to process the image.");
-      }
-    }
-  }, [name, description, difficulty, router]);
-
-  const handleSubmit = async () => {
-    if (!imageUri) return console.error('Image URI is missing');
-    
-    setLoading(true);
-
-    try {
-      const gymId = await getSecureItem("gymId");
-
-      const formData = new FormData();
-      formData.append("name", name);  
-      formData.append("description", description);  
-      formData.append("difficulty", difficulty || "");  
-      formData.append("gymId", gymId || "");
-      formData.append("annotations", annotationsData || "");
-      formData.append("locationId", locationId || ""); // TODO: update to actually represent the location
-
-      const { extension, mimeType } = getFileType(imageUri);
-      if (Platform.OS === "web") {
-        // For web, fetch the file as a blob
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const file = new File([blob], `photo.${extension}`, { type: mimeType });
-        formData.append("image", file);
-      } else {
-        // For React Native
-        formData.append("image", {
-          imageUri,
-          name: `photo.${extension}`,
-          type: mimeType,
-        } as any);
-      }
-
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_ROUTE, {
-        method: "POST",
-        body: formData,
-      }, 5000);
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Route created successfully!'); // TODO: switch away from alerts to have more control over styling
-        router.back();
-        router.setParams({ shouldReload: 1})
-      } else {
-        console.error('Error creating route:', data.error);
-        Alert.alert('Error', 'Failed to create route');
-      }
-    } catch (error) {
-      console.error('Error fetching the image:', error);
-      Alert.alert('Error', 'An error occurred while creating the route');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <ScrollView 
-      contentContainerStyle={styles.container}
-      style={{ backgroundColor: COLORS.backgroundPrimary }}
-    >
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: COLORS.backgroundPrimary }}>
       <Text style={[styles.title, { textAlign: "center", marginBottom: 25 }]}>{gymName}</Text>
 
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => handleImagePick(false)}>
-          <Text style={styles.buttonText}>Pick an Image</Text>
+      <View style={styles.optionsContainer}>
+        <TouchableOpacity
+          style={[styles.button, loadingTemplates && { opacity: 0.5 }]}
+          onPress={() => {
+            setShowTemplates(true);
+            fetchTemplates();
+          }}
+          disabled={loadingTemplates}
+        >
+          <Text style={styles.buttonText}>Use a Template</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.buttonText, { textAlign: "center" }]}>OR</Text>
+        <Text style={[styles.buttonText, { textAlign: "center", marginVertical: 10 }]}>OR</Text>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleImagePick(true)}>
-          <Text style={styles.buttonText}>Take a Picture</Text>
-        </TouchableOpacity>
+        <View style={styles.imageButtonsContainer}>
+          <TouchableOpacity style={[styles.button, styles.halfButton]} onPress={() => handleImagePick(false)}>
+            <Text style={styles.buttonText}>Pick Image</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.halfButton]} onPress={() => handleImagePick(true)}>
+            <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
+      {/* Template Selection Modal */}
+      <Modal visible={showTemplates} transparent animationType="slide" onRequestClose={() => setShowTemplates(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select a Template</Text>
+              <TouchableOpacity onPress={() => setShowTemplates(false)}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {loadingTemplates ? (
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            ) : templates.length === 0 ? (
+              <Text style={{ textAlign: "center", marginTop: 20, color: COLORS.textSecondary }}>
+                No templates available.
+              </Text>
+            ) : (
+              <FlatList
+                data={templates}
+                keyExtractor={(item) => item.id || Math.random().toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.templateItem} onPress={() => handleTemplateSelect(item)}>
+                    <Image source={{ uri: item.imageUrl }} style={styles.templateImage} />
+                    <Text style={styles.templateName}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+                numColumns={2}
+                contentContainerStyle={styles.templateGrid}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+
       {imageUri && (
-        <RouteImage
-          style={styles.imagePreview}
-          imageURI={imageUri}
-          dataJSON={annotationsData || ""}
-          interactable={false}
-        />
+        <RouteImage style={styles.imagePreview} imageURI={imageUri} dataJSON={annotationsData || ""} interactable={false} />
       )}
 
-      <TextInput
-        style={styles.textInput}
-        placeholder="Route Name"
-        value={name}
-        onChangeText={setName}
-        placeholderTextColor={COLORS.textSecondary}
-      />
+      {/* Inputs */}
+      <TextInput style={styles.textInput} placeholder="Route Name" value={name} onChangeText={setName} placeholderTextColor={COLORS.textSecondary} />
+      <TextInput style={styles.textInput} placeholder="Description" value={description} onChangeText={setDescription} placeholderTextColor={COLORS.textSecondary} multiline />
+      <TextInput style={[styles.textInput, { marginBottom: 30 }]} placeholder="Difficulty" value={difficulty} onChangeText={setDifficulty} placeholderTextColor={COLORS.textSecondary} />
 
-      <TextInput
-        style={styles.textInput}
-        placeholder="Description"
-        value={description}
-        onChangeText={setDescription}
-        placeholderTextColor={COLORS.textSecondary}
-        multiline
-      />
-
-      <TextInput
-        style={[styles.textInput, { marginBottom: 30 }]}
-        placeholder="Difficulty"
-        value={difficulty}
-        onChangeText={setDifficulty}
-        placeholderTextColor={COLORS.textSecondary}
-      />
-
+      {/* Submit */}
       <TouchableOpacity
-        style={[styles.submitButton, { backgroundColor: canSubmit ? '#2f8f4c' : '#B0BEC5' }]}
+        style={[styles.submitButton, { backgroundColor: canSubmit ? "#2f8f4c" : "#B0BEC5" }]}
         onPress={handleSubmit}
         disabled={!canSubmit}
       >
-        <Text style={[styles.submitButtonText, { color: canSubmit ? COLORS.textPrimary : '#2e2e2e' }]}>Submit</Text>
+        <Text style={[styles.submitButtonText, { color: canSubmit ? COLORS.textPrimary : "#2e2e2e" }]}>Submit</Text>
       </TouchableOpacity>
 
-      {!canSubmit && (
-        <Text style={styles.incompleteMessage}>
-          Please fill in all fields before submitting.
-        </Text>
-      )}
+      {!canSubmit && <Text style={styles.incompleteMessage}>Please fill in all fields before submitting.</Text>}
 
-      {/* Loading Modal */}
       <LoadingModal visible={loading} message="Submitting..." />
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -276,11 +299,78 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: COLORS.textPrimary,
   },
-  buttonsContainer: {
+  optionsContainer: {
     flexDirection: 'column',
-    justifyContent: 'space-between',
-    height: 130,
+    width: '100%',
     marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  imageButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  halfButton: {
+    flex: 0.48,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.backgroundPrimary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+    height: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  closeButton: {
+    fontSize: 24,
+    color: COLORS.textSecondary,
+    padding: 5,
+  },
+  templateGrid: {
+    padding: 10,
+  },
+  templateItem: {
+    flex: 1,
+    margin: 5,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: SIZES.borderRadius,
+    padding: 10,
+    alignItems: 'center',
+  },
+  templateImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: SIZES.borderRadius,
+    marginBottom: 8,
+  },
+  templateName: {
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: COLORS.primary,

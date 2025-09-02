@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { COLORS, SIZES, SHADOWS, globalStyles } from '@/constants/theme';
+import { calculateOptimalImageDimensions } from '@/utils/imageUtils';
 import RouteImage from "@/components/RouteImage/RouteImage";
 import { Route } from '@/app/(tabs)/home';
 
@@ -32,8 +33,6 @@ const RouteDetail = () => {
 
   // Get image size
   const imageUriString = routeDetails?.imageUrl;
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
 
   useEffect(() => {
     if (imageUriString) {
@@ -43,19 +42,19 @@ const RouteDetail = () => {
     }
   }, [imageUriString]);
 
-  // Scale image while keeping aspect ratio
+  // Scale image while keeping aspect ratio using utility
   const scaledImageDimensions = imageDimensions
     ? (() => {
-        const aspectRatio = imageDimensions.width / imageDimensions.height;
-        let width = screenWidth;
-        let height = screenWidth / aspectRatio;
-
-        if (height > screenHeight * 0.8) {
-          height = screenHeight * 0.8;
-          width = height * aspectRatio;
-        }
-
-        return { width, height };
+        const { scaleX, scaleY } = calculateOptimalImageDimensions({
+          imageWidth: imageDimensions.width,
+          imageHeight: imageDimensions.height,
+          insets: { top: 0, bottom: 0, left: 0, right: 0 },
+          extraHeight: -0.2 * imageDimensions.height // mimic 80% screen height
+        });
+        return {
+          width: imageDimensions.width * scaleX,
+          height: imageDimensions.height * scaleY,
+        };
       })()
     : null;
 

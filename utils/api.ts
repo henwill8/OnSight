@@ -1,3 +1,5 @@
+import { getFileType } from '@/utils/fileUtils';
+import { Platform } from 'react-native';
 import config from '@/config';
 import { API_PATHS } from '@/constants/paths';
 import { router } from 'expo-router';
@@ -46,6 +48,53 @@ export async function fetchWithTimeout(
   }
 
   throw new Error("fetchWithTimeout: exhausted retries without success.");
+}
+
+
+/**
+ * Create FormData for image upload, handling web and native platforms.
+ */
+export async function createImageFormData({
+  name,
+  description,
+  difficulty,
+  gymId,
+  annotations,
+  locationId,
+  imageUri,
+}: {
+  name: string;
+  description: string;
+  difficulty: string;
+  gymId: string;
+  annotations?: string | null;
+  locationId?: string | null;
+  imageUri: string;
+}) {
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("description", description);
+  formData.append("difficulty", difficulty || "");
+  formData.append("gymId", gymId || "");
+  formData.append("annotations", annotations || "");
+  formData.append("locationId", locationId || "");
+
+  const { extension, mimeType } = getFileType(imageUri);
+  if (Platform.OS === "web") {
+    // For web, fetch the file as a blob
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+    const file = new File([blob], `photo.${extension}`, { type: mimeType });
+    formData.append("image", file);
+  } else {
+    // For React Native
+    formData.append("image", {
+      uri: imageUri,
+      name: `photo.${extension}`,
+      type: mimeType,
+    } as any);
+  }
+  return formData;
 }
 
 // Function to fetch job status with timeout

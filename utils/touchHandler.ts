@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { useRef } from "react";
-import { FittedImageRectOutput } from "./ImageUtils";
+import { FittedImageRectOutput } from "./imageUtils";
 
 export const crossPlatformTouchHandler = (
   interactable: boolean,
