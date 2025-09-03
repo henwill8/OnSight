@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
 import config from "@/config";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { fetchWithTimeout } from "@/utils/api";
+import { getSecureItem } from '@/utils/secureStorage';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { API_PATHS } from "@/constants/paths";
 
@@ -14,6 +15,27 @@ export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false); // Track loading state
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetchWithTimeout(
+          config.API_URL + API_PATHS.VERIFY_TOKEN,
+          { method: "GET", credentials: "include" },
+          5000
+        );
+
+        if (response.ok) {
+          router.replace("/(tabs)/home");
+        } else {
+          router.replace("/auth/login");
+        }
+      } catch {
+        router.replace("/auth/login");
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   const handleLogin = async () => {
     console.log("Attempting login for user:", username);

@@ -7,7 +7,6 @@ import { API_PATHS } from "@/constants/paths";
 
 export default function Index() {
   const router = useRouter();
-  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -19,7 +18,6 @@ export default function Index() {
         );
 
         if (response.ok) {
-          setIsAuthed(true); // only show Skia after auth
           router.replace("/(tabs)/home");
         } else {
           router.replace("/auth/login");
@@ -31,5 +29,5 @@ export default function Index() {
     checkAuth();
   }, [router]);
 
-  if (!isAuthed) return null;
+  return null;
 }

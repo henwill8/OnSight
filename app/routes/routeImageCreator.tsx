@@ -13,6 +13,7 @@ import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
 import { API_PATHS } from "@/constants/paths";
 import { AntDesign, Feather } from '@expo/vector-icons';
+import { useRouteStore } from '@/store/routeStore'
 
 type ImageSize = { width: number; height: number };
 
@@ -20,8 +21,7 @@ const RouteImageCreator: React.FC = () => {
   const router = useRouter();
   const navigation = useNavigation();
 
-  const { imageUri } = useLocalSearchParams();
-  const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
+  const { imageUri, annotations } = useRouteStore();
 
   const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null); // Image size
   const [scaleX, setScaleX] = useState<number>(1); // Values used to scale the image to the screen size
@@ -42,16 +42,39 @@ const RouteImageCreator: React.FC = () => {
   }, [navigation]);
 
   useEffect(() => {
-    if (imageUriString) {
-      Image.getSize(imageUriString, (width, height) => {
+    if (imageUri) {
+      Image.getSize(imageUri, (width, height) => {
         setImageDimensions({ width, height });
       });
 
-      sendImageToServer(imageUriString);
+      // Check if we have existing annotations
+      if (annotations) {
+        loadAnnotations(annotations);
+      } else {
+        sendImageToServer(imageUri);
+      }
     } else {
       console.error("No imageUri provided");
     }
-  }, [imageUriString]);
+  }, [imageUri, annotations]);
+
+  const loadAnnotations = useCallback(async (annotationsUri: string) => {
+    console.log("Loading existing annotations...");
+    
+    try {
+      const response = await fetch(annotationsUri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch annotations: ${response.status}`);
+      }
+      let annotationsData = await response.text();
+      
+      routeAnnotationRef.current?.loadAnnotationJSON(annotationsData);
+      setDataReceived(true);
+      
+    } catch (error: any) {
+      sendImageToServer(imageUri || "")
+    }
+  }, [imageUri]);
 
   const handleToggleBoundingBoxes = () => {
     setShowUnselectedHolds(prev => !prev);
@@ -68,12 +91,10 @@ const RouteImageCreator: React.FC = () => {
   const handleExport = async () => {
     setShowUnselectedHolds(false);
 
-    try {  
+    try {
+      useRouteStore.getState().setRouteData(imageUri, routeAnnotationRef.current?.exportAnnotationJSON)
+      
       router.back(); // Go back to previous screen
-      router.setParams({
-        exportedUri: encodeURIComponent(imageUriString || ""),
-        annotationsJSON: routeAnnotationRef.current?.exportAnnotationJSON()
-      });
     } catch (error) {
       console.error("Error exporting image: ", error);
       Alert.alert("Export Failed", "There was an error exporting the image.");
@@ -211,7 +232,7 @@ const RouteImageCreator: React.FC = () => {
             width: imageDimensions.width * scaleX,
             height: imageDimensions.height * scaleY,
           }}
-          imageURI={imageUriString}
+          imageURI={imageUri}
           interactable={true}
           climbingHoldOverlayProps={{
             showUnselectedHolds: showUnselectedHolds,
@@ -228,7 +249,10 @@ const RouteImageCreator: React.FC = () => {
         <AntDesign name="check" size={32} color="#fff" />
       </TouchableOpacity>
 
-      <LoadingModal visible={!dataReceived} message={"Detecting Climbing Holds...\n(may take up to 10 seconds)"}/>
+      <LoadingModal 
+        visible={!dataReceived} 
+        message={annotations ? "Loading Existing Annotations..." : "Detecting Climbing Holds...\n(may take up to 10 seconds)"}
+      />
     </View>
   );
 };

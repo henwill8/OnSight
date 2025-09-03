@@ -12,167 +12,115 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
-import { setSecureItem, getSecureItem } from "@/utils/secureStorage";
-import { resizeImageToMaxDimension } from "@/utils/imageUtils";
-import { fetchWithTimeout, createImageFormData } from "@/utils/api";
-import { API_PATHS } from "@/constants/paths";
+import { useRouteStore } from '@/store/routeStore';
 import { COLORS, SIZES } from "@/constants/theme";
-import config from "@/config";
 
 import LoadingModal from "@/components/ui/LoadingModal";
 import RouteImage from "@/components/RouteImage/RouteImage";
 
-interface Template {
-  imageUrl: string;
-  annotationsUrl: string;
-}
+// Services
+import { RouteService, Template } from '@/services/RouteService';
+import { ImagePickerService } from '@/services/ImagePickerService';
 
 const CreateRouteScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
+  const { locationId: locationIdParam } = useLocalSearchParams();
+  const { imageUri: exportedUri, annotations: annotationsJSON } = useRouteStore();
 
+  // State
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
-
+  
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [difficulty, setDifficulty] = useState<string>("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [annotationsData, setAnnotationsData] = useState<string | null>(null);
-
   const [locationId, setLocationId] = useState<string | null>(null);
   const [gymName, setGymName] = useState<string>("");
-
+  
   const [canSubmit, setCanSubmit] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { locationId: locationIdParam, exportedUri, annotationsJSON } = useLocalSearchParams();
-
-  /** Fetch Templates **/
-  const fetchTemplates = useCallback(async () => {
+  // Handlers
+  const handleFetchTemplates = useCallback(async () => {
     setLoadingTemplates(true);
     try {
-      const gymId = await getSecureItem("gymId");
-      const response = await fetchWithTimeout(
-        config.API_URL + API_PATHS.GET_TEMPLATES + (gymId ? `?gymId=${gymId}` : "") + (locationIdParam && gymId ? `&locationId=${locationIdParam}` : ""),
-        { method: "GET" }
-      );
-      const data = await response.json();
-      console.log(data)
-      if (response.ok) {
-        const templates: Template[] = (data || []).map(t => ({
-          imageUrl: t.imageUrl,
-          annotationsUrl: t.annotationsUrl
-        }));
-        setTemplates(templates);
-      } else {
-        console.error("Error fetching templates:", data.error);
-        Alert.alert("Error", "Failed to load templates");
-      }
+      const fetchedTemplates = await RouteService.fetchTemplates(locationIdParam as string);
+      setTemplates(fetchedTemplates);
     } catch (error) {
-      console.error("Error fetching templates:", error);
       Alert.alert("Error", "Failed to load templates");
     } finally {
       setLoadingTemplates(false);
     }
-  }, []);
+  }, [locationIdParam]);
 
-  /** Handle Template Select **/
   const handleTemplateSelect = (template: Template) => {
-    router.push({
-      pathname: "/routes/routeImageCreator",
-      params: {
-        imageUri: encodeURIComponent(template.imageUrl),
-        annotationsUri: encodeURIComponent(template.annotationsUrl),
-        name,
-        description,
-        difficulty,
-      },
-    });
+    useRouteStore.getState().setRouteData(template.imageUrl, template.annotationsUrl);
+    router.push("/routes/routeImageCreator");
     setShowTemplates(false);
   };
 
-  /** Handle Image Pick **/
-  const handleImagePick = useCallback(
-    async (useCamera: boolean) => {
-      const permission = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const handleImagePick = useCallback(async (useCamera: boolean) => {
+    const result = useCamera 
+      ? await ImagePickerService.launchCamera()
+      : await ImagePickerService.launchImageLibrary();
 
-      if (permission.status !== "granted") {
-        Alert.alert("Permission Required", "You need to allow access to use this feature.");
-        return;
-      }
+    if (result.success && result.uri) {
+      useRouteStore.getState().setRouteData(result.uri, null);
+      router.push("/routes/routeImageCreator");
+    } else if (result.error) {
+      Alert.alert("Error", result.error);
+    }
+  }, [router]);
 
-      const pickerResult = useCamera
-        ? await ImagePicker.launchCameraAsync({ quality: 1 })
-        : await ImagePicker.launchImageLibraryAsync({ quality: 1 });
-
-      if (pickerResult.assets && pickerResult.assets.length > 0) {
-        const uri = pickerResult.assets[0].uri;
-        try {
-          const resizedImage = await resizeImageToMaxDimension(uri);
-
-          router.push({
-            pathname: "/routes/routeImageCreator",
-            params: {
-              imageUri: encodeURIComponent(resizedImage.uri),
-              name,
-              description,
-              difficulty,
-            },
-          });
-        } catch (error) {
-          console.error("Error manipulating image:", error);
-          Alert.alert("Error", "Failed to process the image.");
-        }
-      }
-    },
-    [name, description, difficulty, router]
-  );
-
-  /** Handle Submit **/
   const handleSubmit = async () => {
-    if (!imageUri) return console.error("Image URI is missing");
+    if (!imageUri || !annotationsJSON) {
+      Alert.alert("Error", "Missing required data");
+      return;
+    }
+
     setLoading(true);
     try {
-      const gymId = await getSecureItem("gymId");
-      const formData = await createImageFormData({
+      await RouteService.createRoute({
         name,
         description,
         difficulty,
-        gymId: gymId || "",
-        annotations: annotationsData,
-        locationId,
         imageUri,
+        annotationsJSON,
+        locationId: locationId || undefined,
       });
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_ROUTE, {
-        method: "POST",
-        body: formData,
-      }, 5000);
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert("Success", "Route created successfully!");
-        router.back();
-        router.setParams({ shouldReload: 1 });
-      } else {
-        console.error("Error creating route:", data.error);
-        Alert.alert("Error", "Failed to create route");
-      }
-    } catch (error) {
-      console.error("Error creating route:", error);
-      Alert.alert("Error", "An error occurred while creating the route");
+
+      Alert.alert("Success", "Route created successfully!");
+      router.back();
+      router.setParams({ shouldReload: 1 });
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to create route");
     } finally {
       setLoading(false);
     }
   };
 
-  /** Effects **/
+  const handleShowTemplates = () => {
+    setShowTemplates(true);
+    handleFetchTemplates();
+  };
+
+  // Effects
+  const fetchGymName = useCallback(async () => {
+    try {
+      const currentGymName = await RouteService.getCurrentGymName();
+      setGymName(currentGymName);
+    } catch (error) {
+      console.error("Error fetching gym name:", error);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (exportedUri) setImageUri(exportedUri as string);
@@ -187,107 +135,162 @@ const CreateRouteScreen = () => {
       headerStyle: { backgroundColor: COLORS.backgroundSecondary },
       headerTintColor: "white",
     });
-    fetchCurrentGymName();
-  }, [navigation]);
-
-  const fetchCurrentGymName = async () => {
-    const currentGymName = await getSecureItem("gymName");
-    setGymName(currentGymName || "");
-  };
+    fetchGymName();
+  }, [navigation, fetchGymName]);
 
   useEffect(() => {
-    setCanSubmit(!!difficulty && !!imageUri);
-  }, [difficulty, imageUri]);
+    setCanSubmit(!!difficulty && !!imageUri && !!name.trim());
+  }, [difficulty, imageUri, name]);
+
+  // Render methods
+  const renderTemplateItem = ({ item }: { item: Template }) => (
+    <TouchableOpacity 
+      style={styles.templateItem} 
+      onPress={() => handleTemplateSelect(item)}
+    >
+      <Image source={{ uri: item.imageUrl }} style={styles.templateImage} />
+    </TouchableOpacity>
+  );
+
+  const renderTemplateModal = () => (
+    <Modal 
+      visible={showTemplates} 
+      transparent 
+      animationType="slide" 
+      onRequestClose={() => setShowTemplates(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select a Template</Text>
+            <TouchableOpacity onPress={() => setShowTemplates(false)}>
+              <Text style={styles.closeButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {loadingTemplates ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          ) : templates.length === 0 ? (
+            <Text style={styles.emptyMessage}>
+              No templates available.
+            </Text>
+          ) : (
+            <FlatList
+              data={templates}
+              keyExtractor={(item) => item.id || Math.random().toString()}
+              renderItem={renderTemplateItem}
+              numColumns={2}
+              contentContainerStyle={styles.templateGrid}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: COLORS.backgroundPrimary }}>
-      <Text style={[styles.title, { textAlign: "center", marginBottom: 25 }]}>{gymName}</Text>
+    <ScrollView 
+      contentContainerStyle={styles.container} 
+      style={styles.scrollView}
+    >
+      <Text style={styles.title}>{gymName}</Text>
 
+      {/* Options Section */}
       <View style={styles.optionsContainer}>
         <TouchableOpacity
-          style={[styles.button, loadingTemplates && { opacity: 0.5 }]}
-          onPress={() => {
-            setShowTemplates(true);
-            fetchTemplates();
-          }}
+          style={[styles.button, loadingTemplates && styles.buttonDisabled]}
+          onPress={handleShowTemplates}
           disabled={loadingTemplates}
         >
           <Text style={styles.buttonText}>Use a Template</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.buttonText, { textAlign: "center", marginVertical: 10 }]}>OR</Text>
+        <Text style={styles.orText}>OR</Text>
 
         <View style={styles.imageButtonsContainer}>
-          <TouchableOpacity style={[styles.button, styles.halfButton]} onPress={() => handleImagePick(false)}>
+          <TouchableOpacity 
+            style={[styles.button, styles.halfButton]} 
+            onPress={() => handleImagePick(false)}
+          >
             <Text style={styles.buttonText}>Pick Image</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.halfButton]} onPress={() => handleImagePick(true)}>
+          <TouchableOpacity 
+            style={[styles.button, styles.halfButton]} 
+            onPress={() => handleImagePick(true)}
+          >
             <Text style={styles.buttonText}>Take Photo</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Template Selection Modal */}
-      <Modal visible={showTemplates} transparent animationType="slide" onRequestClose={() => setShowTemplates(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select a Template</Text>
-              <TouchableOpacity onPress={() => setShowTemplates(false)}>
-                <Text style={styles.closeButton}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            {loadingTemplates ? (
-              <ActivityIndicator size="large" color={COLORS.primary} />
-            ) : templates.length === 0 ? (
-              <Text style={{ textAlign: "center", marginTop: 20, color: COLORS.textSecondary }}>
-                No templates available.
-              </Text>
-            ) : (
-              <FlatList
-                data={templates}
-                keyExtractor={(item) => item.id || Math.random().toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.templateItem} onPress={() => handleTemplateSelect(item)}>
-                    <Image source={{ uri: item.imageUrl }} style={styles.templateImage} />
-                    <Text style={styles.templateName}>{item.name}</Text>
-                  </TouchableOpacity>
-                )}
-                numColumns={2}
-                contentContainerStyle={styles.templateGrid}
-              />
-            )}
-          </View>
-        </View>
-      </Modal>
+      {renderTemplateModal()}
 
+      {/* Image Preview */}
       {imageUri && (
-        <RouteImage style={styles.imagePreview} imageURI={imageUri} dataJSON={annotationsData || ""} interactable={false} />
+        <RouteImage 
+          style={styles.imagePreview} 
+          imageURI={imageUri} 
+          dataJSON={annotationsData || ""} 
+          interactable={false} 
+        />
       )}
 
-      {/* Inputs */}
-      <TextInput style={styles.textInput} placeholder="Route Name" value={name} onChangeText={setName} placeholderTextColor={COLORS.textSecondary} />
-      <TextInput style={styles.textInput} placeholder="Description" value={description} onChangeText={setDescription} placeholderTextColor={COLORS.textSecondary} multiline />
-      <TextInput style={[styles.textInput, { marginBottom: 30 }]} placeholder="Difficulty" value={difficulty} onChangeText={setDifficulty} placeholderTextColor={COLORS.textSecondary} />
+      {/* Form Inputs */}
+      <View style={styles.formContainer}>
+        <TextInput 
+          style={styles.textInput} 
+          placeholder="Route Name" 
+          value={name} 
+          onChangeText={setName} 
+          placeholderTextColor={COLORS.textSecondary} 
+        />
+        
+        <TextInput 
+          style={[styles.textInput, styles.multilineInput]} 
+          placeholder="Description" 
+          value={description} 
+          onChangeText={setDescription} 
+          placeholderTextColor={COLORS.textSecondary} 
+          multiline 
+        />
+        
+        <TextInput 
+          style={styles.textInput} 
+          placeholder="Difficulty" 
+          value={difficulty} 
+          onChangeText={setDifficulty} 
+          placeholderTextColor={COLORS.textSecondary} 
+        />
+      </View>
 
-      {/* Submit */}
+      {/* Submit Section */}
       <TouchableOpacity
-        style={[styles.submitButton, { backgroundColor: canSubmit ? "#2f8f4c" : "#B0BEC5" }]}
+        style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         disabled={!canSubmit}
       >
-        <Text style={[styles.submitButtonText, { color: canSubmit ? COLORS.textPrimary : "#2e2e2e" }]}>Submit</Text>
+        <Text style={[styles.submitButtonText, !canSubmit && styles.submitButtonTextDisabled]}>
+          Submit
+        </Text>
       </TouchableOpacity>
 
-      {!canSubmit && <Text style={styles.incompleteMessage}>Please fill in all fields before submitting.</Text>}
+      {!canSubmit && (
+        <Text style={styles.incompleteMessage}>
+          Please fill in all required fields before submitting.
+        </Text>
+      )}
 
       <LoadingModal visible={loading} message="Submitting..." />
     </ScrollView>
   );
 };
 
-
 const styles = StyleSheet.create({
+  scrollView: {
+    backgroundColor: COLORS.backgroundPrimary,
+  },
   container: {
     flexGrow: 1,
     padding: 20,
@@ -296,21 +299,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 25,
     color: COLORS.textPrimary,
+    textAlign: 'center',
   },
   optionsContainer: {
     flexDirection: 'column',
     width: '100%',
     marginBottom: 20,
     paddingHorizontal: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 15,
-    textAlign: 'center',
   },
   imageButtonsContainer: {
     flexDirection: 'row',
@@ -320,6 +317,29 @@ const styles = StyleSheet.create({
   halfButton: {
     flex: 0.48,
   },
+  button: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.borderRadius,
+    padding: 13,
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  orText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -350,6 +370,17 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     padding: 5,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyMessage: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: COLORS.textSecondary,
+    fontSize: 16,
+  },
   templateGrid: {
     padding: 10,
   },
@@ -365,32 +396,25 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
     borderRadius: SIZES.borderRadius,
-    marginBottom: 8,
   },
-  templateName: {
-    color: COLORS.textPrimary,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    padding: 13,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
+  
+  // Form Styles
+  formContainer: {
+    marginVertical: 20,
   },
   textInput: {
     borderWidth: 1,
     marginBottom: 15,
-    padding: 10,
+    padding: 12,
     color: COLORS.textPrimary,
     borderColor: COLORS.border,
     borderRadius: SIZES.borderRadius,
     backgroundColor: COLORS.backgroundSecondary,
+    fontSize: 16,
+  },
+  multilineInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   imagePreview: {
     width: '100%',
@@ -399,19 +423,30 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.borderRadius,
     resizeMode: 'cover',
   },
+  
+  // Submit Styles
   submitButton: {
+    backgroundColor: '#2f8f4c',
     padding: 15,
     borderRadius: SIZES.borderRadius,
     alignItems: 'center',
+    marginTop: 10,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#B0BEC5',
   },
   submitButtonText: {
+    color: COLORS.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
+  submitButtonTextDisabled: {
+    color: '#2e2e2e',
+  },
   incompleteMessage: {
     color: 'red',
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: '500',
     marginTop: 10,
     textAlign: 'center',
   },

@@ -54,9 +54,10 @@
     "react-native-svg": "15.11.2",
     "react-native-view-shot": "~4.0.3",
     "react-native-web": "^0.20.0",
-    "react-zoom-pan-pinch": "^3.7.0",
     "react-native-zoomable-view": "git+https://github.com/henwill8/react-native-zoomable-view.git",
-    "serve": "^14.2.4"
+    "react-zoom-pan-pinch": "^3.7.0",
+    "serve": "^14.2.4",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",
