@@ -11,6 +11,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
     container: {
       flex: 1,
       padding: spacing.md,
+      backgroundColor: colors.backgroundPrimary,
     },
     textInput: {
       borderWidth: 1,

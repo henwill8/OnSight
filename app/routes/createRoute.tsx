@@ -128,7 +128,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
     templateItem: {
       flex: 1,
       margin: spacing.xs,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: colors.backgroundPrimary,
       borderRadius: sizes.borderRadius,
       padding: spacing.sm,
       alignItems: 'center',
@@ -150,7 +150,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       color: colors.textPrimary,
       borderColor: colors.border,
       borderRadius: sizes.borderRadius,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: colors.backgroundPrimary,
       fontSize: 16,
     },
     multilineInput: {
@@ -305,11 +305,11 @@ const CreateRouteScreen = () => {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Create Route",
-      headerStyle: { backgroundColor: colors.backgroundSecondary },
+      headerStyle: { backgroundColor: colors.backgroundPrimary },
       headerTintColor: "white",
     });
     fetchGymName();
-  }, [navigation, fetchGymName, colors.backgroundSecondary]);
+  }, [navigation, fetchGymName, colors.backgroundPrimary]);
 
   useEffect(() => {
     setCanSubmit(!!difficulty && !!imageUri && !!name.trim());

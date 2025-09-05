@@ -11,7 +11,7 @@ import { Route, Location, BreadcrumbItem } from '@/types';
 
 const getStyles = (colors: any, sizes: any, shadows: any, spacing: any) => {
   return StyleSheet.create({
-    container: { flex: 1, padding: spacing.md },
+    container: { flex: 1, padding: spacing.md, backgroundColor: colors.backgroundPrimary },
     breadcrumbContainer: { flexDirection: 'row', marginVertical: spacing.sm },
     breadcrumbGroup: { flexDirection: 'row', alignItems: 'center' },
     breadcrumbItem: { fontSize: 16, marginHorizontal: spacing.xs },
@@ -52,7 +52,7 @@ const HomeScreen = () => {
   const { shouldReload } = useLocalSearchParams();
 
   const { gymData, setGymData, setGymField, clearGymData, isLoading } = useGymStore();
-  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.gymName ? gymData.gymName : null, gymData.locationId);
+  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.gymId ? gymData.gymId : null, gymData.locationId);
 
   const styles = getStyles(colors, sizes, shadows, spacing);
 
