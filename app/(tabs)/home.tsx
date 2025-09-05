@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation, useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import RouteImage from '@/components/RouteImage/RouteImage';
 import { useGymStore } from '@/store/gymStore';
 import { useRoutesData } from '@/hooks/useRoutesData';
 import { useTheme } from '@/constants/theme';
+import { Route, Location, BreadcrumbItem } from '@/types';
 
 const HomeScreen = () => {
   const { colors, sizes, shadows } = useTheme();
@@ -14,8 +15,8 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const { shouldReload } = useLocalSearchParams();
 
-  const { store: gymData } = useGymStore();
-  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData(gymData.gymName ? gymData.gymName : null, gymData.locationId);
+  const { gymData, setGymData, setGymField, clearGymData, isLoading } = useGymStore();
+  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.gymName ? gymData.gymName : null, gymData.locationId);
 
   useFocusEffect(() => {
     if (shouldReload) {
@@ -23,6 +24,12 @@ const HomeScreen = () => {
       router.setParams({ shouldReload: 0 });
     }
   });
+
+  useEffect(() => {
+    if (gymData.gymName) {
+      navigation.setOptions({ headerTitle: gymData.gymName ? gymData.gymName : "No Gym Selected" });
+    }
+  }, [gymData.gymName, navigation]);
 
   if (!gymData.gymName) {
     return (
@@ -32,27 +39,27 @@ const HomeScreen = () => {
     );
   }
 
-  const handleRoutePress = (route: any) => {
+  const handleRoutePress = (route: Route) => {
     router.push('/routes/routeDetail');
     router.setParams({ route: encodeURIComponent(JSON.stringify(route)) });
   };
 
   const handleAddRoute = () => {
     router.push('/routes/createRoute');
-    router.setParams({ gymData.locationId });
+    router.setParams({ locationId: gymData.locationId });
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundPrimary }]}>
       {/* Breadcrumb */}
       <ScrollView horizontal style={styles.breadcrumbContainer}>
-        <TouchableOpacity onPress={() => gymData.setField('locationId', '')}>
+        <TouchableOpacity onPress={() => setGymField({ locationId: '' })}>
           <Text style={[styles.breadcrumbItem, { color: colors.textPrimary }]}>Home</Text>
         </TouchableOpacity>
         {breadcrumb.map((loc, idx) => (
           <View key={loc.id} style={styles.breadcrumbGroup}>
             <Text style={[styles.breadcrumbSeparator, { color: colors.textSecondary }]}>{'>'}</Text>
-            <TouchableOpacity onPress={() => gymData.setField('locationId', loc.id)}>
+            <TouchableOpacity onPress={() => setGymField({ locationId: loc.id })}>
               <Text style={[styles.breadcrumbItem, { color: colors.textPrimary }]}>{loc.name}</Text>
             </TouchableOpacity>
           </View>
@@ -68,7 +75,7 @@ const HomeScreen = () => {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.childLocationCard, { backgroundColor: colors.primary }]}
-              onPress={() => gymData.setField('locationId', item.id)}
+              onPress={() => setGymField({ locationId: '' })}
             >
               <Text style={[styles.childLocationName, { color: colors.textPrimary }]}>{item.name}</Text>
             </TouchableOpacity>

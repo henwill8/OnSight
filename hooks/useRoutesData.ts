@@ -3,10 +3,10 @@ import config from '@/config';
 import { API_PATHS } from '@/constants/paths';
 import { fetchWithTimeout } from '@/utils/api';
 
-export const useRoutesData = (gymId: string | null, locationId: string | null) => {
-  const [routes, setRoutes] = useState([]);
-  const [childLocations, setChildLocations] = useState([]);
-  const [breadcrumb, setBreadcrumb] = useState([]);
+export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string | null) => {
+  const [routes, setRoutes] = useState<R[]>([]);
+  const [childLocations, setChildLocations] = useState<L[]>([]);
+  const [breadcrumb, setBreadcrumb] = useState<B[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -50,7 +50,7 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
       })
     );
 
-    setRoutes(routesWithSignedUrls);
+    setRoutes(routesWithSignedUrls as R[]);
   };
 
   const fetchChildLocations = async () => {
@@ -58,7 +58,7 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
     const res = await fetch(childUrl);
     if (!res.ok) throw new Error('Failed to fetch child locations');
     const data = await res.json();
-    setChildLocations(data.locations || []);
+    setChildLocations(data.locations as L[] || []);
   };
 
   const fetchBreadcrumb = async () => {
@@ -70,7 +70,7 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
     const res = await fetch(breadcrumbUrl);
     if (!res.ok) throw new Error('Failed to fetch breadcrumb');
     const data = await res.json();
-    setBreadcrumb(data.ancestry || []);
+    setBreadcrumb(data.ancestry as B[] || []);
   };
 
   useEffect(() => {

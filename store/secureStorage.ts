@@ -3,24 +3,20 @@ import { Platform } from 'react-native';
 
 import { useState, useEffect, useCallback } from 'react';
 
-/**
- * Generic hook for managing an object in secure storage with state sync.
- *
- * @param key Storage key
- * @param initialValue Default value if nothing is stored
- */
-export function useSecureStorage<T extends Record<string, any>>(key: string, initialValue: T) {
-  const [value, setValue] = useState<T>(initialValue);
+export function useSecureStorageObject<T extends Record<string, any>>(
+  key: string,
+  initialValue: T
+) {
+  const [value, setValueState] = useState<T>(initialValue);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from storage on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const storedValue = await getSecureItem(key);
         if (storedValue && mounted) {
-          setValue(JSON.parse(storedValue) as T);
+          setValueState(JSON.parse(storedValue) as T);
         }
       } catch (error) {
         console.error('Error loading secure storage:', error);
@@ -34,11 +30,20 @@ export function useSecureStorage<T extends Record<string, any>>(key: string, ini
     };
   }, [key]);
 
-  // Replace full object
-  const saveValue = useCallback(
+  const clearValue = useCallback(async () => {
+    try {
+      setValueState(initialValue);
+      await removeSecureItem(key);
+    } catch (error) {
+      console.error('Error clearing secure storage:', error);
+    }
+  }, [key, initialValue]);
+
+  // Full replace
+  const replace = useCallback(
     async (newValue: T) => {
       try {
-        setValue(newValue);
+        setValueState(newValue);
         await setSecureItem(key, JSON.stringify(newValue));
       } catch (error) {
         console.error('Error saving secure storage:', error);
@@ -47,31 +52,27 @@ export function useSecureStorage<T extends Record<string, any>>(key: string, ini
     [key]
   );
 
-  // Update a single property
-  const setField = useCallback(
-    async <K extends keyof T>(field: K, fieldValue: T[K]) => {
+  // Partial update
+  const updateFields = useCallback(
+    async (partial: Partial<T>) => {
       try {
-        const updated = { ...value, [field]: fieldValue };
-        setValue(updated);
+        const updated = { ...value, ...partial };
+        setValueState(updated);
         await setSecureItem(key, JSON.stringify(updated));
       } catch (error) {
-        console.error('Error setting field in secure storage:', error);
+        console.error('Error updating fields in secure storage:', error);
       }
     },
     [key, value]
   );
 
-  // Remove value from storage
-  const clearValue = useCallback(async () => {
-    try {
-      setValue(initialValue);
-      await removeSecureItem(key);
-    } catch (error) {
-      console.error('Error clearing secure storage:', error);
-    }
-  }, [key, initialValue]);
-
-  return { value, setValue: saveValue, setField, clearValue, isLoading };
+  return {
+    value,
+    isLoading,
+    replace,
+    updateFields,
+    clearValue
+  };
 }
 
 

@@ -9,7 +9,7 @@ import { API_PATHS } from "@/constants/paths";
 
 const ChooseGym: React.FC = () => {
   const { colors, sizes } = useTheme();
-  const { gymName, gymId, setGymData } = useGymStore();
+  const { gymData, setGymData, setGymField, clearGymData, isLoading } = useGymStore();
 
   const [gyms, setGyms] = useState<any[]>([]);
   const [newGymName, setNewGymName] = useState('');
@@ -72,7 +72,7 @@ const ChooseGym: React.FC = () => {
 
   const handleSelectGym = async (gym: any) => {
     try {
-      setGymData(gym.name, gym.id, '');
+      setGymData({ gymName: gym.name, gymId: gym.id, locationId: '' });
     } catch (error) {
       console.error(error);
     }
@@ -110,7 +110,7 @@ const ChooseGym: React.FC = () => {
 
       {/* Current Gym */}
       <Text style={[styles.currentGymText, { color: colors.textPrimary }]}>
-        {gymName ? `Current Gym: ${gymName}` : 'No gym selected.'}
+        {gymData.gymName ? `Current Gym: ${gymData.gymName}` : 'No gym selected.'}
       </Text>
 
       {/* Available Gyms */}
