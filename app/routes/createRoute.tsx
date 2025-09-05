@@ -16,20 +16,193 @@ import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { useRouteStore } from '@/store/routeStore';
-import { COLORS, SIZES } from "@/constants/theme";
+import { useTheme } from "@/constants/theme";
 
 import LoadingModal from "@/components/ui/LoadingModal";
 import RouteImage from "@/components/RouteImage/RouteImage";
 
 // Services
-import { RouteService, Template } from '@/services/RouteService';
 import { ImagePickerService } from '@/services/ImagePickerService';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouteService } from '@/hooks/useRouteService';
+import { Template } from '@/types';
+
+const getStyles = (colors: any, sizes: any, spacing: any) => {
+  return StyleSheet.create({
+    scrollView: {
+      backgroundColor: colors.backgroundPrimary,
+    },
+    container: {
+      flexGrow: 1,
+      padding: spacing.md,
+      paddingTop: spacing.lg + spacing.xs,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      marginBottom: spacing.lg + spacing.xs,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    optionsContainer: {
+      flexDirection: 'column',
+      width: '100%',
+      marginBottom: spacing.md,
+      paddingHorizontal: spacing.sm,
+    },
+    imageButtonsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    halfButton: {
+      flex: 0.48,
+    },
+    button: {
+      backgroundColor: colors.primary,
+      borderRadius: sizes.borderRadius,
+      padding: spacing.md,
+      alignItems: 'center',
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      color: colors.textPrimary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    orText: {
+      color: colors.textPrimary,
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginVertical: spacing.sm,
+    },
+  
+    // Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.backgroundPrimary,
+      borderTopLeftRadius: sizes.borderRadius,
+      borderTopRightRadius: sizes.borderRadius,
+      paddingBottom: spacing.md,
+      height: '80%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    closeButton: {
+      fontSize: 24,
+      color: colors.textSecondary,
+      padding: spacing.xs,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyMessage: {
+      textAlign: 'center',
+      marginTop: spacing.md,
+      color: colors.textSecondary,
+      fontSize: 16,
+    },
+    templateGrid: {
+      padding: spacing.sm,
+    },
+    templateItem: {
+      flex: 1,
+      margin: spacing.xs,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: sizes.borderRadius,
+      padding: spacing.sm,
+      alignItems: 'center',
+    },
+    templateImage: {
+      width: '100%',
+      height: 150,
+      borderRadius: sizes.borderRadius,
+    },
+  
+    // Form Styles
+    formContainer: {
+      marginVertical: spacing.md,
+    },
+    textInput: {
+      borderWidth: 1,
+      marginBottom: spacing.md,
+      padding: spacing.sm + spacing.xs,
+      color: colors.textPrimary,
+      borderColor: colors.border,
+      borderRadius: sizes.borderRadius,
+      backgroundColor: colors.backgroundSecondary,
+      fontSize: 16,
+    },
+    multilineInput: {
+      minHeight: 80,
+      textAlignVertical: 'top',
+    },
+    imagePreview: {
+      width: '100%',
+      height: 400,
+      marginBottom: spacing.md,
+      borderRadius: sizes.borderRadius,
+      resizeMode: 'cover',
+    },
+  
+    // Submit Styles
+    submitButton: {
+      backgroundColor: colors.success,
+      padding: spacing.md,
+      borderRadius: sizes.borderRadius,
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    submitButtonDisabled: {
+      backgroundColor: colors.disabled,
+    },
+    submitButtonText: {
+      color: colors.textPrimary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    submitButtonTextDisabled: {
+      color: colors.textSecondary,
+    },
+    incompleteMessage: {
+      color: colors.error,
+      fontSize: 14,
+      fontWeight: '500',
+      marginTop: spacing.sm,
+      textAlign: 'center',
+    },
+  });
+};
 
 const CreateRouteScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
   const { locationId: locationIdParam } = useLocalSearchParams();
   const { imageUri: exportedUri, annotations: annotationsJSON } = useRouteStore();
+  const { fetchTemplates, createRoute, getCurrentGymName } = useRouteService();
+
+  const { colors, sizes, spacing, global } = useTheme();
+  const styles = getStyles(colors, sizes, spacing);
 
   // State
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -51,14 +224,14 @@ const CreateRouteScreen = () => {
   const handleFetchTemplates = useCallback(async () => {
     setLoadingTemplates(true);
     try {
-      const fetchedTemplates = await RouteService.fetchTemplates(locationIdParam as string);
+      const fetchedTemplates = await fetchTemplates(locationIdParam as string);
       setTemplates(fetchedTemplates);
     } catch (error) {
       Alert.alert("Error", "Failed to load templates");
     } finally {
       setLoadingTemplates(false);
     }
-  }, [locationIdParam]);
+  }, [locationIdParam, fetchTemplates]);
 
   const handleTemplateSelect = (template: Template) => {
     useRouteStore.getState().setRouteData(template.imageUrl, template.annotationsUrl);
@@ -87,7 +260,7 @@ const CreateRouteScreen = () => {
 
     setLoading(true);
     try {
-      await RouteService.createRoute({
+      await createRoute({
         name,
         description,
         difficulty,
@@ -114,12 +287,12 @@ const CreateRouteScreen = () => {
   // Effects
   const fetchGymName = useCallback(async () => {
     try {
-      const currentGymName = await RouteService.getCurrentGymName();
+      const currentGymName = await getCurrentGymName();
       setGymName(currentGymName);
     } catch (error) {
       console.error("Error fetching gym name:", error);
     }
-  }, []);
+  }, [getCurrentGymName]);
 
   useFocusEffect(
     useCallback(() => {
@@ -132,11 +305,11 @@ const CreateRouteScreen = () => {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Create Route",
-      headerStyle: { backgroundColor: COLORS.backgroundSecondary },
+      headerStyle: { backgroundColor: colors.backgroundSecondary },
       headerTintColor: "white",
     });
     fetchGymName();
-  }, [navigation, fetchGymName]);
+  }, [navigation, fetchGymName, colors.backgroundSecondary]);
 
   useEffect(() => {
     setCanSubmit(!!difficulty && !!imageUri && !!name.trim());
@@ -170,7 +343,7 @@ const CreateRouteScreen = () => {
           
           {loadingTemplates ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
             </View>
           ) : templates.length === 0 ? (
             <Text style={styles.emptyMessage}>
@@ -244,7 +417,7 @@ const CreateRouteScreen = () => {
           placeholder="Route Name" 
           value={name} 
           onChangeText={setName} 
-          placeholderTextColor={COLORS.textSecondary} 
+          placeholderTextColor={colors.textSecondary} 
         />
         
         <TextInput 
@@ -252,7 +425,7 @@ const CreateRouteScreen = () => {
           placeholder="Description" 
           value={description} 
           onChangeText={setDescription} 
-          placeholderTextColor={COLORS.textSecondary} 
+          placeholderTextColor={colors.textSecondary} 
           multiline 
         />
         
@@ -261,7 +434,7 @@ const CreateRouteScreen = () => {
           placeholder="Difficulty" 
           value={difficulty} 
           onChangeText={setDifficulty} 
-          placeholderTextColor={COLORS.textSecondary} 
+          placeholderTextColor={colors.textSecondary} 
         />
       </View>
 
@@ -286,170 +459,5 @@ const CreateRouteScreen = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: COLORS.backgroundPrimary,
-  },
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    paddingTop: 35,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 25,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  optionsContainer: {
-    flexDirection: 'column',
-    width: '100%',
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
-  imageButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  halfButton: {
-    flex: 0.48,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    padding: 13,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  orText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.backgroundPrimary,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 20,
-    height: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  closeButton: {
-    fontSize: 24,
-    color: COLORS.textSecondary,
-    padding: 5,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyMessage: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: COLORS.textSecondary,
-    fontSize: 16,
-  },
-  templateGrid: {
-    padding: 10,
-  },
-  templateItem: {
-    flex: 1,
-    margin: 5,
-    backgroundColor: COLORS.backgroundSecondary,
-    borderRadius: SIZES.borderRadius,
-    padding: 10,
-    alignItems: 'center',
-  },
-  templateImage: {
-    width: '100%',
-    height: 150,
-    borderRadius: SIZES.borderRadius,
-  },
-  
-  // Form Styles
-  formContainer: {
-    marginVertical: 20,
-  },
-  textInput: {
-    borderWidth: 1,
-    marginBottom: 15,
-    padding: 12,
-    color: COLORS.textPrimary,
-    borderColor: COLORS.border,
-    borderRadius: SIZES.borderRadius,
-    backgroundColor: COLORS.backgroundSecondary,
-    fontSize: 16,
-  },
-  multilineInput: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  imagePreview: {
-    width: '100%',
-    height: 400,
-    marginBottom: 20,
-    borderRadius: SIZES.borderRadius,
-    resizeMode: 'cover',
-  },
-  
-  // Submit Styles
-  submitButton: {
-    backgroundColor: '#2f8f4c',
-    padding: 15,
-    borderRadius: SIZES.borderRadius,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#B0BEC5',
-  },
-  submitButtonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  submitButtonTextDisabled: {
-    color: '#2e2e2e',
-  },
-  incompleteMessage: {
-    color: 'red',
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-});
 
 export default CreateRouteScreen;

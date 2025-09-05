@@ -19,7 +19,7 @@ export const COLORS = {
 };
 
 // Spacing
-export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
+export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxs: 3 };
 
 // Font sizes
 export const FONT = { title: 24, subtitle: 20, body: 16, caption: 12 };
@@ -33,6 +33,14 @@ export const SIZES = {
   buttonHeight: 56,
   imagePreviewHeight: 400,
   listItemHeight: 80,
+  strokeWidth: 4,
+  minDrawingDistance: 10,
+  simplifyTolerance: 4.0,
+  clickTimeThreshold: 200,
+  zoomMax: 10.0,
+  zoomMin: 0.5,
+  zoomStep: 0.5,
+  initialZoom: 1.0,
 };
 
 // Border radius scale

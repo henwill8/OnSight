@@ -20,6 +20,17 @@ export interface FittedImageRectOutput {
   scaleY: number;
 }
 
+/**
+ * Calculates the dimensions and offset for an image to fit within a container
+ * based on a specified resize mode (contain or cover).
+ *
+ * @param containerWidth The width of the container.
+ * @param containerHeight The height of the container.
+ * @param imageWidth The original width of the image.
+ * @param imageHeight The original height of the image.
+ * @param resizeMode How the image should be resized to fit its container. Defaults to "cover".
+ * @returns An object containing the calculated width, height, offsetX, offsetY, scaleX, and scaleY for the fitted image.
+ */
 export function getFittedImageRect({
   containerWidth,
   containerHeight,
@@ -57,8 +68,12 @@ export function getFittedImageRect({
 }
 
 /**
- * Resize an image to a max dimension (width or height).
- * Returns manipulated image object with uri, width, height.
+ * Resizes an image to ensure its largest dimension (width or height) does not exceed a specified maximum dimension.
+ * If the image is already smaller than the max dimension, it is returned as-is.
+ *
+ * @param uri The URI of the image to resize.
+ * @param maxDimension The maximum allowed dimension (width or height). Defaults to 1024.
+ * @returns A promise that resolves to an ImageManipulator.ImageResult object with the manipulated image's URI, width, and height.
  */
 export async function resizeImageToMaxDimension(uri: string, maxDimension: number = 1024) {
   // Get the original image dimensions
@@ -92,8 +107,14 @@ export async function resizeImageToMaxDimension(uri: string, maxDimension: numbe
 }
 
 /**
- * Calculates the optimal scale factors for an image to fit within the available screen space.
- * Accounts for safe area insets and UI elements.
+ * Calculates the optimal scale factors for an image to fit within the available screen space,
+ * taking into account safe area insets and additional UI height.
+ *
+ * @param imageWidth The original width of the image.
+ * @param imageHeight The original height of the image.
+ * @param insets The safe area insets (top, bottom, left, right).
+ * @param extraHeight Additional height occupied by UI elements, to be subtracted from available screen height. Defaults to 220.
+ * @returns An object containing the calculated scale factors (scaleX, scaleY).
  */
 export function calculateOptimalImageDimensions({
   imageWidth,

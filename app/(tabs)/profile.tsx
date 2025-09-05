@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
+import { useTheme } from '@/constants/theme';
 
 export default function ProfileScreen() {
+  const { colors, global } = useTheme();
   return (
-    <View style={globalStyles.centerItemsContainer}>
-      <Text style={{color: COLORS.textPrimary}}>Profile Screen</Text>
+    <View style={global.centerItemsContainer}>
+      <Text style={{color: colors.textPrimary}}>Profile Screen</Text>
     </View>
   );
 }

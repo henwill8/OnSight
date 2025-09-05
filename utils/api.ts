@@ -4,6 +4,18 @@ import config from '@/config';
 import { API_PATHS } from '@/constants/paths';
 import { router } from 'expo-router';
 
+/**
+ * Fetches data from a given URL with a specified timeout and retry mechanism.
+ * Handles network errors, timeouts, and redirects to login for unauthorized/forbidden responses.
+ *
+ * @param url The URL to fetch from.
+ * @param options Request initialization options (e.g., method, headers, body).
+ * @param timeout The maximum time in milliseconds to wait for a response.
+ * @param retries The number of times to retry the request if it fails.
+ * @param retryDelay The delay in milliseconds between retries.
+ * @returns A Promise that resolves to the Response object.
+ * @throws An error if the fetch operation ultimately fails or times out after all retries.
+ */
 export async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -50,7 +62,13 @@ export async function fetchWithTimeout(
   throw new Error("fetchWithTimeout: exhausted retries without success.");
 }
 
-// Function to fetch job status with timeout
+/**
+ * Fetches the status of a job from the API.
+ *
+ * @param jobId The ID of the job to fetch the status for.
+ * @param timeout The maximum time in milliseconds to wait for a response.
+ * @returns A Promise that resolves to the job status data, or null if an error occurs.
+ */
 const fetchJobStatus = async (jobId: string, timeout: number) => {
   try {
     const statusResponse = await fetchWithTimeout(config.API_URL + API_PATHS.JOB_STATUS(jobId), { method: "GET" }, timeout);
@@ -68,6 +86,15 @@ const fetchJobStatus = async (jobId: string, timeout: number) => {
   }
 };
 
+/**
+ * Polls the job status at regular intervals until the job is done or an error occurs.
+ *
+ * @param jobId The ID of the job to poll.
+ * @param intervalLength The interval in milliseconds between status checks.
+ * @param handleJobDone Callback function to handle the job completion data.
+ * @param handleJobError Callback function to handle job errors.
+ * @param timeout The maximum time in milliseconds to wait for each status fetch.
+ */
 export const pollJobStatus = async (jobId: string, intervalLength: number, handleJobDone: any, handleJobError: any, timeout: number = 5000) => {
   try {
     let statusData = await fetchJobStatus(jobId, timeout);

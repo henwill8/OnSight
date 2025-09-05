@@ -9,14 +9,52 @@ import { useRoutesData } from '@/hooks/useRoutesData';
 import { useTheme } from '@/constants/theme';
 import { Route, Location, BreadcrumbItem } from '@/types';
 
+const getStyles = (colors: any, sizes: any, shadows: any, spacing: any) => {
+  return StyleSheet.create({
+    container: { flex: 1, padding: spacing.md },
+    breadcrumbContainer: { flexDirection: 'row', marginVertical: spacing.sm },
+    breadcrumbGroup: { flexDirection: 'row', alignItems: 'center' },
+    breadcrumbItem: { fontSize: 16, marginHorizontal: spacing.xs },
+    breadcrumbSeparator: { fontSize: 16, marginHorizontal: spacing.xs },
+    childLocationCard: { padding: spacing.sm, marginRight: spacing.md, borderRadius: sizes.borderRadius, justifyContent: 'center', alignItems: 'center' },
+    childLocationName: { fontSize: 16 },
+    routeCard: { flexDirection: 'row', marginBottom: spacing.md, padding: spacing.md, borderRadius: sizes.borderRadius, borderWidth: 1 },
+    routeImage: { width: 80, height: 80, borderRadius: sizes.borderRadius, marginRight: spacing.md },
+    routeInfo: { flex: 1 },
+    routeName: { fontSize: 17, fontWeight: '500' },
+    routeDescription: { fontSize: 14, marginTop: spacing.xs },
+    addButton: { 
+      position: 'absolute',
+      right: spacing.md,
+      bottom: spacing.lg,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: shadows.medium.shadowColor,
+      elevation: shadows.medium.elevation,
+    },
+    noGymSelectedText: {
+      color: colors.textPrimary,
+    },
+    noRoutesFoundText: {
+      color: colors.textSecondary,
+      marginTop: spacing.md,
+    },
+  });
+};
+
 const HomeScreen = () => {
-  const { colors, sizes, shadows } = useTheme();
+  const { colors, sizes, shadows, spacing } = useTheme();
   const router = useRouter();
   const navigation = useNavigation();
   const { shouldReload } = useLocalSearchParams();
 
   const { gymData, setGymData, setGymField, clearGymData, isLoading } = useGymStore();
   const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.gymName ? gymData.gymName : null, gymData.locationId);
+
+  const styles = getStyles(colors, sizes, shadows, spacing);
 
   useFocusEffect(() => {
     if (shouldReload) {
@@ -33,8 +71,8 @@ const HomeScreen = () => {
 
   if (!gymData.gymName) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.backgroundPrimary }]}>
-        <Text style={{ color: colors.textPrimary }}>No gym selected. Please select a gym.</Text>
+      <View style={styles.container}>
+        <Text style={styles.noGymSelectedText}>No gym selected. Please select a gym.</Text>
       </View>
     );
   }
@@ -50,17 +88,17 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundPrimary }]}>
+    <View style={styles.container}>
       {/* Breadcrumb */}
       <ScrollView horizontal style={styles.breadcrumbContainer}>
         <TouchableOpacity onPress={() => setGymField({ locationId: '' })}>
-          <Text style={[styles.breadcrumbItem, { color: colors.textPrimary }]}>Home</Text>
+          <Text style={styles.breadcrumbItem}>Home</Text>
         </TouchableOpacity>
         {breadcrumb.map((loc, idx) => (
           <View key={loc.id} style={styles.breadcrumbGroup}>
-            <Text style={[styles.breadcrumbSeparator, { color: colors.textSecondary }]}>{'>'}</Text>
+            <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
             <TouchableOpacity onPress={() => setGymField({ locationId: loc.id })}>
-              <Text style={[styles.breadcrumbItem, { color: colors.textPrimary }]}>{loc.name}</Text>
+              <Text style={styles.breadcrumbItem}>{loc.name}</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -74,10 +112,10 @@ const HomeScreen = () => {
           horizontal
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.childLocationCard, { backgroundColor: colors.primary }]}
+              style={styles.childLocationCard}
               onPress={() => setGymField({ locationId: '' })}
             >
-              <Text style={[styles.childLocationName, { color: colors.textPrimary }]}>{item.name}</Text>
+              <Text style={styles.childLocationName}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
@@ -92,21 +130,13 @@ const HomeScreen = () => {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[
-                styles.routeCard,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  borderColor: colors.border,
-                  shadowColor: shadows.medium.shadowColor,
-                  elevation: shadows.medium.elevation,
-                },
-              ]}
+              style={styles.routeCard}
               onPress={() => handleRoutePress(item)}
             >
               <RouteImage imageURI={item.imageUrl} dataURL={item.annotationsUrl} style={styles.routeImage} />
               <View style={styles.routeInfo}>
-                <Text style={[styles.routeName, { color: colors.textPrimary }]}>{item.name || 'No Name'}</Text>
-                <Text style={[styles.routeDescription, { color: colors.textSecondary }]}>
+                <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
+                <Text style={styles.routeDescription}>
                   {item.description || 'No Description'}
                 </Text>
               </View>
@@ -114,18 +144,11 @@ const HomeScreen = () => {
           )}
         />
       ) : (
-        <Text style={{ color: colors.textSecondary, marginTop: 16 }}>No routes found</Text>
+        <Text style={styles.noRoutesFoundText}>No routes found</Text>
       )}
 
       <TouchableOpacity
-        style={[
-          styles.addButton,
-          {
-            backgroundColor: colors.primary,
-            shadowColor: shadows.medium.shadowColor,
-            elevation: shadows.medium.elevation,
-          },
-        ]}
+        style={styles.addButton}
         onPress={handleAddRoute}
       >
         <AntDesign name="plus" size={32} color={colors.textPrimary} />
@@ -133,21 +156,5 @@ const HomeScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  breadcrumbContainer: { flexDirection: 'row', marginVertical: 10 },
-  breadcrumbGroup: { flexDirection: 'row', alignItems: 'center' },
-  breadcrumbItem: { fontSize: 16, marginHorizontal: 5 },
-  breadcrumbSeparator: { fontSize: 16, marginHorizontal: 2 },
-  childLocationCard: { padding: 10, marginRight: 10, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  childLocationName: { fontSize: 16 },
-  routeCard: { flexDirection: 'row', marginBottom: 12, padding: 12, borderRadius: 15, borderWidth: 1 },
-  routeImage: { width: 80, height: 80, borderRadius: 8, marginRight: 12 },
-  routeInfo: { flex: 1 },
-  routeName: { fontSize: 17, fontWeight: '500' },
-  routeDescription: { fontSize: 14, marginTop: 4 },
-  addButton: { position: 'absolute', right: 20, bottom: 30, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
-});
 
 export default HomeScreen;

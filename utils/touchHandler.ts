@@ -2,6 +2,18 @@ import { Platform } from "react-native";
 import { useRef } from "react";
 import { FittedImageRectOutput } from "./imageUtils";
 
+/**
+ * Provides cross-platform touch and mouse event handlers for drawing interactions.
+ * This hook abstracts away the differences between web (mouse/touch events) and
+ * React Native (responder system) to provide a unified drawing experience.
+ *
+ * @param interactable A boolean indicating if the drawing canvas is currently interactable.
+ * @param fittedImageRect An object containing the dimensions and offsets of the fitted image.
+ * @param onDrawStart Callback function triggered when a drawing gesture starts.
+ * @param onDrawMove Callback function triggered when a drawing gesture moves.
+ * @param onDrawEnd Callback function triggered when a drawing gesture ends.
+ * @returns An object containing `eventHandlers` for the component and `pointerEvents` CSS style.
+ */
 export const crossPlatformTouchHandler = (
   interactable: boolean,
   fittedImageRect: FittedImageRectOutput,
@@ -10,6 +22,13 @@ export const crossPlatformTouchHandler = (
   onDrawEnd: (point: { x: number; y: number }) => void
 ) => {
   
+  /**
+   * Extracts the x and y coordinates from a given event, normalizing them
+   * based on the platform (web or native) and the fitted image dimensions.
+   * 
+   * @param event The touch or mouse event object.
+   * @returns An object with the extracted and normalized x and y coordinates.
+   */
   const extractPoint = (event: any) => {
     if (Platform.OS === 'web') {
       // Web mouse/touch events
@@ -34,12 +53,12 @@ export const crossPlatformTouchHandler = (
     return { x: 0, y: 0 };
   };
 
-  let touchMoveOccurring = useRef(true).current; // true as the forceUpdate in DrawingCanvas will re-render and reset this
+  const touchMoveOccurring = useRef(false);
 
   const handleTouchStart = (event: any) => {
     if (!interactable) return;
     
-    touchMoveOccurring = false; // Reset move flag
+    touchMoveOccurring.current = false; // Reset move flag
   };
 
   const handleTouchMove = (event: any) => {
@@ -48,8 +67,8 @@ export const crossPlatformTouchHandler = (
     const point = extractPoint(event);
 
     // First move - trigger the start
-    if (!touchMoveOccurring) {
-      touchMoveOccurring = true;
+    if (!touchMoveOccurring.current) {
+      touchMoveOccurring.current = true;
       onDrawStart(point);
     }
     
@@ -60,7 +79,7 @@ export const crossPlatformTouchHandler = (
     if (!interactable) return;
     
     // Only call onDrawEnd if there was movement
-    if (touchMoveOccurring) {
+    if (touchMoveOccurring.current) {
       const point = extractPoint(event);
       onDrawEnd(point);
     }

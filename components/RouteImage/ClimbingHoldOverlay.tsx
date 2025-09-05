@@ -6,6 +6,7 @@ import { ClimbingHold } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/imageUtils";
 import { crossPlatformTouchHandler } from "@/utils/touchHandler";
 import { simplifyPolygon, createSmoothPath, pointInPolygon } from "@/utils/geometricUtils";
+import { useTheme } from "@/constants/theme";
 
 interface ClimbingHoldOverlayProps {
   data: ClimbingHold[];
@@ -28,10 +29,11 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   interactable = true,
   onHoldStateChange,
   style,
-  simplifyTolerance = 4.0,
+  simplifyTolerance = sizes.simplifyTolerance,
   smoothingFactor = 0.5,
-  clickThreshold = 5,
+  clickThreshold = sizes.clickThreshold,
 }) => {
+  const { colors, sizes } = useTheme();
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
   // Generate unique mask ID for this instance
@@ -85,7 +87,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   const touchStartTime = useRef<number | null>(null);
   const touchActive = useRef(false);
 
-  const clickTimeThreshold = 200;
+  const clickTimeThreshold = sizes.clickTimeThreshold;
 
   const onTouchStart = () => {
     if (touchActive.current) return;
@@ -178,7 +180,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
               d={pathData}
               fill="none"
               stroke={strokeColor}
-              strokeWidth={4 * scaleX}
+              strokeWidth={sizes.strokeWidth * scaleX}
               strokeLinejoin="round"
               strokeLinecap="round"
             />

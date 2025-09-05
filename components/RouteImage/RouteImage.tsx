@@ -6,13 +6,14 @@ import React, {
   forwardRef,
   ForwardRefRenderFunction,
 } from "react";
-import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode } from "react-native";
+import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode, StyleSheet } from "react-native";
 import DrawingCanvas from "@/components/RouteImage/DrawingCanvas";
 import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
 import { getFittedImageRect } from "@/utils/imageUtils";
 import { ActivityIndicator } from "react-native";
 import Zoomable from "@/components/ui/Zoomable";
+import { useTheme } from "@/constants/theme";
 
 export interface ClimbingHold {
   coordinates: number[];
@@ -67,6 +68,28 @@ export interface RouteImageRef {
   loadPredictedClimbingHolds: (climbingHolds: ClimbingHold[]) => void;
 }
 
+const getStyles = (colors: any) => {
+  return StyleSheet.create({
+    imageContainer: {
+      flex: 1,
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    fullOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+    },
+    loadingOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });
+};
+
 const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   {
     imageURI,
@@ -80,6 +103,8 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   },
   ref
 ) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [annotationData, setAnnotationData] = useState<AnnotationsData>({
     climbingHolds: [],
     drawingPaths: [],
@@ -260,7 +285,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
 
   return (
     <Zoomable style={{ flex: 1 }}>
-      <View style={[style, { position: 'relative', overflow: 'hidden' }]} onLayout={onContainerLayout}>
+      <View style={[style, styles.imageContainer]} onLayout={onContainerLayout}>
         <Image
           source={{ uri: imageURI }}
           onLoad={() => setImageLoaded(true)}
@@ -276,8 +301,8 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
         />
         
         {(!imageLoaded || !annotationsLoaded) && (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#888" />
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         )}
     
@@ -289,13 +314,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
               fittedImageRect={fittedImage}
               interactable={interactable}
               {...climbingHoldOverlayProps}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-              }}
+              style={styles.fullOverlay}
             />
             <DrawingCanvas
               data={annotationData.drawingPaths}
@@ -303,13 +322,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
               fittedImageRect={fittedImage}
               interactable={interactable}
               {...drawingCanvasProps}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-              }}
+              style={styles.fullOverlay}
             />
           </>
         )}

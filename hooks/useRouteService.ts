@@ -1,61 +1,46 @@
 import { Platform } from 'react-native';
 import { fetchWithTimeout } from '@/utils/api';
 import { getFileType } from '@/utils/fileUtils';
-import { getSecureItem } from '@/store/secureStorage';
 import { API_PATHS } from '@/constants/paths';
 import config from '@/config';
+import { useGymStore } from '@/store/gymStore';
+import { Template, CreateRouteData } from '@/types';
 
-export interface Template {
-  id: string;
-  imageUrl: string;
-  annotationsUrl: string;
-}
+export const useRouteService = () => {
+  const { gymData } = useGymStore();
 
-export interface CreateRouteData {
-  name: string;
-  description: string;
-  difficulty: string;
-  imageUri: string;
-  annotationsJSON: string;
-  locationId?: string;
-}
-
-export class RouteService {
-  /**
-   * Fetches templates from the API with signed URLs
-   */
-  static async fetchTemplates(locationId?: string): Promise<Template[]> {
+  const fetchTemplates = async (locationId?: string): Promise<Template[]> => {
     try {
-      const gymId = await getSecureItem("gymId");
-      
+      const gymId = gymData.gymId;
+
       // Build query parameters
       const queryParams = new URLSearchParams();
       if (gymId) queryParams.append('gymId', gymId);
       if (locationId && gymId) queryParams.append('locationId', locationId);
-      
+
       const url = `${config.API_URL}${API_PATHS.GET_TEMPLATES}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
+
       const response = await fetchWithTimeout(url, { method: "GET" });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to fetch templates');
       }
-      
+
       const data = await response.json();
-      
+
       // Process templates to get signed URLs
       const templatesWithSignedUrls = await Promise.all(
         data.map(async (template: any) => {
           try {
             const [imageUrlRes, annotationsUrlRes] = await Promise.all([
-              fetchWithTimeout(template.imageUrl, { 
-                method: 'GET', 
-                headers: { 'Content-Type': 'application/json' } 
+              fetchWithTimeout(template.imageUrl, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
               }),
-              fetchWithTimeout(template.annotationsUrl, { 
-                method: 'GET', 
-                headers: { 'Content-Type': 'application/json' } 
+              fetchWithTimeout(template.annotationsUrl, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
               })
             ]);
 
@@ -67,37 +52,34 @@ export class RouteService {
               annotationsUrl = url;
             }
 
-            return { 
-              ...template, 
-              imageUrl, 
-              annotationsUrl 
+            return {
+              ...template,
+              imageUrl,
+              annotationsUrl
             };
           } catch (err) {
             console.error(`Error getting signed URL for template: ${template.imageUrl}`, err);
-            return { 
-              ...template, 
-              imageUrl: null, 
-              annotationsUrl: null 
+            return {
+              ...template,
+              imageUrl: null,
+              annotationsUrl: null
             };
           }
         })
       );
-      
+
       return templatesWithSignedUrls;
     } catch (error) {
       console.error("Error fetching templates:", error);
       throw error;
     }
-  }
+  };
 
-  /**
-   * Creates a new route
-   */
-  static async createRoute(routeData: CreateRouteData): Promise<any> {
+  const createRoute = async (routeData: CreateRouteData): Promise<any> => {
     try {
-      const gymId = await getSecureItem("gymId");
+      const gymId = gymData.gymId;
       const formData = new FormData();
-      
+
       // Append text data
       formData.append("name", routeData.name);
       formData.append("description", routeData.description);
@@ -108,7 +90,7 @@ export class RouteService {
 
       // Handle image file
       const { extension, mimeType } = getFileType(routeData.imageUri);
-      
+
       if (Platform.OS === "web") {
         // For web, fetch the file as a blob
         const response = await fetch(routeData.imageUri);
@@ -143,18 +125,15 @@ export class RouteService {
       console.error("Error creating route:", error);
       throw error;
     }
-  }
+  };
 
-  /**
-   * Gets the current gym name
-   */
-  static async getCurrentGymName(): Promise<string> {
-    try {
-      const gymName = await getSecureItem("gymName");
-      return gymName || "";
-    } catch (error) {
-      console.error("Error fetching gym name:", error);
-      return "";
-    }
-  }
-}
+  const getCurrentGymName = (): string => {
+    return gymData.gymName || "";
+  };
+
+  return {
+    fetchTemplates,
+    createRoute,
+    getCurrentGymName,
+  };
+};
