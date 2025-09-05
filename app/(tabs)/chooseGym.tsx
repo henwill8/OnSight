@@ -6,7 +6,6 @@ import config from '@/config';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { fetchWithTimeout } from "@/utils/api";
 import { API_PATHS } from "@/constants/paths";
-import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
 
 const ChooseGym: React.FC = () => {
   const { colors, sizes } = useTheme();

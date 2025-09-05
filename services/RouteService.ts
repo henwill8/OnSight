@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { fetchWithTimeout } from '@/utils/api';
 import { getFileType } from '@/utils/fileUtils';
-import { getSecureItem } from '@/utils/secureStorage';
+import { getSecureItem } from '@/store/secureStorage';
 import { API_PATHS } from '@/constants/paths';
 import config from '@/config';
 

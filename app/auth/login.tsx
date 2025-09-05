@@ -4,7 +4,7 @@ import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Acti
 import config from "@/config";
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 import { fetchWithTimeout } from "@/utils/api";
-import { getSecureItem } from '@/utils/secureStorage';
+import { getSecureItem } from '@/store/secureStorage';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { API_PATHS } from "@/constants/paths";
 
