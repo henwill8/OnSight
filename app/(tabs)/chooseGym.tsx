@@ -6,7 +6,6 @@ import { useChooseGymLogic } from '@/hooks/useChooseGymLogic';
 import { Gym } from '@/types';
 import LoadingModal from '@/components/ui/LoadingModal';
 
-  useEffect(() => {
 const getStyles = (colors: any, sizes: any, spacing: any) => {
   return StyleSheet.create({
     container: {
