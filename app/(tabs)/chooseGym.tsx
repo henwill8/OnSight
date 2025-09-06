@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, Alert, TouchableOpacity, StyleSheet } from 'react-native';
-import { useGymStore } from '@/store/gymStore';
+import { useGymStore } from '@/storage/gymStore';
 import { useTheme } from '@/constants/theme';
-import { useChooseGymLogic } from '@/hooks/useChooseGymLogic';
+import { useChooseGymLogic } from '@/hooks/gyms/useChooseGymLogic';
 import { Gym } from '@/types';
 import LoadingModal from '@/components/ui/LoadingModal';
 
@@ -18,7 +18,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       marginBottom: spacing.md,
       padding: spacing.sm,
       borderColor: colors.border,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: colors.backgroundPrimary,
       color: colors.textPrimary,
       borderRadius: sizes.borderRadius,
     },
@@ -60,7 +60,9 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
 
 const ChooseGym: React.FC = () => {
   const { colors, sizes, spacing, font } = useTheme();
-  const { gymData } = useGymStore();
+  const { state, updateGym } = useGymStore();
+  const gymData = state.data;
+
   const {
     gyms,
     newGymName,
@@ -74,14 +76,17 @@ const ChooseGym: React.FC = () => {
 
   const styles = getStyles(colors, sizes, spacing);
 
-  const renderGymItem = ({ item }: { item: Gym }) => (
-    <TouchableOpacity onPress={() => handleSelectGym(item)}>
-      <View style={styles.gymItem}>
-        <Text style={styles.gymText}>{item.name}</Text>
-        <Text style={{ color: colors.textSecondary }}>{item.location}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderGymItem = ({ item }: { item: Gym }) => {
+    console.log('Rendering item:', item);
+    return (
+      <TouchableOpacity onPress={() => handleSelectGym(item)}>
+        <View style={styles.gymItem}>
+          <Text style={styles.gymText}>{item.name || 'No name'}</Text>
+          <Text style={{ color: colors.textSecondary }}>{item.location || 'No location'}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -106,7 +111,7 @@ const ChooseGym: React.FC = () => {
 
       {/* Current Gym */}
       <Text style={styles.currentGymText}>
-        {gymData.gymName ? `Current Gym: ${gymData.gymName}` : 'No gym selected.'}
+        {gymData.name ? `Current Gym: ${gymData.name}` : 'No gym selected.'}
       </Text>
 
       {/* Available Gyms */}
@@ -114,7 +119,7 @@ const ChooseGym: React.FC = () => {
       <FlatList
         data={gyms}
         renderItem={renderGymItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
       />
 
       {/* Loading */}

@@ -7,8 +7,8 @@ import React, {
   ForwardRefRenderFunction,
 } from "react";
 import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode, StyleSheet } from "react-native";
-import DrawingCanvas from "@/components/RouteImage/DrawingCanvas";
-import ClimbingHoldOverlay from "@/components/RouteImage/ClimbingHoldOverlay";
+import DrawingCanvas from "./DrawingCanvas";
+import ClimbingHoldOverlay from "./ClimbingHoldOverlay";
 import { HOLD_SELECTION } from "@/constants/holdSelection";
 import { getFittedImageRect } from "@/utils/imageUtils";
 import { ActivityIndicator } from "react-native";

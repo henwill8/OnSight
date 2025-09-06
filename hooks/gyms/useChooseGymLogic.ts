@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import config from '@/config';
-import { API_PATHS } from '@/constants/paths';
-import { fetchWithTimeout } from '@/utils/api';
-import { useGymStore } from '@/store/gymStore';
-import { Gym } from '@/types';
+import { API_PATHS } from '../../constants/paths';
+import { Gym } from '../../types';
+import { callApi } from '../../utils/api';
+import { useGymStore } from '@/storage/gymStore';
 
 export const useChooseGymLogic = () => {
-  const { setGymData } = useGymStore();
 
   const [gyms, setGyms] = useState<Gym[]>([]);
   const [newGymName, setNewGymName] = useState('');
   const [newGymLocation, setNewGymLocation] = useState('');
   const [loading, setLoading] = useState(false);
+  const { state: gymStoreState, setGym, updateGym } = useGymStore();
 
   useEffect(() => {
     fetchGyms();
@@ -21,9 +20,8 @@ export const useChooseGymLogic = () => {
   const fetchGyms = async () => {
     setLoading(true);
     try {
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.LIST_GYMS, { method: 'GET' }, 5000);
-      const data = await response.json();
-      if (response.ok) setGyms(data.gyms);
+      const response = await callApi<{ gyms: Gym[] }>(API_PATHS.LIST_GYMS, { method: 'GET', timeout: 5000 });
+      if (response.gyms) setGyms(response.gyms);
       else Alert.alert('Error', 'Failed to fetch gyms');
     } catch (error) {
       console.error(error);
@@ -41,25 +39,17 @@ export const useChooseGymLogic = () => {
 
     setLoading(true);
     try {
-      const response = await fetchWithTimeout(
-        config.API_URL + API_PATHS.CREATE_GYM,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newGymName, location: newGymLocation }),
-        },
-        5000
-      );
+      const response = await callApi<{ message?: string }>(API_PATHS.CREATE_GYM, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: { name: newGymName, location: newGymLocation },
+        timeout: 5000
+      });
 
-      if (response.ok) {
-        Alert.alert('Success', 'Gym created successfully!');
-        setNewGymName('');
-        setNewGymLocation('');
-        fetchGyms();
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to create gym');
-      }
+      Alert.alert('Success', 'Gym created successfully!');
+      setNewGymName('');
+      setNewGymLocation('');
+      fetchGyms();
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to create gym');
@@ -70,7 +60,8 @@ export const useChooseGymLogic = () => {
 
   const handleSelectGym = async (gym: Gym) => {
     try {
-      setGymData({ gymName: gym.name, gymId: gym.id, locationId: '' });
+      console.log("setting gym data", gym);
+      setGym(gym);
     } catch (error) {
       console.error(error);
     }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useLayoutEffect } from "react";
+import React, { useLayoutEffect } from "react";
 import {
   View,
   TextInput,
@@ -12,20 +12,17 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
-import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "expo-router";
 
-import { useRouteStore } from '@/store/routeStore';
 import { useTheme } from "@/constants/theme";
 
 import LoadingModal from "@/components/ui/LoadingModal";
 import RouteImage from "@/components/RouteImage/RouteImage";
 
 // Services
-import { ImagePickerService } from '@/services/ImagePickerService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouteService } from '@/hooks/useRouteService';
 import { Template } from '@/types';
+import { useCreateRouteLogic } from '@/hooks/routes/useCreateRouteLogic';
 
 const getStyles = (colors: any, sizes: any, spacing: any) => {
   return StyleSheet.create({
@@ -195,125 +192,49 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
 };
 
 const CreateRouteScreen = () => {
-  const router = useRouter();
   const navigation = useNavigation();
-  const { locationId: locationIdParam } = useLocalSearchParams();
-  const { imageUri: exportedUri, annotations: annotationsJSON } = useRouteStore();
-  const { fetchTemplates, createRoute, getCurrentGymName } = useRouteService();
-
   const { colors, sizes, spacing, global } = useTheme();
   const styles = getStyles(colors, sizes, spacing);
 
-  // State
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
-  
-  const [name, setName] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [difficulty, setDifficulty] = useState<string>("");
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [annotationsData, setAnnotationsData] = useState<string | null>(null);
-  const [locationId, setLocationId] = useState<string | null>(null);
-  const [gymName, setGymName] = useState<string>("");
-  
-  const [canSubmit, setCanSubmit] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Handlers
-  const handleFetchTemplates = useCallback(async () => {
-    setLoadingTemplates(true);
-    try {
-      const fetchedTemplates = await fetchTemplates(locationIdParam as string);
-      setTemplates(fetchedTemplates);
-    } catch (error) {
-      Alert.alert("Error", "Failed to load templates");
-    } finally {
-      setLoadingTemplates(false);
-    }
-  }, [locationIdParam, fetchTemplates]);
-
-  const handleTemplateSelect = (template: Template) => {
-    useRouteStore.getState().setRouteData(template.imageUrl, template.annotationsUrl);
-    router.push("/routes/routeImageCreator");
-    setShowTemplates(false);
-  };
-
-  const handleImagePick = useCallback(async (useCamera: boolean) => {
-    const result = useCamera 
-      ? await ImagePickerService.launchCamera()
-      : await ImagePickerService.launchImageLibrary();
-
-    if (result.success && result.uri) {
-      useRouteStore.getState().setRouteData(result.uri, null);
-      router.push("/routes/routeImageCreator");
-    } else if (result.error) {
-      Alert.alert("Error", result.error);
-    }
-  }, [router]);
-
-  const handleSubmit = async () => {
-    if (!imageUri || !annotationsJSON) {
-      Alert.alert("Error", "Missing required data");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await createRoute({
-        name,
-        description,
-        difficulty,
-        imageUri,
-        annotationsJSON,
-        locationId: locationId || undefined,
-      });
-
-      Alert.alert("Success", "Route created successfully!");
-      router.back();
-      router.setParams({ shouldReload: 1 });
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to create route");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleShowTemplates = () => {
-    setShowTemplates(true);
-    handleFetchTemplates();
-  };
+  const {
+    templates,
+    showTemplates,
+    loadingTemplates,
+    setShowTemplates,
+    handleFetchTemplates,
+    handleTemplateSelect,
+    handleImagePick,
+    handleSubmit,
+    handleShowTemplates,
+    name,
+    setName,
+    description,
+    setDescription,
+    difficulty,
+    setDifficulty,
+    imageUri,
+    setImageUri,
+    annotationsData,
+    setAnnotationsData,
+    locationId,
+    setLocationId,
+    gymName,
+    setGymName,
+    canSubmit,
+    loading,
+    exportedUri,
+    annotationsJSON,
+  } = useCreateRouteLogic(navigation);
 
   // Effects
-  const fetchGymName = useCallback(async () => {
-    try {
-      const currentGymName = await getCurrentGymName();
-      setGymName(currentGymName);
-    } catch (error) {
-      console.error("Error fetching gym name:", error);
-    }
-  }, [getCurrentGymName]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (exportedUri) setImageUri(exportedUri as string);
-      if (annotationsJSON) setAnnotationsData(annotationsJSON as string);
-      if (locationIdParam) setLocationId(locationIdParam as string);
-    }, [exportedUri, annotationsJSON, locationIdParam])
-  );
-
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Create Route",
       headerStyle: { backgroundColor: colors.backgroundPrimary },
       headerTintColor: "white",
     });
-    fetchGymName();
-  }, [navigation, fetchGymName, colors.backgroundPrimary]);
-
-  useEffect(() => {
-    setCanSubmit(!!difficulty && !!imageUri && !!name.trim());
-  }, [difficulty, imageUri, name]);
+    setGymName(gymName); 
+  }, [navigation, colors.backgroundPrimary, gymName, setGymName]);
 
   // Render methods
   const renderTemplateItem = ({ item }: { item: Template }) => (

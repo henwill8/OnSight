@@ -17,7 +17,7 @@ export type BreadcrumbItem = Location;
 export interface Gym {
   id: string;
   name: string;
-  location: string;
+  location: string; // separate from a gym location, this is the real world location of the gym
 }
 
 export interface Template {
@@ -34,3 +34,5 @@ export interface CreateRouteData {
   annotationsJSON: string;
   locationId?: string;
 }
+
+export interface SaveRouteRequest extends CreateRouteData {}

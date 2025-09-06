@@ -2,7 +2,7 @@ import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Acti
 import { useRouter } from "expo-router";
 import { useTheme } from '@/constants/theme';
 import LoadingModal from '@/components/ui/LoadingModal';
-import { useRegisterLogic } from '@/hooks/useRegisterLogic';
+import { useRegisterLogic } from '@/hooks/auth/useRegisterLogic';
 
 const getStyles = (colors: any, global: any) => {
   return StyleSheet.create({

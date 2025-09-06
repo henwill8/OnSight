@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import config from '@/config';
-import { API_PATHS } from '@/constants/paths';
-import { fetchWithTimeout } from '@/utils/api';
+import { API_PATHS } from '../../constants/paths';
+import { callApi } from '../../utils/api';
 
 export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string | null) => {
   const [routes, setRoutes] = useState<R[]>([]);
@@ -25,16 +24,14 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
   }, [gymId, locationId]);
 
   const fetchRoutes = async () => {
-    const routesUrl = `${config.API_URL}${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ''}`;
-    const res = await fetch(routesUrl);
-    if (!res.ok) throw new Error('Failed to fetch routes');
-    const data = await res.json();
+    const routesUrl = `${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ''}`;
+    const data = await callApi<{ routes: R[] }>(routesUrl, { method: "GET" });
 
     const routesWithSignedUrls = await Promise.all(
-      data.map(async (route: any) => {
+      data.routes.map(async (route: any) => {
         try {
-          const imageRes = await fetchWithTimeout(route.imageUrl);
-          const annotationsRes = await fetchWithTimeout(route.annotationsUrl);
+          const imageRes = await callApi<Response>(route.imageUrl, { skipJsonParse: true });
+          const annotationsRes = await callApi<Response>(route.annotationsUrl, { skipJsonParse: true });
 
           const { url: imageUrl } = await imageRes.json();
           let annotationsUrl = '';
@@ -54,11 +51,9 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
   };
 
   const fetchChildLocations = async () => {
-    const childUrl = `${config.API_URL}${API_PATHS.GET_CHILD_LOCATIONS(gymId || '')}${locationId ? `?parentId=${locationId}` : ''}`;
-    const res = await fetch(childUrl);
-    if (!res.ok) throw new Error('Failed to fetch child locations');
-    const data = await res.json();
-    setChildLocations(data.locations as L[] || []);
+    const childUrl = `${API_PATHS.GET_CHILD_LOCATIONS(gymId || '')}${locationId ? `?parentId=${locationId}` : ''}`;
+    const data = await callApi<{ locations: L[] }>(childUrl, { method: "GET" });
+    setChildLocations(data.locations || []);
   };
 
   const fetchBreadcrumb = async () => {
@@ -66,11 +61,9 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
       setBreadcrumb([]);
       return;
     }
-    const breadcrumbUrl = `${config.API_URL}${API_PATHS.GET_LOCATION_ANCESTRY(locationId)}`;
-    const res = await fetch(breadcrumbUrl);
-    if (!res.ok) throw new Error('Failed to fetch breadcrumb');
-    const data = await res.json();
-    setBreadcrumb(data.ancestry as B[] || []);
+    const breadcrumbUrl = `${API_PATHS.GET_LOCATION_ANCESTRY(locationId)}`;
+    const data = await callApi<{ ancestry: B[] }>(breadcrumbUrl, { method: "GET" });
+    setBreadcrumb(data.ancestry || []);
   };
 
   useEffect(() => {

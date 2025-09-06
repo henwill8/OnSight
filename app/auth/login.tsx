@@ -2,9 +2,12 @@ import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Acti
 import { useRouter } from "expo-router";
 import { useTheme } from '@/constants/theme';
 import LoadingModal from '@/components/ui/LoadingModal';
-import { useLoginLogic } from '@/hooks/useLoginLogic';
+import { useLoginLogic } from '@/hooks/auth/useLoginLogic';
+import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
+import { useEffect } from "react";
+import { API_PATHS } from "@/constants/paths";
+import { callApi } from "@/utils/api";
 
-const landingPage = "/(tabs)/home";
 
 const getStyles = (colors: any, global: any) => {
   return StyleSheet.create({
@@ -50,9 +53,11 @@ const getStyles = (colors: any, global: any) => {
 
 export default function LoginScreen() {
   const { colors, global } = useTheme();
-  const { username, setUsername, password, setPassword, loading, handleLogin, router } = useLoginLogic();
+  const { email, setEmail, password, setPassword, loading, handleLogin, router } = useLoginLogic();
 
   const styles = getStyles(colors, global);
+
+  useAuthRedirect();
 
   return (
     <View style={styles.container}>
@@ -62,8 +67,8 @@ export default function LoginScreen() {
           style={styles.input}
           placeholder="Username or Email"
           placeholderTextColor={colors.textSecondary}
-          value={username}
-          onChangeText={setUsername}
+          value={email}
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}

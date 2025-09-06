@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { useRef } from "react";
-import { FittedImageRectOutput } from "./imageUtils";
+import { FittedImageRectOutput } from "@/utils/imageUtils";
 
 /**
  * Provides cross-platform touch and mouse event handlers for drawing interactions.

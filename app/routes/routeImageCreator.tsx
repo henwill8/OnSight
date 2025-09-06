@@ -6,7 +6,7 @@ import RouteImage, { RouteImageRef, ClimbingHold } from "@/components/RouteImage
 import { useTheme } from '@/constants/theme';
 import { HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
 import { AntDesign, Feather } from '@expo/vector-icons';
-import { useRouteImageCreatorLogic } from '@/hooks/useRouteImageCreatorLogic';
+import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
 import LoadingModal from '@/components/ui/LoadingModal';
 
 const getStyles = (colors: any, sizes: any, shadows: any) => {
@@ -281,7 +281,7 @@ const RouteImageCreator: React.FC = () => {
             width: imageDimensions.width * scaleX,
             height: imageDimensions.height * scaleY,
           }}
-          imageURI={imageUri}
+          imageURI={imageUri || ""}
           interactable={true}
           climbingHoldOverlayProps={{
             showUnselectedHolds: showUnselectedHolds,

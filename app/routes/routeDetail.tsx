@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useTheme } from '@/constants/theme';
 import RouteImage from "@/components/RouteImage/RouteImage";
-import { useRouteDetailLogic } from '@/hooks/useRouteDetailLogic';
+import { useRouteDetailLogic } from '@/hooks/routes/useRouteDetailLogic';
 
 const getStyles = (colors: any, sizes: any, shadows: any, global: any) => {
   return StyleSheet.create({

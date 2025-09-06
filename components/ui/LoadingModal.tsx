@@ -37,7 +37,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ visible, message }) => {
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <ActivityIndicator size="large" color={colors.textPrimary} />
-          {message && <Text style={styles.loadingText}>{message}</Text>}
+          {Boolean(message) && <Text style={styles.loadingText}>{message}</Text>}
         </View>
       </View>
     </Modal>

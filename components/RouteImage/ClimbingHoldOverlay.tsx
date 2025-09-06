@@ -4,7 +4,7 @@ import { View, ViewStyle } from "react-native";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
 import { ClimbingHold } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/imageUtils";
-import { crossPlatformTouchHandler } from "@/utils/touchHandler";
+import { useTouchHandler } from "../../hooks/utils/useTouchHandler";
 import { simplifyPolygon, createSmoothPath, pointInPolygon } from "@/utils/geometricUtils";
 import { useTheme } from "@/constants/theme";
 
@@ -120,7 +120,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   };
 
   // Apply cross-platform touch handling
-  const { eventHandlers, pointerEvents } = crossPlatformTouchHandler(
+  const { eventHandlers, pointerEvents } = useTouchHandler(
     interactable,
     fittedImageRect,
     onTouchStart,
