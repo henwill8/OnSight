@@ -77,7 +77,6 @@ const ChooseGym: React.FC = () => {
   const styles = getStyles(colors, sizes, spacing);
 
   const renderGymItem = ({ item }: { item: Gym }) => {
-    console.log('Rendering item:', item);
     return (
       <TouchableOpacity onPress={() => handleSelectGym(item)}>
         <View style={styles.gymItem}>

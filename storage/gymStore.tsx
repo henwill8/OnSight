@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { storage } from './storage';
 import { Gym } from '@/types';
+import { parse } from 'react-native-svg';
 
 const defaultGym: Gym = {
   id: '',
@@ -81,25 +82,26 @@ export function GymProvider({ children }: GymProviderProps) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
         const storedData = await storage.getItem(STORAGE_KEY);
-        
+  
         if (storedData) {
           const parsedData = JSON.parse(storedData) as Gym;
-          // Validate the data structure
-          if (parsedData && typeof parsedData === 'object' &&
-              'gymName' in parsedData && 'gymId' in parsedData && 'locationId' in parsedData) {
-            dispatch({ type: 'SET_GYM_DATA', payload: parsedData });
-          }
+
+          dispatch({ type: 'SET_GYM_DATA', payload: parsedData });
+        } else {
+          console.log('No stored gym found. Leaving defaultGym as initial.');
+          // Leave defaultGym as initial state
         }
       } catch (error) {
         console.warn('Failed to load gym data from storage:', error);
+        // Do not reset state to default here
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
         dispatch({ type: 'SET_LOADED', payload: true });
       }
     };
-
+  
     loadStoredData();
-  }, []);
+  }, []);  
 
   // Save to storage whenever data changes (but not during initial load)
   useEffect(() => {
