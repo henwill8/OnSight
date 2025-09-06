@@ -20,7 +20,7 @@ export const useAuthRedirect = () => {
     }
   }
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  return {
+    checkAuth
+  }
 };

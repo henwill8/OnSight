@@ -19,10 +19,21 @@ export const COLORS = {
 };
 
 // Spacing
-export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxs: 3 };
+export const SPACING = { xs: 8, sm: 12, md: 16, lg: 24, xl: 32, xxs: 4 };
 
 // Font sizes
-export const FONT = { title: 24, subtitle: 20, body: 16, caption: 12 };
+export const FONT = {
+  h1: 32,
+  h2: 28,
+  h3: 24,
+  h4: 20,
+  h5: 16,
+  h6: 14,
+  title: 24,
+  subtitle: 20,
+  body: 16,
+  caption: 12
+};
 
 // Sizes / common dimensions
 export const SIZES = {

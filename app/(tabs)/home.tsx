@@ -6,24 +6,24 @@ import { AntDesign } from '@expo/vector-icons';
 import RouteImage from '@/components/RouteImage/RouteImage';
 
 import { useGymStore } from '@/storage/gymStore';
-import { Gym } from '@/types';
+import { useLocationStore } from '@/storage/locationStore';
 import { useRoutesData } from '@/hooks/routes/useRoutesData';
 import { useTheme } from '@/constants/theme';
 import { Route, Location, BreadcrumbItem } from '@/types';
 
-const getStyles = (colors: any, sizes: any, shadows: any, spacing: any) => {
+const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: any) => {
   return StyleSheet.create({
     breadcrumbContainer: { flexDirection: 'row', marginVertical: spacing.sm },
     breadcrumbGroup: { flexDirection: 'row', alignItems: 'center' },
-    breadcrumbItem: { fontSize: 16, marginHorizontal: spacing.xs, color: colors.textPrimary },
-    breadcrumbSeparator: { fontSize: 16, marginHorizontal: spacing.xs },
+    breadcrumbItem: { fontSize: font.body, marginHorizontal: spacing.xs, color: colors.textPrimary },
+    breadcrumbSeparator: { fontSize: font.body, marginHorizontal: spacing.xs },
     childLocationCard: { padding: spacing.sm, marginRight: spacing.md, borderRadius: sizes.borderRadius, justifyContent: 'center', alignItems: 'center' },
-    childLocationName: { fontSize: 16, color: colors.textPrimary },
+    childLocationName: { fontSize: font.body, color: colors.textPrimary },
     routeCard: { flexDirection: 'row', marginBottom: spacing.md, padding: spacing.md, borderRadius: sizes.borderRadius, borderWidth: 1 },
     routeImage: { width: 80, height: 80, borderRadius: sizes.borderRadius, marginRight: spacing.md },
     routeInfo: { flex: 1 },
-    routeName: { fontSize: 17, fontWeight: '500' },
-    routeDescription: { fontSize: 14, marginTop: spacing.xs },
+    routeName: { fontSize: font.h5, fontWeight: '500' },
+    routeDescription: { fontSize: font.caption, marginTop: spacing.xs },
     addButton: { 
       position: 'absolute',
       right: spacing.md,
@@ -49,21 +49,20 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any) => {
 };
 
 const HomeScreen = () => {
-  const { colors, sizes, shadows, spacing, global } = useTheme();
+  const { colors, sizes, shadows, spacing, global, font } = useTheme();
   const router = useRouter();
   const navigation = useNavigation();
   const { shouldReload } = useLocalSearchParams();
 
-  const { state, updateGym } = useGymStore();
-  const gymData = state.data;
+  const { state: gymState, updateGym } = useGymStore();
+  const gymData = gymState.data;
 
-  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.id ? gymData.id : null, gymData.location);
+  const { state: locationState, updateLocation } = useLocationStore();
+  const locationData = locationState.data;
 
-  const styles = getStyles(colors, sizes, shadows, spacing);
+  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.id ? gymData.id : null, locationData.id);
 
-  const setGymField = (partial: Partial<Gym>) => {
-    updateGym(partial);
-  };
+  const styles = getStyles(colors, sizes, shadows, spacing, font);
 
   useFocusEffect( 
     React.useCallback(() => {
@@ -95,20 +94,20 @@ const HomeScreen = () => {
 
   const handleAddRoute = () => {
     router.push('/routes/createRoute');
-    router.setParams({ locationId: gymData.location });
+    router.setParams({ locationId: locationData.id });
   };
 
   return (
     <View style={global.centerItemsContainer}>
       {/* Breadcrumb */}
       <ScrollView horizontal style={styles.breadcrumbContainer}>
-        <TouchableOpacity onPress={() => setGymField({ location: '' })}>
+        <TouchableOpacity onPress={() => updateLocation({ id: '' })}>
           <Text style={styles.breadcrumbItem}>Home</Text>
         </TouchableOpacity>
         {breadcrumb.map((loc, idx) => (
           <View key={loc.id} style={styles.breadcrumbGroup}>
             <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
-            <TouchableOpacity onPress={() => setGymField({ location: loc.id })}>
+            <TouchableOpacity onPress={() => updateLocation({ id: loc.id })}>
               <Text style={styles.breadcrumbItem}>{loc.name}</Text>
             </TouchableOpacity>
           </View>
@@ -124,7 +123,7 @@ const HomeScreen = () => {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.childLocationCard}
-              onPress={() => setGymField({ location: '' })}
+              onPress={() => updateLocation({ id: '' })}
             >
               <Text style={styles.childLocationName}>{item.name}</Text>
             </TouchableOpacity>

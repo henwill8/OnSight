@@ -4,7 +4,7 @@ import { useTheme } from '@/constants/theme';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { useRegisterLogic } from '@/hooks/auth/useRegisterLogic';
 
-const getStyles = (colors: any, global: any) => {
+const getStyles = (colors: any, global: any, font: any) => {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -18,7 +18,7 @@ const getStyles = (colors: any, global: any) => {
       justifyContent: "center",
     },
     title: {
-      fontSize: 24,
+      fontSize: font.h3,
       fontWeight: "bold",
       marginBottom: 20,
       color: colors.textPrimary,
@@ -31,6 +31,7 @@ const getStyles = (colors: any, global: any) => {
       borderRadius: 5,
       borderColor: colors.border,
       color: colors.textPrimary,
+      fontSize: font.body,
     },
     button: {
       backgroundColor: colors.primary,
@@ -41,14 +42,14 @@ const getStyles = (colors: any, global: any) => {
     },
     buttonText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: "bold",
     },
   });
 };
 
 export default function RegisterScreen() {
-  const { colors, global } = useTheme();
+  const { colors, global, font } = useTheme();
   const {
     username,
     setUsername,
@@ -61,7 +62,7 @@ export default function RegisterScreen() {
     router,
   } = useRegisterLogic();
 
-  const styles = getStyles(colors, global);
+  const styles = getStyles(colors, global, font);
 
   return (
     <View style={styles.container}>
@@ -93,7 +94,7 @@ export default function RegisterScreen() {
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/auth/login")}>
-          <Text style={[global.link, { textAlign: "center" }]}>Already have an account? Login here</Text>
+          <Text style={[global.link, { textAlign: "center", fontSize: font.caption }]}>Already have an account? Login here</Text>
         </TouchableOpacity>
       </View>
 

@@ -8,24 +8,22 @@ const landingPage = "/(tabs)/home";
 
 export const useLoginLogic = () => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  
-
   const handleLogin = async () => {
-    console.log("Attempting login for user:", email);
+    console.log("Attempting login for user:", username);
     setLoading(true);
 
     try {
 
       await callApi(API_PATHS.LOGIN, {
         method: "POST",
-        body: { email, password },
+        body: { username, password },
       });
 
-      console.log("Login successful for user:", email);
+      console.log("Login successful for user:", username);
       router.replace(landingPage);
 
     } catch (error: any) {
@@ -36,8 +34,8 @@ export const useLoginLogic = () => {
   };
 
   return {
-    email,
-    setEmail,
+    email: username,
+    setEmail: setUsername,
     password,
     setPassword,
     loading,

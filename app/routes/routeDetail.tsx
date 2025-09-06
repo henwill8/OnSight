@@ -5,7 +5,7 @@ import { useTheme } from '@/constants/theme';
 import RouteImage from "@/components/RouteImage/RouteImage";
 import { useRouteDetailLogic } from '@/hooks/routes/useRouteDetailLogic';
 
-const getStyles = (colors: any, sizes: any, shadows: any, global: any) => {
+const getStyles = (colors: any, sizes: any, shadows: any, global: any, font: any) => {
   return StyleSheet.create({
     loadingContainer: {
       flex: 1,
@@ -18,7 +18,7 @@ const getStyles = (colors: any, sizes: any, shadows: any, global: any) => {
       alignItems: 'center',
     },
     emptyText: {
-      fontSize: 18,
+      fontSize: font.h5,
     },
     container: {
       flex: 1,
@@ -41,16 +41,16 @@ const getStyles = (colors: any, sizes: any, shadows: any, global: any) => {
       marginHorizontal: 10,
     },
     name: {
-      fontSize: 24,
+      fontSize: font.h3,
       fontWeight: '600',
       marginBottom: 5,
     },
     description: {
-      fontSize: 16,
+      fontSize: font.body,
       marginBottom: 5,
     },
     difficulty: {
-      fontSize: 18,
+      fontSize: font.h5,
     },
     routeCard: {
       marginBottom: 12,
@@ -62,7 +62,7 @@ const getStyles = (colors: any, sizes: any, shadows: any, global: any) => {
 };
 
 const RouteDetail = () => {
-  const { colors, sizes, shadows, global } = useTheme();
+  const { colors, sizes, shadows, global, font } = useTheme();
   const {
     navigation,
     routeDetails,
@@ -78,7 +78,7 @@ const RouteDetail = () => {
     });
   }, [navigation, colors.backgroundSecondary]);
 
-  const styles = getStyles(colors, sizes, shadows, global);
+  const styles = getStyles(colors, sizes, shadows, global, font);
 
   if (loading) {
     return (

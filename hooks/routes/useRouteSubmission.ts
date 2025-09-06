@@ -1,0 +1,90 @@
+import { useState, useCallback } from "react";
+import { Alert, Platform } from "react-native";
+import { getFileType } from '@/utils/fileUtils';
+import { API_PATHS } from '@/constants/paths';
+import { getSecureItem } from '@/utils/secureStorageUtils';
+import { callApi } from '@/utils/api';
+import { SaveRouteRequest } from '@/types';
+
+interface RouteSubmissionData {
+  name: string;
+  description: string;
+  difficulty: string;
+  imageUri?: string | null;
+  annotationsJSON?: string | null;
+  locationId?: string; // Make optional to match SaveRouteRequest
+}
+
+interface UseRouteSubmissionReturn {
+  loading: boolean;
+  handleSubmit: (data: RouteSubmissionData, navigateBackAndReload: () => void) => Promise<void>;
+}
+
+export const useRouteSubmission = (): UseRouteSubmissionReturn => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = useCallback(async (data: RouteSubmissionData, navigateBackAndReload: () => void) => {
+    if (!data.imageUri || !data.annotationsJSON) {
+      Alert.alert("Error", "Missing required data");
+      return;
+    }
+
+    setLoading(true);
+    try {
+
+      const storedGymData = await getSecureItem('gymData');
+      const gymData = storedGymData ? JSON.parse(storedGymData) : { gymId: '' };
+      const gymId = gymData.gymId;
+      const formData = new FormData();
+
+      // Append text data
+      formData.append("name", data.name);
+      formData.append("description", data.description);
+      formData.append("difficulty", data.difficulty || "");
+      formData.append("gymId", gymId || "");
+      formData.append("locationId", data.locationId || "");
+      formData.append("annotations", data.annotationsJSON || "");
+
+      // Handle image file
+      if (!data.imageUri) {
+        console.warn("Route image URI is missing, skipping image upload.");
+        return;
+      }
+      const { extension, mimeType } = getFileType(data.imageUri);
+
+      if (Platform.OS === "web") {
+        // For web, fetch the file as a blob
+        const response = await fetch(data.imageUri);
+        const blob = await response.blob();
+        const file = new File([blob], `photo.${extension}`, { type: mimeType });
+        formData.append("image", file);
+      } else {
+        // For React Native
+        formData.append("image", {
+          uri: data.imageUri,
+          name: `photo.${extension}`,
+          type: mimeType,
+        } as any);
+      }
+
+      await callApi<{ message?: string }>(API_PATHS.CREATE_ROUTE, {
+        method: "POST",
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 5000
+      });
+
+      Alert.alert("Success", "Route created successfully!");
+      navigateBackAndReload();
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to create route");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    handleSubmit,
+  };
+};

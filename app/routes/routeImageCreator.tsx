@@ -9,28 +9,28 @@ import { AntDesign, Feather } from '@expo/vector-icons';
 import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
 import LoadingModal from '@/components/ui/LoadingModal';
 
-const getStyles = (colors: any, sizes: any, shadows: any) => {
+const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: any) => {
   return StyleSheet.create({
     scrollView: {
       backgroundColor: colors.backgroundPrimary,
     },
     container: {
       flexGrow: 1,
-      padding: 20,
-      paddingTop: 35,
+      padding: spacing.md,
+      paddingTop: spacing.lg + spacing.xs,
     },
     title: {
-      fontSize: 24,
+      fontSize: font.h3,
       fontWeight: 'bold',
-      marginBottom: 25,
+      marginBottom: spacing.lg + spacing.xs,
       color: colors.textPrimary,
       textAlign: 'center',
     },
     optionsContainer: {
       flexDirection: 'column',
       width: '100%',
-      marginBottom: 20,
-      paddingHorizontal: 10,
+      marginBottom: spacing.md,
+      paddingHorizontal: spacing.sm,
     },
     imageButtonsContainer: {
       flexDirection: 'row',
@@ -43,7 +43,7 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
     button: {
       backgroundColor: colors.primary,
       borderRadius: sizes.borderRadius,
-      padding: 13,
+      padding: spacing.md,
       alignItems: 'center',
     },
     buttonDisabled: {
@@ -51,15 +51,15 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
     },
     buttonText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
     },
     orText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
       textAlign: 'center',
-      marginVertical: 10,
+      marginVertical: spacing.sm,
     },
   
     // Modal Styles
@@ -72,26 +72,26 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
       backgroundColor: colors.backgroundPrimary,
       borderTopLeftRadius: sizes.borderRadius,
       borderTopRightRadius: sizes.borderRadius,
-      paddingBottom: 20,
+      paddingBottom: spacing.md,
       height: '80%',
     },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: 15,
+      padding: spacing.md,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     modalTitle: {
-      fontSize: 20,
+      fontSize: font.h4,
       fontWeight: '600',
       color: colors.textPrimary,
     },
     closeButton: {
-      fontSize: 24,
+      fontSize: font.h3,
       color: colors.textSecondary,
-      padding: 5,
+      padding: spacing.xs,
     },
     loadingContainer: {
       flex: 1,
@@ -100,19 +100,19 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
     },
     emptyMessage: {
       textAlign: 'center',
-      marginTop: 20,
+      marginTop: spacing.md,
       color: colors.textSecondary,
-      fontSize: 16,
+      fontSize: font.body,
     },
     templateGrid: {
-      padding: 10,
+      padding: spacing.sm,
     },
     templateItem: {
       flex: 1,
-      margin: 5,
+      margin: spacing.xs,
       backgroundColor: colors.backgroundSecondary,
       borderRadius: sizes.borderRadius,
-      padding: 10,
+      padding: spacing.sm,
       alignItems: 'center',
     },
     templateImage: {
@@ -123,17 +123,17 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
   
     // Form Styles
     formContainer: {
-      marginVertical: 20,
+      marginVertical: spacing.md,
     },
     textInput: {
       borderWidth: 1,
-      marginBottom: 15,
-      padding: 12,
+      marginBottom: spacing.md,
+      padding: spacing.sm + spacing.xs,
       color: colors.textPrimary,
       borderColor: colors.border,
       borderRadius: sizes.borderRadius,
       backgroundColor: colors.backgroundSecondary,
-      fontSize: 16,
+      fontSize: font.body,
     },
     multilineInput: {
       minHeight: 80,
@@ -142,7 +142,7 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
     imagePreview: {
       width: '100%',
       height: 400,
-      marginBottom: 20,
+      marginBottom: spacing.md,
       borderRadius: sizes.borderRadius,
       resizeMode: 'cover',
     },
@@ -150,17 +150,17 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
     // Submit Styles
     submitButton: {
       backgroundColor: colors.success,
-      padding: 15,
+      padding: spacing.md,
       borderRadius: sizes.borderRadius,
       alignItems: 'center',
-      marginTop: 10,
+      marginTop: spacing.sm,
     },
     submitButtonDisabled: {
       backgroundColor: colors.disabled,
     },
     submitButtonText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
     },
     submitButtonTextDisabled: {
@@ -168,18 +168,18 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
     },
     incompleteMessage: {
       color: colors.error,
-      fontSize: 14,
+      fontSize: font.caption,
       fontWeight: '500',
-      marginTop: 10,
+      marginTop: spacing.sm,
       textAlign: 'center',
     },
     sidebar: {
       position: "absolute",
-      right: 20,
-      top: 100,
+      right: spacing.md,
+      top: spacing.xxl,
       backgroundColor: colors.backgroundSecondary,
-      paddingVertical: 10,
-      paddingHorizontal: 8,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
       borderRadius: sizes.borderRadius,
       alignItems: "center",
       zIndex: 20,
@@ -187,30 +187,30 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
       elevation: shadows.medium.elevation,
     },
     sidebarButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      marginVertical: 8,
+      width: sizes.iconLg,
+      height: sizes.iconLg,
+      borderRadius: sizes.iconLg / 2,
+      marginVertical: spacing.xs,
       borderWidth: 2,
       borderColor: 'transparent',
     },
     sidebarUndo: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      marginTop: 12,
+      width: sizes.iconLg,
+      height: sizes.iconLg,
+      borderRadius: sizes.iconLg / 2,
+      marginTop: spacing.sm,
       backgroundColor: colors.error,
       justifyContent: "center",
       alignItems: "center",
     },
     checkButton: {
       position: "absolute",
-      bottom: 30,
-      right: "50%",
-      transform: [{ translateX: 30 }],
-      width: 60,
-      height: 60,
-      borderRadius: 30,
+      bottom: spacing.lg,
+      right: `50%`,
+      transform: [{ translateX: spacing.lg }],
+      width: sizes.iconXl,
+      height: sizes.iconXl,
+      borderRadius: sizes.iconXl / 2,
       backgroundColor: colors.success,
       justifyContent: "center",
       alignItems: "center",
@@ -221,7 +221,7 @@ const getStyles = (colors: any, sizes: any, shadows: any) => {
 };
 
 const RouteImageCreator: React.FC = () => {
-  const { colors, sizes, shadows } = useTheme();
+  const { colors, sizes, shadows, font, spacing } = useTheme();
   const {
     imageUri,
     annotations,
@@ -248,7 +248,7 @@ const RouteImageCreator: React.FC = () => {
     });
   }, [navigation, colors.backgroundSecondary]);
 
-  const styles = getStyles(colors, sizes, shadows);
+  const styles = getStyles(colors, sizes, shadows, font, spacing);
 
   return (
     <View style={styles.container}>

@@ -27,8 +27,10 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
     const routesUrl = `${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ''}`;
     const data = await callApi<{ routes: R[] }>(routesUrl, { method: "GET" });
 
+    const routesToProcess = data.routes || []; // Ensure data.routes is an array
+
     const routesWithSignedUrls = await Promise.all(
-      data.routes.map(async (route: any) => {
+      routesToProcess.map(async (route: any) => {
         try {
           const imageRes = await callApi<Response>(route.imageUrl, { skipJsonParse: true });
           const annotationsRes = await callApi<Response>(route.annotationsUrl, { skipJsonParse: true });

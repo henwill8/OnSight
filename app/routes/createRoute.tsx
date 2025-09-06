@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from "react";
+import React, { useLayoutEffect, useState, useEffect, useCallback } from "react";
 import {
   View,
   TextInput,
@@ -10,9 +10,9 @@ import {
   ScrollView,
   Image,
   Modal,
-  ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "expo-router";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { useTheme } from "@/constants/theme";
 
@@ -21,10 +21,13 @@ import RouteImage from "@/components/RouteImage/RouteImage";
 
 // Services
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Template } from '@/types';
-import { useCreateRouteLogic } from '@/hooks/routes/useCreateRouteLogic';
+import { Template, SaveRouteRequest } from '@/types';
+import { useImageSelection } from '@/hooks/routes/useImageSelection';
+import { useRouteTemplates } from '@/hooks/routes/useRouteTemplates';
+import { useRouteForm } from '@/hooks/routes/useRouteForm';
+import { useRouteSubmission } from '@/hooks/routes/useRouteSubmission';
 
-const getStyles = (colors: any, sizes: any, spacing: any) => {
+const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
   return StyleSheet.create({
     scrollView: {
       backgroundColor: colors.backgroundPrimary,
@@ -35,7 +38,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       paddingTop: spacing.lg + spacing.xs,
     },
     title: {
-      fontSize: 24,
+      fontSize: font.h3,
       fontWeight: 'bold',
       marginBottom: spacing.lg + spacing.xs,
       color: colors.textPrimary,
@@ -66,12 +69,12 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
     },
     buttonText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
     },
     orText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
       textAlign: 'center',
       marginVertical: spacing.sm,
@@ -99,12 +102,12 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       borderBottomColor: colors.border,
     },
     modalTitle: {
-      fontSize: 20,
+      fontSize: font.h4,
       fontWeight: '600',
       color: colors.textPrimary,
     },
     closeButton: {
-      fontSize: 24,
+      fontSize: font.h3,
       color: colors.textSecondary,
       padding: spacing.xs,
     },
@@ -117,7 +120,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       textAlign: 'center',
       marginTop: spacing.md,
       color: colors.textSecondary,
-      fontSize: 16,
+      fontSize: font.body,
     },
     templateGrid: {
       padding: spacing.sm,
@@ -145,10 +148,9 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       marginBottom: spacing.md,
       padding: spacing.sm + spacing.xs,
       color: colors.textPrimary,
-      borderColor: colors.border,
       borderRadius: sizes.borderRadius,
-      backgroundColor: colors.backgroundPrimary,
-      fontSize: 16,
+      backgroundColor: colors.backgroundSecondary,
+      fontSize: font.body,
     },
     multilineInput: {
       minHeight: 80,
@@ -175,7 +177,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
     },
     submitButtonText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
     },
     submitButtonTextDisabled: {
@@ -183,7 +185,7 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
     },
     incompleteMessage: {
       color: colors.error,
-      fontSize: 14,
+      fontSize: font.caption,
       fontWeight: '500',
       marginTop: spacing.sm,
       textAlign: 'center',
@@ -192,39 +194,60 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
 };
 
 const CreateRouteScreen = () => {
+  const router = useRouter();
   const navigation = useNavigation();
-  const { colors, sizes, spacing, global } = useTheme();
-  const styles = getStyles(colors, sizes, spacing);
+  const { colors, sizes, spacing, global, font } = useTheme();
+  const styles = getStyles(colors, sizes, spacing, font);
 
-  const {
-    templates,
-    showTemplates,
-    loadingTemplates,
-    setShowTemplates,
-    handleFetchTemplates,
-    handleTemplateSelect,
-    handleImagePick,
-    handleSubmit,
-    handleShowTemplates,
-    name,
-    setName,
-    description,
-    setDescription,
-    difficulty,
-    setDifficulty,
-    imageUri,
-    setImageUri,
-    annotationsData,
-    setAnnotationsData,
-    locationId,
-    setLocationId,
-    gymName,
-    setGymName,
-    canSubmit,
-    loading,
-    exportedUri,
-    annotationsJSON,
-  } = useCreateRouteLogic(navigation);
+  const { locationId: locationIdParam } = useLocalSearchParams();
+
+  // Composed Hooks
+  const { imageUri, setImageUri, annotationsData, setAnnotationsData, exportedUri, annotationsJSON, handleImagePick: imageSelectionHandleImagePick, setRouteData } = useImageSelection();
+  const { templates, showTemplates, setShowTemplates, loadingTemplates, handleFetchTemplates, handleTemplateSelect: templateHandleTemplateSelect, handleShowTemplates: templateHandleShowTemplates } = useRouteTemplates();
+  const { name, setName, description, setDescription, difficulty, setDifficulty, canSubmit } = useRouteForm(imageUri);
+  const { loading, handleSubmit: submitHandleSubmit } = useRouteSubmission();
+
+  const [locationId, setLocationId] = useState<string>("");
+  const [gymName, setGymName] = useState<string>("");
+
+  // Handlers that compose the new hooks
+  const handleImagePick = useCallback(async (useCamera: boolean) => {
+    await imageSelectionHandleImagePick(useCamera, () => router.push("/routes/routeImageCreator"));
+  }, [imageSelectionHandleImagePick, router]);
+
+  const handleTemplateSelect = useCallback((template: Template) => {
+    templateHandleTemplateSelect(template, setRouteData, () => router.push("/routes/routeImageCreator"));
+  }, [templateHandleTemplateSelect, setRouteData, router]);
+
+  const handleSubmit = useCallback(async () => {
+    const submissionData: SaveRouteRequest = {
+      name,
+      description,
+      difficulty,
+      imageUri,
+      annotationsJSON,
+      locationId: locationId || undefined,
+    };
+    await submitHandleSubmit(submissionData, () => {
+      router.back();
+      router.setParams({ shouldReload: "true" }); // shouldReload needs to be a string for setParams
+    });
+  }, [name, description, difficulty, imageUri, annotationsJSON, locationId, submitHandleSubmit, router]);
+
+  const handleShowTemplates = useCallback(() => {
+    templateHandleShowTemplates(locationIdParam as string || ""); // Use the composed handleShowTemplates
+  }, [templateHandleShowTemplates, locationIdParam]);
+
+  useEffect(() => {
+    setLocationId((locationIdParam || "") as string);
+  }, [locationIdParam]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (exportedUri) setImageUri(exportedUri as string);
+      if (annotationsJSON) setAnnotationsData(annotationsJSON as string);
+    }, [exportedUri, annotationsJSON, setImageUri, setAnnotationsData])
+  );
 
   // Effects
   useLayoutEffect(() => {

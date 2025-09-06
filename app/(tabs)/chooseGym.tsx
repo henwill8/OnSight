@@ -6,7 +6,7 @@ import { useChooseGymLogic } from '@/hooks/gyms/useChooseGymLogic';
 import { Gym } from '@/types';
 import LoadingModal from '@/components/ui/LoadingModal';
 
-const getStyles = (colors: any, sizes: any, spacing: any) => {
+const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -17,42 +17,41 @@ const getStyles = (colors: any, sizes: any, spacing: any) => {
       borderWidth: 1,
       marginBottom: spacing.md,
       padding: spacing.sm,
-      borderColor: colors.border,
-      backgroundColor: colors.backgroundPrimary,
+      backgroundColor: colors.backgroundSecondary,
       color: colors.textPrimary,
       borderRadius: sizes.borderRadius,
+      fontSize: font.body,
     },
     button: {
-      padding: 13,
+      padding: spacing.sm,
       alignItems: 'center',
-      marginBottom: spacing.lg,
       backgroundColor: colors.primary,
       borderRadius: sizes.borderRadius,
     },
     buttonText: {
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: '600',
       color: colors.textPrimary,
     },
     currentGymText: {
-      fontSize: 22,
+      fontSize: font.h3,
       fontWeight: '500',
       textAlign: 'center',
       marginVertical: spacing.xl,
       color: colors.textPrimary,
     },
     availableGymsTitle: {
-      fontSize: 20,
+      fontSize: font.h4,
       marginBottom: spacing.sm,
       color: colors.textPrimary,
     },
     gymItem: {
-      padding: spacing.sm,
+      padding: spacing.xs,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     gymText: {
-      fontSize: 18,
+      fontSize: font.body,
       color: colors.textPrimary,
     },
   });
@@ -74,14 +73,14 @@ const ChooseGym: React.FC = () => {
     handleSelectGym,
   } = useChooseGymLogic();
 
-  const styles = getStyles(colors, sizes, spacing);
+  const styles = getStyles(colors, sizes, spacing, font);
 
   const renderGymItem = ({ item }: { item: Gym }) => {
     return (
       <TouchableOpacity onPress={() => handleSelectGym(item)}>
         <View style={styles.gymItem}>
           <Text style={styles.gymText}>{item.name || 'No name'}</Text>
-          <Text style={{ color: colors.textSecondary }}>{item.location || 'No location'}</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: font.caption }}>{item.location || 'No location'}</Text>
         </View>
       </TouchableOpacity>
     );

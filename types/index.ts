@@ -30,8 +30,8 @@ export interface CreateRouteData {
   name: string;
   description: string;
   difficulty: string;
-  imageUri: string;
-  annotationsJSON: string;
+  imageUri?: string | null;
+  annotationsJSON?: string | null;
   locationId?: string;
 }
 

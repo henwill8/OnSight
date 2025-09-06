@@ -7,11 +7,12 @@ import { useTheme } from '@/constants/theme';
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
+  style?: object;
 }) {
   return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
-const getStyles = (colors: any, spacing: any) => {
+const getStyles = (colors: any, spacing: any, font: any) => {
   return StyleSheet.create({
     keyboardAvoidingView: {
       flex: 1,
@@ -19,12 +20,19 @@ const getStyles = (colors: any, spacing: any) => {
     tabBarIcon: {
       marginBottom: -spacing.xxs, // Assuming a very small spacing for -3
     },
+    tabBarLabel: {
+      fontSize: font.caption,
+    },
+    headerTitle: {
+      fontSize: font.h4,
+      fontWeight: 'bold',
+    },
   });
 };
 
 export default function TabLayout() {
-  const { colors, spacing, global } = useTheme();
-  const styles = getStyles(colors, spacing);
+  const { colors, spacing, global, font } = useTheme();
+  const styles = getStyles(colors, spacing, font);
 
   return (
     <KeyboardAvoidingView
@@ -41,6 +49,8 @@ export default function TabLayout() {
             backgroundColor: colors.backgroundSecondary
           },
           headerTintColor: colors.textPrimary,
+          headerTitleStyle: styles.headerTitle,
+          tabBarLabelStyle: styles.tabBarLabel,
         }}
       >
         <Tabs.Screen

@@ -8,9 +8,9 @@ interface LoadingModalProps {
 }
 
 const LoadingModal: React.FC<LoadingModalProps> = ({ visible, message }) => {
-  const { colors, spacing, sizes } = useTheme();
+  const { colors, spacing, sizes, font } = useTheme();
 
-  const getStyles = () => StyleSheet.create({
+  const getStyles = (colors: any, spacing: any, sizes: any, font: any) => StyleSheet.create({
     modalBackground: {
       flex: 1,
       justifyContent: 'center',
@@ -25,12 +25,12 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ visible, message }) => {
     },
     loadingText: {
       marginTop: spacing.sm,
-      fontSize: sizes.fontSize,
+      fontSize: font.body,
       color: colors.textPrimary,
     },
   });
 
-  const styles = getStyles();
+  const styles = getStyles(colors, spacing, sizes, font);
 
   return (
     <Modal transparent={true} animationType="fade" visible={visible}>

@@ -1,15 +1,15 @@
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useTheme } from '@/constants/theme';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { useLoginLogic } from '@/hooks/auth/useLoginLogic';
 import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { API_PATHS } from "@/constants/paths";
 import { callApi } from "@/utils/api";
 
 
-const getStyles = (colors: any, global: any) => {
+const getStyles = (colors: any, global: any, font: any) => {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -22,7 +22,7 @@ const getStyles = (colors: any, global: any) => {
       width: "100%",
     },
     title: {
-      fontSize: 24,
+      fontSize: font.h3,
       fontWeight: "bold",
       marginBottom: 20,
       color: colors.textPrimary,
@@ -35,6 +35,7 @@ const getStyles = (colors: any, global: any) => {
       borderRadius: 5,
       borderColor: colors.border,
       color: colors.textPrimary,
+      fontSize: font.body,
     },
     button: {
       backgroundColor: colors.primary,
@@ -45,19 +46,23 @@ const getStyles = (colors: any, global: any) => {
     },
     buttonText: {
       color: colors.textPrimary,
-      fontSize: 16,
+      fontSize: font.body,
       fontWeight: "bold",
     },
   });
 };
 
 export default function LoginScreen() {
-  const { colors, global } = useTheme();
+  const { colors, global, font } = useTheme();
   const { email, setEmail, password, setPassword, loading, handleLogin, router } = useLoginLogic();
 
-  const styles = getStyles(colors, global);
+  const styles = getStyles(colors, global, font);
 
-  useAuthRedirect();
+  const { checkAuth } = useAuthRedirect();
+
+  useCallback(() => {
+    checkAuth();
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -82,7 +87,7 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/auth/register")}>
-          <Text style={[global.link, { textAlign: "center" }]}>Don't have an account? Register here</Text>
+          <Text style={[global.link, { textAlign: "center", fontSize: font.caption }]}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>
 
