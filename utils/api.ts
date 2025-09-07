@@ -13,7 +13,7 @@ interface ApiConfig {
 export const callApi = async <T>(path: string, apiConfig?: ApiConfig): Promise<T> => {
   const { method = 'GET', headers = {}, body, timeout = 5000, skipJsonParse = false } = apiConfig || {};
 
-  const url = config.API_URL + path;
+  const url = path.includes(config.API_URL) ? path : config.API_URL + path;
 
   const finalHeaders: Record<string, string> = {
     ...headers,

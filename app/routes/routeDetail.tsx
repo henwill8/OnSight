@@ -11,11 +11,13 @@ const getStyles = (colors: any, sizes: any, shadows: any, global: any, font: any
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: colors.backgroundPrimary
     },
     emptyContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: colors.backgroundPrimary
     },
     emptyText: {
       fontSize: font.h5,
@@ -23,6 +25,7 @@ const getStyles = (colors: any, sizes: any, shadows: any, global: any, font: any
     container: {
       flex: 1,
       position: 'relative',
+      backgroundColor: colors.backgroundPrimary
     },
     imageContainer: {
       flex: 1,
@@ -68,7 +71,6 @@ const RouteDetail = () => {
     routeDetails,
     loading,
     scaledImageDimensions,
-    parsedParams: routeInfo
   } = useRouteDetailLogic();
 
   useLayoutEffect(() => {
@@ -96,6 +98,8 @@ const RouteDetail = () => {
       </View>
     );
   }
+
+  console.log(scaledImageDimensions)
 
   return (
     <View style={global.container}>

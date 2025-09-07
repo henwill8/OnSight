@@ -20,11 +20,16 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
     breadcrumbSeparator: { fontSize: font.body, marginHorizontal: spacing.xs },
     childLocationCard: { padding: spacing.sm, marginRight: spacing.md, borderRadius: sizes.borderRadius, justifyContent: 'center', alignItems: 'center' },
     childLocationName: { fontSize: font.body, color: colors.textPrimary },
-    routeCard: { flexDirection: 'row', marginBottom: spacing.md, padding: spacing.md, borderRadius: sizes.borderRadius, borderWidth: 1 },
+    routeCard: { flexDirection: 'row', marginBottom: spacing.md, padding: spacing.md, borderRadius: sizes.borderRadius, backgroundColor: colors.backgroundSecondary },
     routeImage: { width: 80, height: 80, borderRadius: sizes.borderRadius, marginRight: spacing.md },
-    routeInfo: { flex: 1 },
-    routeName: { fontSize: font.h5, fontWeight: '500' },
-    routeDescription: { fontSize: font.caption, marginTop: spacing.xs },
+    routeInfo: { flex: 1, color: colors.textSecondary },
+    routeName: { fontSize: font.h5, fontWeight: '500', color: colors.textSecondary },
+    routeDescription: { fontSize: font.caption, marginTop: spacing.xs, color: colors.textSecondary },
+    routeDifficulty: {
+      fontSize: font.caption,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
     addButton: { 
       position: 'absolute',
       right: spacing.md,
@@ -90,7 +95,7 @@ const HomeScreen = () => {
     const { route: routeData, ...otherParams } = route;
     router.navigate('/routes/routeDetail');
     router.setParams({ routeParams: encodeURIComponent(JSON.stringify(otherParams)) });
-    setRoute(routeData);
+    setRoute(route.route);
   };
 
   const handleAddRoute = () => {
@@ -147,6 +152,7 @@ const HomeScreen = () => {
                 <Text style={styles.routeDescription}>
                   {route.description || 'No Description'}
                 </Text>
+                <Text style={styles.routeDifficulty}>Difficulty: {route.difficulty}</Text>
               </View>
             </TouchableOpacity>
           )}

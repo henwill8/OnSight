@@ -211,11 +211,11 @@ const CreateRouteScreen = () => {
   const { loading, handleSubmit: submitHandleSubmit } = useRouteSubmission();
 
   // Reset route data when component mounts (starting a new route)
-  // useEffect(() => {
-  //   console.log("resetting route data")
-  //   resetRouteData();
-  // }, []);
-
+  useEffect(() => {
+    console.log("resetting route data")
+    resetRouteData();
+  }, []);
+  
   // Handlers that compose the new hooks
   const handleImagePick = useCallback(async (useCamera: boolean) => {
     const result = await pickImage(useCamera);
@@ -309,7 +309,7 @@ const CreateRouteScreen = () => {
 
   return (
     <ScrollView 
-      contentContainerStyle={[global.centerItemsContainer, styles.container]} 
+      contentContainerStyle={styles.container} 
       style={styles.scrollView}
     >
       <Text style={styles.title}>{gymData.name || 'Create Route'}</Text>

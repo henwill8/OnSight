@@ -17,8 +17,9 @@ export const useApi = () => {
 
   const handleUnauthorized = useCallback(() => {
     console.log("Unauthorized access detected, redirecting to login");
-    if (pathname !== "/auth/login")
+    if (pathname !== "/auth/login") {
       router.replace("/auth/login");
+    }
   }, [router]);
 
   const apiCall = useCallback(async <T>(path: string, apiConfig?: ApiConfig): Promise<T> => {
@@ -27,13 +28,6 @@ export const useApi = () => {
     } catch (error: any) {
       // Check if the error is due to unauthorized access
       if (error.status === 401 || error.status === 403) {
-        handleUnauthorized();
-      } else if (error.message && (
-        error.message.includes('401') || 
-        error.message.includes('403') ||
-        error.message.includes('Unauthorized') ||
-        error.message.includes('Forbidden')
-      )) {
         handleUnauthorized();
       }
       throw error;

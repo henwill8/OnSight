@@ -19,6 +19,7 @@ export const useImageDimensions = (imageUri: string | null, extraHeight: number 
       Image.getSize(imageUri, (width, height) => {
         setImageDimensions({ width, height });
       });
+      console.log("Image size", imageDimensions, imageUri)
     }
   }, [imageUri]);
 

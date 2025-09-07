@@ -12,6 +12,11 @@ import { G } from 'react-native-svg';
 
 const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: any) => {
   return StyleSheet.create({
+    container: {
+      flex: 1,
+      position: 'relative',
+      backgroundColor: colors.backgroundPrimary
+    },
     sidebar: {
       position: "absolute",
       right: spacing.md,
@@ -26,17 +31,17 @@ const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: an
       elevation: shadows.medium.elevation,
     },
     sidebarButton: {
-      width: sizes.iconLg,
-      height: sizes.iconLg,
-      borderRadius: sizes.iconLg / 2,
+      width: 40,
+      height: 40,
+      borderRadius: 40 / 2,
       marginVertical: spacing.xs,
-      borderWidth: 2,
+      borderWidth: 4,
       borderColor: 'transparent',
     },
     sidebarUndo: {
-      width: sizes.iconLg,
-      height: sizes.iconLg,
-      borderRadius: sizes.iconLg / 2,
+      width: 40,
+      height: 40,
+      borderRadius: 40 / 2,
       marginTop: spacing.sm,
       backgroundColor: colors.error,
       justifyContent: "center",
@@ -47,9 +52,9 @@ const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: an
       bottom: spacing.lg,
       right: `50%`,
       transform: [{ translateX: spacing.lg }],
-      width: sizes.iconXl,
-      height: sizes.iconXl,
-      borderRadius: sizes.iconXl / 2,
+      width: 50,
+      height: 50,
+      borderRadius: 50 / 2,
       backgroundColor: colors.success,
       justifyContent: "center",
       alignItems: "center",
@@ -98,7 +103,7 @@ const RouteImageCreator: React.FC = () => {
             key={color}
             style={[
               styles.sidebarButton,
-              { borderColor: selectedColor === color ? "#fff" : "transparent", backgroundColor: color }
+              { borderColor: selectedColor === color ? "#000" : "transparent", backgroundColor: color }
             ]}
             onPress={() => handleColorSelect(color)}
           />

@@ -31,7 +31,7 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
 
   const fetchRoutes = async () => {
     const routesUrl = `${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ''}`;
-    const data = await callApi<{ routes: RouteInfo[] }>(routesUrl, { method: "GET" });
+    const data = await callApi<{ routes: RouteInfo[]}>(routesUrl, { method: "GET" });
 
     const routesToProcess = data.routes || []; // Ensure data.routes is an array
 
