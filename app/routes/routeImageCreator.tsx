@@ -138,7 +138,7 @@ const RouteImageCreator: React.FC = () => {
 
       <LoadingModal 
         visible={!dataReceived} 
-        message={annotations.climbingHolds ? "Loading Existing Annotations..." : "Detecting Climbing Holds...\n(may take up to 10 seconds)"}
+        message={annotations ? "Loading Existing Annotations..." : "Detecting Climbing Holds...\n(may take up to 10 seconds)"}
       />
     </View>
   );

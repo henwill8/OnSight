@@ -159,7 +159,7 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
       textAlignVertical: 'top',
     },
     imagePreview: {
-      width: '100%',
+      width: "100%",
       height: 400,
       marginBottom: spacing.md,
       borderRadius: sizes.borderRadius,
@@ -211,15 +211,16 @@ const CreateRouteScreen = () => {
   const { loading, handleSubmit: submitHandleSubmit } = useRouteSubmission();
 
   // Reset route data when component mounts (starting a new route)
-  useEffect(() => {
-    resetRouteData();
-  }, []);
+  // useEffect(() => {
+  //   console.log("resetting route data")
+  //   resetRouteData();
+  // }, []);
 
   // Handlers that compose the new hooks
   const handleImagePick = useCallback(async (useCamera: boolean) => {
     const result = await pickImage(useCamera);
     if (result.success && result.uri) {
-      updateRouteData({ imageUri: result.uri || '' });
+      setRouteData({ imageUri: result.uri || '', annotations: null });
       router.push("/routes/routeImageCreator");
     }
   }, [pickImage, updateRouteData, router]);
@@ -241,7 +242,7 @@ const CreateRouteScreen = () => {
     };
     await submitHandleSubmit(submissionData, () => {
       router.back();
-      router.setParams({ shouldReload: "true" }); // shouldReload needs to be a string for setParams
+      router.setParams({ shouldReload: "true" });
     });
   }, [name, description, difficulty, routeData.imageUri, routeData.annotations, locationData.id, submitHandleSubmit, router]);
 
@@ -253,10 +254,10 @@ const CreateRouteScreen = () => {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Create Route",
-      headerStyle: { backgroundColor: colors.backgroundPrimary },
+      headerStyle: { backgroundColor: colors.backgroundSecondary },
       headerTintColor: "white",
     });
-  }, [navigation, colors.backgroundPrimary]);
+  }, [navigation, colors.backgroundSecondary]);
 
   // Render methods
   const renderTemplateItem = ({ item }: { item: Route }) => (
@@ -308,7 +309,7 @@ const CreateRouteScreen = () => {
 
   return (
     <ScrollView 
-      contentContainerStyle={styles.container} 
+      contentContainerStyle={[global.centerItemsContainer, styles.container]} 
       style={styles.scrollView}
     >
       <Text style={styles.title}>{gymData.name || 'Create Route'}</Text>
@@ -346,8 +347,7 @@ const CreateRouteScreen = () => {
       {/* Image Preview */}
       {routeData.imageUri && (
         <RouteImage 
-          style={styles.imagePreview} 
-          routeData={routeData}
+          style={styles.imagePreview}
           interactable={false} 
         />
       )}

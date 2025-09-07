@@ -17,30 +17,37 @@ export default function Zoomable({ children, zoomEnabled = true, panEnabled = tr
   const { sizes } = useTheme();
   if (Platform.OS === "web") {
     return (
-      <TransformWrapper
-        doubleClick={{ disabled: true }}
-        wheel={{ step: 50 }}
-        pinch={{ step: 5, disabled: false }}
-        panning={{ 
-          disabled: true,
-        }}
-        onPanningStart={(ref, event) => {
-          // Check if it's a TouchEvent and has only one touch
-          if (event instanceof TouchEvent && event.touches.length === 1) {
-            return false; // Prevent panning on single touch
-          }
-          return true;
-        }}
-      >
-        <TransformComponent>
-          {children}
-        </TransformComponent>
-      </TransformWrapper>
+      <View>
+        {children}
+      </View> // TODO: figure out why styling doesnt work with transform wrapper/component
+      // <TransformWrapper
+      //   doubleClick={{ disabled: true }}
+      //   wheel={{ step: 50, disabled: !interactable }}
+      //   pinch={{ step: 5, disabled: !interactable }}
+      //   panning={{ 
+      //     disabled: true,
+      //   }}
+      //   onPanningStart={(ref, event) => {
+      //     // Check if it's a TouchEvent and has only one touch
+      //     if (!interactable || (event instanceof TouchEvent && event.touches.length === 1)) {
+      //       return false; // Prevent panning on single touch
+      //     }
+      //     return true;
+      //   }}
+      // >
+      //   <TransformComponent
+      //     wrapperStyle={style}
+      //     contentStyle={style}
+      //   >
+      //     {children}
+      //   </TransformComponent>
+      // </TransformWrapper>
     );
   }
 
   return (
     <ReactNativeZoomableView
+      style={style}
       maxZoom={sizes.zoomMax}
       minZoom={sizes.zoomMin}
       zoomStep={sizes.zoomStep}

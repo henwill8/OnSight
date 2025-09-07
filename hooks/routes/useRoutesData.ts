@@ -52,22 +52,14 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
 
           const processedRoute: Route = {
             imageUri: imageUrl,
-            annotations: annotations || {
-              climbingHolds: [],
-              drawingPaths: [],
-              history: []
-            }
+            annotations: annotations || null
           };
 
           return { ...route, route: processedRoute };
         } catch (err) {
           const dummyRoute: Route = {
             imageUri: '',
-            annotations: {
-              climbingHolds: [],
-              drawingPaths: [],
-              history: []
-            }
+            annotations: null
           };
 
           return { ...route, route: dummyRoute };

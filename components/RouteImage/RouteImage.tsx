@@ -32,7 +32,7 @@ export interface RouteImageRef {
 }
 
 const getStyles = (colors: any) => StyleSheet.create({
-  imageContainer: { flex: 1, position: "relative", overflow: "hidden" },
+  imageContainer: { position: "relative", overflow: "hidden" },
   fullOverlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
   loadingOverlay: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
@@ -59,7 +59,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
 
   // Determine data source based on mode
   const isCreateMode = mode === 'create';
-  const currentRouteData = isCreateMode ? storeRouteData : externalRouteData;
+  const currentRouteData = externalRouteData ? externalRouteData : storeRouteData;
 
   const onContainerLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -67,7 +67,9 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   };
 
   useEffect(() => {
-    Image.getSize(currentRouteData?.imageUri, (width, height) => setImageSize({ width, height }));
+    if (currentRouteData?.imageUri) {
+      Image.getSize(currentRouteData.imageUri, (width, height) => setImageSize({ width, height }));
+    }
   }, [currentRouteData?.imageUri]);
 
   const fittedImage = useCallback(() => {
@@ -81,13 +83,38 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
     });
   }, [imageSize, containerSize, imageProps.resizeMode]);
 
+  // Helper function to get safe annotations with fallback
+  const getSafeAnnotations = useCallback((): AnnotationsData => {
+    if (!currentRouteData?.annotations) {
+      return {
+        climbingHolds: [],
+        drawingPaths: [],
+        history: []
+      };
+    }
+    return currentRouteData.annotations;
+  }, [currentRouteData?.annotations]);
+
+  // Helper function to check if annotations exist and have data
+  const hasAnnotations = useCallback((): boolean => {
+    const annotations = currentRouteData?.annotations;
+    return annotations !== null && annotations !== undefined;
+  }, [currentRouteData?.annotations]);
+
+  // Helper function to check if we should show overlays
+  const shouldShowOverlays = useCallback((): boolean => {
+    return imageLoaded && fittedImage() && hasAnnotations();
+  }, [imageLoaded, fittedImage, hasAnnotations]);
+
   const updateAnnotations = (newAnnotations: Partial<AnnotationsData>, historyEntry?: ChangeLogEntry) => {
     if (!isCreateMode) return;
 
+    const currentAnnotations = getSafeAnnotations();
+    
     const updated: AnnotationsData = {
-      climbingHolds: newAnnotations.climbingHolds ?? currentRouteData.annotations.climbingHolds,
-      drawingPaths: newAnnotations.drawingPaths ?? currentRouteData.annotations.drawingPaths,
-      history: [...currentRouteData.annotations.history, historyEntry].filter(Boolean),
+      climbingHolds: newAnnotations.climbingHolds ?? currentAnnotations.climbingHolds,
+      drawingPaths: newAnnotations.drawingPaths ?? currentAnnotations.drawingPaths,
+      history: [...currentAnnotations.history, historyEntry].filter(Boolean),
     };
 
     updateData({ annotations: updated });
@@ -96,13 +123,17 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   const addDrawingPath = (newPath: IPath) => {
     // Only allow drawing in interactive mode
     if (!interactable) return;
-    updateAnnotations({ drawingPaths: [...currentRouteData.annotations.drawingPaths, newPath] }, { type: "ADD_PATH", data: [] });
+    
+    const currentAnnotations = getSafeAnnotations();
+    updateAnnotations({ drawingPaths: [...currentAnnotations.drawingPaths, newPath] }, { type: "ADD_PATH", data: [] });
   };
 
   const updateClimbingHold = (index: number, newState: HOLD_SELECTION, prevState: HOLD_SELECTION) => {
     // Only allow hold updates in interactive mode
     if (!interactable) return;
-    const updatedHolds = [...currentRouteData.annotations.climbingHolds];
+    
+    const currentAnnotations = getSafeAnnotations();
+    const updatedHolds = [...currentAnnotations.climbingHolds];
     if (updatedHolds[index]) updatedHolds[index] = { ...updatedHolds[index], holdSelectionState: newState };
     updateAnnotations({ climbingHolds: updatedHolds }, { type: "UPDATE_HOLD_STATE", data: { index, prevState } });
   };
@@ -110,13 +141,14 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   const undo = () => {
     if (!interactable || !isCreateMode) return;
     
-    const history = currentRouteData.annotations.history;
+    const currentAnnotations = getSafeAnnotations();
+    const history = currentAnnotations.history;
     if (!history.length) return;
 
     const lastChange = history[history.length - 1];
     const updatedAnnotations: AnnotationsData = {
-      climbingHolds: [...currentRouteData.annotations.climbingHolds],
-      drawingPaths: [...currentRouteData.annotations.drawingPaths],
+      climbingHolds: [...currentAnnotations.climbingHolds],
+      drawingPaths: [...currentAnnotations.drawingPaths],
       history: history.slice(0, -1),
     };
 
@@ -137,11 +169,25 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
 
   useImperativeHandle(ref, () => ({ undo }));
 
+  // Early return if no route data
+  if (!currentRouteData) {
+    return (
+      <View style={[style, styles.imageContainer]}>
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <Zoomable style={global.centerItemsContainer}>
+    <Zoomable 
+      style={{ flex: 1 }} 
+      interactable={interactable}
+    >
       <View style={[style, styles.imageContainer]} onLayout={onContainerLayout}>
         <Image
-          source={{ uri: currentRouteData?.imageUri }}
+          source={{ uri: currentRouteData.imageUri }}
           onLoad={() => setImageLoaded(true)}
           style={{
             position: "absolute",
@@ -160,10 +206,10 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
           </View>
         )}
 
-        {imageLoaded && fittedImage() && (
+        {shouldShowOverlays() && (
           <>
             <ClimbingHoldOverlay
-              data={currentRouteData.annotations.climbingHolds}
+              data={getSafeAnnotations().climbingHolds}
               onHoldStateChange={updateClimbingHold}
               fittedImageRect={fittedImage()}
               interactable={interactable && isCreateMode}
@@ -171,7 +217,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
               style={styles.fullOverlay}
             />
             <DrawingCanvas
-              data={currentRouteData.annotations.drawingPaths}
+              data={getSafeAnnotations().drawingPaths}
               onAddPath={addDrawingPath}
               fittedImageRect={fittedImage()}
               interactable={interactable && isCreateMode}

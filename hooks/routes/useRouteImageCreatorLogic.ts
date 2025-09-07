@@ -23,10 +23,12 @@ export const useRouteImageCreatorLogic = (routeImageRef: React.RefObject<RouteIm
   useEffect(() => {
     if (routeData.imageUri && !routeData.annotations) {
       sendImageToServer(routeData.imageUri);
+    } else if (routeData.imageUri) {
+      console.log("Found annotations");
     } else {
-      console.error("No imageUri provided");
+      console.error("Missing image uri")
     }
-  }, [routeData.imageUri, routeData.annotations, imageDimensions, sendImageToServer]);
+  }, []);
 
 
   const handleColorSelect = (color: string) => {

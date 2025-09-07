@@ -39,6 +39,8 @@ export const useRouteSubmission = (): UseRouteSubmissionReturn => {
       formData.append("locationId", data.locationId || "");
       formData.append("annotations", JSON.stringify(routeData.annotations || {}));
 
+      console.log(routeData)
+
       // Handle image file
       if (!routeData.imageUri) {
         console.warn("Route image URI is missing, skipping image upload.");
@@ -64,7 +66,6 @@ export const useRouteSubmission = (): UseRouteSubmissionReturn => {
       await callApi<{ message?: string }>(API_PATHS.CREATE_ROUTE, {
         method: "POST",
         body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 5000
       });
 

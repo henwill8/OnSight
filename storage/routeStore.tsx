@@ -3,16 +3,12 @@ import { AnnotationsData } from "@/types/annotationTypes";
 
 export interface Route {
   imageUri: string;
-  annotations: AnnotationsData;
+  annotations: AnnotationsData | null;
 }
 
 const defaultRoute: Route = {
   imageUri: '',
-  annotations: {
-    climbingHolds: [],
-    drawingPaths: [],
-    history: []
-  }
+  annotations: null
 };
 
 // Route store should only be used when needing to persist a single routes data across pages
