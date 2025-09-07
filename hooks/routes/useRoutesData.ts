@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_PATHS } from '../../constants/paths';
 import { useApi } from '@/hooks/utils/useApi';
+import { loadAnnotations } from '@/utils/annotationUtils';
+import { Route } from '@/storage/routeStore';
+import { Location, BreadcrumbItem, RouteInfo } from '@/types';
+import { AnnotationsData } from '@/types/annotationTypes';
+import { Router } from 'expo-router';
 
-export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string | null) => {
+export const useRoutesData = (gymId: string | null, locationId: string | null) => {
   const { callApi } = useApi();
-  const [routes, setRoutes] = useState<R[]>([]);
-  const [childLocations, setChildLocations] = useState<L[]>([]);
-  const [breadcrumb, setBreadcrumb] = useState<B[]>([]);
+  const [routes, setRoutes] = useState<RouteInfo[]>([]);
+  const [childLocations, setChildLocations] = useState<Location[]>([]);
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -26,11 +31,11 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
 
   const fetchRoutes = async () => {
     const routesUrl = `${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ''}`;
-    const data = await callApi<{ routes: R[] }>(routesUrl, { method: "GET" });
+    const data = await callApi<{ routes: RouteInfo[] }>(routesUrl, { method: "GET" });
 
     const routesToProcess = data.routes || []; // Ensure data.routes is an array
 
-    const routesWithSignedUrls = await Promise.all(
+    const routes = await Promise.all(
       routesToProcess.map(async (route: any) => {
         try {
           const imageRes = await callApi<Response>(route.imageUrl, { skipJsonParse: true });
@@ -43,19 +48,39 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
             annotationsUrl = url;
           }
 
-          return { ...route, imageUrl, annotationsUrl };
+          const annotations: AnnotationsData = await loadAnnotations(annotationsUrl)
+
+          const processedRoute: Route = {
+            imageUri: imageUrl,
+            annotations: annotations || {
+              climbingHolds: [],
+              drawingPaths: [],
+              history: []
+            }
+          };
+
+          return { ...route, route: processedRoute };
         } catch (err) {
-          return { ...route, imageUrl: null, annotationsUrl: null };
+          const dummyRoute: Route = {
+            imageUri: '',
+            annotations: {
+              climbingHolds: [],
+              drawingPaths: [],
+              history: []
+            }
+          };
+
+          return { ...route, route: dummyRoute };
         }
       })
     );
 
-    setRoutes(routesWithSignedUrls as R[]);
+    setRoutes(routes);
   };
 
   const fetchChildLocations = async () => {
     const childUrl = `${API_PATHS.GET_CHILD_LOCATIONS(gymId || '')}${locationId ? `?parentId=${locationId}` : ''}`;
-    const data = await callApi<{ locations: L[] }>(childUrl, { method: "GET" });
+    const data = await callApi<{ locations: Location[] }>(childUrl, { method: "GET" });
     setChildLocations(data.locations || []);
   };
 
@@ -65,7 +90,7 @@ export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string 
       return;
     }
     const breadcrumbUrl = `${API_PATHS.GET_LOCATION_ANCESTRY(locationId)}`;
-    const data = await callApi<{ ancestry: B[] }>(breadcrumbUrl, { method: "GET" });
+    const data = await callApi<{ ancestry: BreadcrumbItem[] }>(breadcrumbUrl, { method: "GET" });
     setBreadcrumb(data.ancestry || []);
   };
 

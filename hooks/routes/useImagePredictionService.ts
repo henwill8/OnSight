@@ -5,9 +5,8 @@ import { useApi } from '@/hooks/utils/useApi';
 import { useRouteStore } from '@/storage/routeStore';
 import { pollJobStatus } from '@/utils/apiServices';
 import { API_PATHS } from "@/constants/paths";
-import { HOLD_SELECTION } from '@/constants/annotationTypes';
+import { HOLD_SELECTION, ClimbingHold, AnnotationsData } from '@/types/annotationTypes';
 import { calculatePolygonArea } from '@/utils/geometricUtils';
-import { ClimbingHold } from '@/components/RouteImage/RouteImage';
 
 interface ImagePredictionServiceProps {
   setDataReceived: (data: boolean) => void;
@@ -37,12 +36,15 @@ export const useImagePredictionService = ({ setDataReceived, setImageDimensions 
       }))
       .sort((a: ClimbingHold, b: ClimbingHold) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
 
-    // Convert climbing holds to JSON format for storage
-    const annotationsJSON = JSON.stringify(predictedClimbingHolds);
+    const annotations: AnnotationsData = {
+      climbingHolds: predictedClimbingHolds,
+      drawingPaths: [],
+      history: []
+    }
 
     setDataReceived(true);
     setImageDimensions(results.imageSize);
-    updateData({ annotations: annotationsJSON });
+    updateData({ annotations });
   }, [setDataReceived, setImageDimensions, updateData]);
 
   const handleJobError = useCallback((statusData: any) => {

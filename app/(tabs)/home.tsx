@@ -7,10 +7,10 @@ import RouteImage from '@/components/RouteImage/RouteImage';
 
 import { useGymStore } from '@/storage/gymStore';
 import { useLocationStore } from '@/storage/locationStore';
-import { Route } from '@/storage/routeStore';
+import { Route, useRouteStore } from '@/storage/routeStore';
 import { useRoutesData } from '@/hooks/routes/useRoutesData';
+import { RouteInfo } from '@/types';
 import { useTheme } from '@/constants/theme';
-import { Location, BreadcrumbItem } from '@/types';
 
 const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: any) => {
   return StyleSheet.create({
@@ -57,8 +57,9 @@ const HomeScreen = () => {
 
   const { data: gymData } = useGymStore();
   const { data: locationData, updateData: updateLocation } = useLocationStore();
+  const { updateData: setRoute } = useRouteStore();
 
-  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.id ? gymData.id : null, locationData.id);
+  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData(gymData.id ? gymData.id : null, locationData.id);
 
   const styles = getStyles(colors, sizes, shadows, spacing, font);
 
@@ -85,9 +86,11 @@ const HomeScreen = () => {
     );
   }
 
-  const handleRoutePress = (route: Route) => {
+  const handleRoutePress = (route: RouteInfo) => {
+    const { route: routeData, ...otherParams } = route;
     router.navigate('/routes/routeDetail');
-    router.setParams({ route: encodeURIComponent(JSON.stringify(route)) });
+    router.setParams({ routeParams: encodeURIComponent(JSON.stringify(otherParams)) });
+    setRoute(routeData);
   };
 
   const handleAddRoute = () => {
@@ -136,9 +139,9 @@ const HomeScreen = () => {
         <FlatList
           data={routes}
           keyExtractor={(item) => item.id}
-          renderItem={({ item: route, index }: { item: Route, index: number }) => (
+          renderItem={({ item: route, index }: { item: RouteInfo, index: number }) => (
             <TouchableOpacity onPress={() => handleRoutePress(route)} style={styles.routeCard}>
-              <RouteImage imageURI={route.imageUrl} dataURL={route.annotationsUrl} style={styles.routeImage} />
+              <RouteImage mode='view' routeData={route.route} style={styles.routeImage} />
               <View style={styles.routeInfo}>
                 <Text style={styles.routeName}>{route.name || 'No Name'}</Text>
                 <Text style={styles.routeDescription}>

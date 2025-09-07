@@ -237,8 +237,6 @@ const CreateRouteScreen = () => {
       name,
       description,
       difficulty,
-      imageUri: routeData.imageUri,
-      annotations: routeData.annotations,
       locationId: locationData.id || undefined,
     };
     await submitHandleSubmit(submissionData, () => {
@@ -266,7 +264,7 @@ const CreateRouteScreen = () => {
       style={styles.templateItem} 
       onPress={() => handleTemplateSelect(item)}
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.templateImage} />
+      <Image source={{ uri: item.imageUri }} style={styles.templateImage} />
     </TouchableOpacity>
   );
 
@@ -297,7 +295,7 @@ const CreateRouteScreen = () => {
           ) : (
             <FlatList
               data={templates}
-              keyExtractor={(item) => item.id || Math.random().toString()}
+              keyExtractor={(item) => Math.random().toString()}
               renderItem={renderTemplateItem}
               numColumns={2}
               contentContainerStyle={styles.templateGrid}
@@ -349,8 +347,7 @@ const CreateRouteScreen = () => {
       {routeData.imageUri && (
         <RouteImage 
           style={styles.imagePreview} 
-          imageURI={routeData.imageUri} 
-          dataJSON={routeData.annotations || ""} 
+          routeData={routeData}
           interactable={false} 
         />
       )}

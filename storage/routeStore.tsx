@@ -15,7 +15,7 @@ const defaultRoute: Route = {
   }
 };
 
-// Route store should only be used for route creation (where there is only one route and it needs to persist across pages)
+// Route store should only be used when needing to persist a single routes data across pages
 export const RouteStore = createStore({
   storageKey: 'route_data',
   defaultValue: defaultRoute,

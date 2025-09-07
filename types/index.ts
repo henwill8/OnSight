@@ -1,3 +1,4 @@
+import { Route } from "@/storage/routeStore";
 import { AnnotationsData } from "@/types/annotationTypes"
 
 export interface Location {
@@ -23,3 +24,18 @@ export interface CreateRouteData {
 }
 
 export interface SaveRouteRequest extends CreateRouteData {}
+export interface RouteInfo {
+  id: string;
+  name?: string;
+  description?: string;
+  difficulty: string;
+  gymId: string;
+  locationId?: string;
+  creator: string;
+  averageRating?: number;
+  imageKey: string;
+  annotationsKey: string;
+  imageUrl: string;
+  annotationsUrl: string;
+  route?: Route; // not actually in the response, set during processing
+}

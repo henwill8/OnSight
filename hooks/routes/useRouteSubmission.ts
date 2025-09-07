@@ -5,13 +5,13 @@ import { API_PATHS } from '@/constants/paths';
 import { getSecureItem } from '@/utils/secureStorageUtils';
 import { useApi } from '@/hooks/utils/useApi';
 import { SaveRouteRequest } from '@/types';
+import { useGymStore } from "@/storage/gymStore";
+import { useRouteStore } from "@/storage/routeStore";
 
 interface RouteSubmissionData {
   name: string;
   description: string;
   difficulty: string;
-  imageUri?: string | null;
-  annotationsJSON?: string | null;
   locationId?: string; // Make optional to match SaveRouteRequest
 }
 
@@ -23,46 +23,39 @@ interface UseRouteSubmissionReturn {
 export const useRouteSubmission = (): UseRouteSubmissionReturn => {
   const [loading, setLoading] = useState(false);
   const { callApi } = useApi();
+  const { data: gymData} = useGymStore();
+  const { data: routeData} = useRouteStore();
 
   const handleSubmit = useCallback(async (data: RouteSubmissionData, navigateBackAndReload: () => void) => {
-    if (!data.imageUri || !data.annotationsJSON) {
-      Alert.alert("Error", "Missing required data");
-      return;
-    }
-
     setLoading(true);
     try {
-
-      const storedGymData = await getSecureItem('gymData');
-      const gymData = storedGymData ? JSON.parse(storedGymData) : { gymId: '' };
-      const gymId = gymData.gymId;
       const formData = new FormData();
 
       // Append text data
       formData.append("name", data.name);
       formData.append("description", data.description);
       formData.append("difficulty", data.difficulty || "");
-      formData.append("gymId", gymId || "");
+      formData.append("gymId", gymData.id || "");
       formData.append("locationId", data.locationId || "");
-      formData.append("annotations", data.annotationsJSON || "");
+      formData.append("annotations", JSON.stringify(routeData.annotations || {}));
 
       // Handle image file
-      if (!data.imageUri) {
+      if (!routeData.imageUri) {
         console.warn("Route image URI is missing, skipping image upload.");
         return;
       }
-      const { extension, mimeType } = getFileType(data.imageUri);
+      const { extension, mimeType } = getFileType(routeData.imageUri);
 
       if (Platform.OS === "web") {
         // For web, fetch the file as a blob
-        const response = await fetch(data.imageUri);
+        const response = await fetch(routeData.imageUri);
         const blob = await response.blob();
         const file = new File([blob], `photo.${extension}`, { type: mimeType });
         formData.append("image", file);
       } else {
         // For React Native
         formData.append("image", {
-          uri: data.imageUri,
+          uri: routeData.imageUri,
           name: `photo.${extension}`,
           type: mimeType,
         } as any);

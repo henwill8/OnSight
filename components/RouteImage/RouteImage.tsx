@@ -29,7 +29,6 @@ interface RouteImageProps {
 
 export interface RouteImageRef {
   undo: () => void;
-  loadPredictedClimbingHolds: (climbingHolds: ClimbingHold[]) => void;
 }
 
 const getStyles = (colors: any) => StyleSheet.create({
@@ -136,11 +135,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
     updateData({ annotations: updatedAnnotations });
   };
 
-  const loadPredictedClimbingHolds = (climbingHolds: ClimbingHold[]) => {
-    updateAnnotations({ climbingHolds });
-  };
-
-  useImperativeHandle(ref, () => ({ undo, loadPredictedClimbingHolds }));
+  useImperativeHandle(ref, () => ({ undo }));
 
   return (
     <Zoomable style={global.centerItemsContainer}>

@@ -8,7 +8,6 @@ import { HOLD_SELECTION_COLORS } from '@/types/annotationTypes';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
 import LoadingModal from '@/components/ui/LoadingModal';
-import { useRouteStore } from '@/storage/routeStore';
 import { G } from 'react-native-svg';
 
 const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: any) => {
@@ -62,6 +61,7 @@ const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: an
 
 const RouteImageCreator: React.FC = () => {
   const { colors, sizes, shadows, font, spacing, global } = useTheme();
+  const routeImageRef = useRef<RouteImageRef>(null);
   const {
     imageUri,
     annotations,
@@ -76,7 +76,7 @@ const RouteImageCreator: React.FC = () => {
     handleUndo,
     handleError,
     navigation,
-  } = useRouteImageCreatorLogic();
+  } = useRouteImageCreatorLogic(routeImageRef);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -113,6 +113,7 @@ const RouteImageCreator: React.FC = () => {
       {/* Image Canvas */}
       {imageDimensions && (
         <RouteImage
+          ref={routeImageRef}
           style={{
             borderRadius: sizes.borderRadius,
             width: imageDimensions.width * scaleX,
@@ -137,7 +138,7 @@ const RouteImageCreator: React.FC = () => {
 
       <LoadingModal 
         visible={!dataReceived} 
-        message={annotations ? "Loading Existing Annotations..." : "Detecting Climbing Holds...\n(may take up to 10 seconds)"}
+        message={annotations.climbingHolds ? "Loading Existing Annotations..." : "Detecting Climbing Holds...\n(may take up to 10 seconds)"}
       />
     </View>
   );

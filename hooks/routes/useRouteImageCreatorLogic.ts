@@ -4,8 +4,9 @@ import { useNavigation } from "expo-router";
 import { useImageDimensions } from '../utils/useImageDimensions';
 import { useImagePredictionService } from './useImagePredictionService';
 import { useRouteStore } from '@/storage/routeStore';
+import { RouteImageRef } from '@/components/RouteImage/RouteImage';
 
-export const useRouteImageCreatorLogic = () => {
+export const useRouteImageCreatorLogic = (routeImageRef: React.RefObject<RouteImageRef>) => {
   const navigation = useNavigation();
   const { data: routeData, updateData: updateRouteData } = useRouteStore();
 
@@ -20,34 +21,12 @@ export const useRouteImageCreatorLogic = () => {
   });
 
   useEffect(() => {
-    if (routeData.imageUri) {
-      if (routeData.annotations) {
-        loadAnnotations(routeData.annotations);
-      } else if (routeData.imageUri && imageDimensions) {
-        sendImageToServer(routeData.imageUri);
-      }
+    if (routeData.imageUri && !routeData.annotations) {
+      sendImageToServer(routeData.imageUri);
     } else {
       console.error("No imageUri provided");
     }
   }, [routeData.imageUri, routeData.annotations, imageDimensions, sendImageToServer]);
-
-  const loadAnnotations = useCallback(async (annotationsUri: string) => {
-    console.log("Loading existing annotations...");
-
-    try {
-      const response = await fetch(annotationsUri);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch annotations: ${response.status}`);
-      }
-      let annotationsData = await response.json();
-
-      updateRouteData({ annotations: annotationsData });
-      setDataReceived(true);
-
-    } catch (error: any) {
-      sendImageToServer(routeData.imageUri || "")
-    }
-  }, [routeData.imageUri, sendImageToServer, updateRouteData]);
 
 
   const handleColorSelect = (color: string) => {
@@ -72,7 +51,7 @@ export const useRouteImageCreatorLogic = () => {
   };
 
   const handleUndo = useCallback(() => {
-    
+    routeImageRef.current.undo();
   }, [updateRouteData]);
 
   return {

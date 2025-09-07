@@ -68,6 +68,7 @@ const RouteDetail = () => {
     routeDetails,
     loading,
     scaledImageDimensions,
+    parsedParams: routeInfo
   } = useRouteDetailLogic();
 
   useLayoutEffect(() => {
@@ -102,8 +103,6 @@ const RouteDetail = () => {
         {/* Image */}
         {scaledImageDimensions && (
           <RouteImage
-            imageURI={routeDetails.imageUrl}
-            dataURL={routeDetails.annotationsUrl}
             style={{
               width: scaledImageDimensions.width,
               height: scaledImageDimensions.height,

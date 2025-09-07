@@ -3,25 +3,22 @@ import { Alert } from "react-native";
 import { API_PATHS } from '@/constants/paths';
 import { getSecureItem } from '@/utils/secureStorageUtils';
 import { useApi } from '@/hooks/utils/useApi';
-import { Template } from '@/types';
-
-interface RouteData {
-  imageUri: string | null;
-  annotations: string | null;
-}
+import { Route } from '@/storage/routeStore';
+import { loadAnnotations } from "@/utils/annotationUtils";
+import { AnnotationsData } from "@/types/annotationTypes";
 
 interface UseRouteTemplatesReturn {
-  templates: Template[];
+  templates: Route[];
   showTemplates: boolean;
   setShowTemplates: Dispatch<SetStateAction<boolean>>;
   loadingTemplates: boolean;
   handleFetchTemplates: (locationId: string | null) => Promise<void>;
-  handleTemplateSelect: (template: Template, setRouteData: (data: RouteData) => void, navigateToCreator: () => void) => void;
+  handleTemplateSelect: (template: Route, setRouteData: (data: Route) => void, navigateToCreator: () => void) => void;
   handleShowTemplates: (locationId: string | null) => void;
 }
 
 export const useRouteTemplates = (): UseRouteTemplatesReturn => {
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templates, setTemplates] = useState<Route[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const { callApi } = useApi();
@@ -41,43 +38,45 @@ export const useRouteTemplates = (): UseRouteTemplatesReturn => {
 
       const url = `${API_PATHS.GET_TEMPLATES}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
-      const data = await callApi<{ templates: Template[] }>(url, { method: "GET" });
+      const data = await callApi<{ templates: Route[] }>(url, { method: "GET" });
 
       // Process templates to get signed URLs
       const templatesWithSignedUrls = await Promise.all(
         data.templates.map(async (template: any) => {
           try {
-            const [imageUrlRes, annotationsUrlRes] = await Promise.all([
-              callApi<{ url: string }>(template.imageUrl, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-              }),
-              callApi<{ url: string }>(template.annotationsUrl, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-              })
-            ]);
-
-            const { url: imageUrl } = imageUrlRes;
-            let annotationsUrl = "";
-
-            if (annotationsUrlRes) {
-              const { url } = annotationsUrlRes;
+            const imageRes = await callApi<Response>(template.imageUrl, { skipJsonParse: true });
+            const annotationsRes = await callApi<Response>(template.annotationsUrl, { skipJsonParse: true });
+  
+            const { url: imageUrl } = await imageRes.json();
+            let annotationsUrl = '';
+            if (annotationsRes.ok) {
+              const { url } = await annotationsRes.json();
               annotationsUrl = url;
             }
-
-            return {
-              ...template,
-              imageUrl,
-              annotationsUrl
+  
+            const annotations: AnnotationsData = await loadAnnotations(annotationsUrl)
+  
+            const processedRoute: Route = {
+              imageUri: imageUrl,
+              annotations: annotations || {
+                climbingHolds: [],
+                drawingPaths: [],
+                history: []
+              }
             };
+  
+            return { ...template, route: processedRoute };
           } catch (err) {
-            console.error(`Error getting signed URL for template: ${template.imageUrl}`, err);
-            return {
-              ...template,
-              imageUrl: null,
-              annotationsUrl: null
+            const dummyRoute: Route = {
+              imageUri: '',
+              annotations: {
+                climbingHolds: [],
+                drawingPaths: [],
+                history: []
+              }
             };
+  
+            return { };
           }
         })
       );
@@ -90,10 +89,10 @@ export const useRouteTemplates = (): UseRouteTemplatesReturn => {
     }
   }, []);
 
-  const handleTemplateSelect = useCallback((template: Template, setRouteData: (data: RouteData) => void, navigateToCreator: () => void) => {
+  const handleTemplateSelect = useCallback((template: Route, setRouteData: (data: Route) => void, navigateToCreator: () => void) => {
     setRouteData({
-      imageUri: template.imageUrl,
-      annotations: template.annotationsUrl
+      imageUri: template.imageUri,
+      annotations: template.annotations
     });
     navigateToCreator();
     setShowTemplates(false);

@@ -1,3 +1,4 @@
+import { Route } from "@/storage/routeStore";
 import { useMemo } from "react";
 import { StyleSheet } from "react-native";
 
@@ -110,4 +111,19 @@ export const useTheme = () => {
     grid: GRID,
     global: globalStyles,
   }), []);
-};
+};export interface RouteInfo {
+  id: string;
+  name?: string;
+  description?: string;
+  difficulty: string;
+  gymId: string;
+  locationId?: string;
+  creator: string;
+  averageRating?: number;
+  imageKey: string;
+  annotationsKey: string;
+  imageUrl: string;
+  annotationsUrl: string;
+  route?: Route; // not actually in the response, set during processing
+}
+
