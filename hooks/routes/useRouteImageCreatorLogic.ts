@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from "expo-router";
 import { useImageDimensions } from '../utils/useImageDimensions';
@@ -13,12 +13,10 @@ export const useRouteImageCreatorLogic = () => {
   const [showUnselectedHolds, setShowUnselectedHolds] = useState<boolean>(false); // Show bounding boxes state
   const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
 
-  const routeAnnotationRef = useRef<any>(null);
   const { imageDimensions, scaleX, scaleY } = useImageDimensions(routeData.imageUri, 220);
   const { sendImageToServer, handleError, handleJobDone, handleJobError } = useImagePredictionService({
     setDataReceived,
     setImageDimensions: (dimensions: { width: number; height: number; } | null) => { /* useImageDimensions handles this */ },
-    routeAnnotationRef,
   });
 
   useEffect(() => {
@@ -41,19 +39,16 @@ export const useRouteImageCreatorLogic = () => {
       if (!response.ok) {
         throw new Error(`Failed to fetch annotations: ${response.status}`);
       }
-      let annotationsData = await response.text();
+      let annotationsData = await response.json();
 
-      routeAnnotationRef.current?.loadAnnotationJSON(annotationsData);
+      updateRouteData({ annotations: annotationsData });
       setDataReceived(true);
 
     } catch (error: any) {
       sendImageToServer(routeData.imageUri || "")
     }
-  }, [routeData.imageUri, sendImageToServer]);
+  }, [routeData.imageUri, sendImageToServer, updateRouteData]);
 
-  const handleToggleBoundingBoxes = () => {
-    setShowUnselectedHolds(prev => !prev);
-  };
 
   const handleColorSelect = (color: string) => {
     setSelectedColor(prevColor => {
@@ -67,8 +62,8 @@ export const useRouteImageCreatorLogic = () => {
     setShowUnselectedHolds(false);
 
     try {
-      updateRouteData({ annotations: routeAnnotationRef.current?.exportAnnotationJSON() || null });
-
+      // The annotations are already stored in the route store
+      // No need to export from a ref since we're using the store
       navigation.goBack(); // Go back to previous screen
     } catch (error) {
       console.error("Error exporting image: ", error);
@@ -76,11 +71,9 @@ export const useRouteImageCreatorLogic = () => {
     }
   };
 
-  const handleUndo = () => {
-    if(routeAnnotationRef.current) {
-      routeAnnotationRef.current.undo();
-    }
-  };
+  const handleUndo = useCallback(() => {
+    
+  }, [updateRouteData]);
 
   return {
     imageUri: routeData.imageUri,
@@ -91,8 +84,6 @@ export const useRouteImageCreatorLogic = () => {
     dataReceived,
     showUnselectedHolds,
     selectedColor,
-    routeAnnotationRef,
-    handleToggleBoundingBoxes,
     handleColorSelect,
     handleExport,
     handleUndo,

@@ -21,13 +21,13 @@ import RouteImage from "@/components/RouteImage/RouteImage";
 
 // Services
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Template, SaveRouteRequest } from '@/types';
+import { SaveRouteRequest } from '@/types';
 import { useRouteTemplates } from '@/hooks/routes/useRouteTemplates';
 import { useRouteForm } from '@/hooks/routes/useRouteForm';
 import { useRouteSubmission } from '@/hooks/routes/useRouteSubmission';
 import { useGymStore } from '@/storage/gymStore';
 import { useLocationStore } from '@/storage/locationStore';
-import { useRouteStore } from '@/storage/routeStore';
+import { useRouteStore, Route } from '@/storage/routeStore';
 import { useImagePicker } from '@/hooks/utils/useImagePicker';
 
 const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
@@ -147,7 +147,6 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
       marginVertical: spacing.md,
     },
     textInput: {
-      borderWidth: 1,
       marginBottom: spacing.md,
       padding: spacing.sm + spacing.xs,
       color: colors.textPrimary,
@@ -184,7 +183,7 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
       fontWeight: '600',
     },
     submitButtonTextDisabled: {
-      color: colors.textSecondary,
+      color: "#404040",
     },
     incompleteMessage: {
       color: colors.error,
@@ -225,10 +224,10 @@ const CreateRouteScreen = () => {
     }
   }, [pickImage, updateRouteData, router]);
 
-  const handleTemplateSelect = useCallback((template: Template) => {
+  const handleTemplateSelect = useCallback((template: Route) => {
     setRouteData({
-      imageUri: template.imageUrl,
-      annotations: template.annotationsUrl
+      imageUri: template.imageUri,
+      annotations: template.annotations
     });
     router.push("/routes/routeImageCreator");
   }, [setRouteData, router]);
@@ -239,7 +238,7 @@ const CreateRouteScreen = () => {
       description,
       difficulty,
       imageUri: routeData.imageUri,
-      annotationsJSON: routeData.annotations,
+      annotations: routeData.annotations,
       locationId: locationData.id || undefined,
     };
     await submitHandleSubmit(submissionData, () => {
@@ -262,7 +261,7 @@ const CreateRouteScreen = () => {
   }, [navigation, colors.backgroundPrimary]);
 
   // Render methods
-  const renderTemplateItem = ({ item }: { item: Template }) => (
+  const renderTemplateItem = ({ item }: { item: Route }) => (
     <TouchableOpacity 
       style={styles.templateItem} 
       onPress={() => handleTemplateSelect(item)}

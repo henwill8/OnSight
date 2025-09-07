@@ -1,137 +1,78 @@
 import React, {
   useState,
-  useMemo,
   useEffect,
   useImperativeHandle,
   forwardRef,
   ForwardRefRenderFunction,
+  useCallback,
 } from "react";
-import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode, StyleSheet } from "react-native";
+import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode, StyleSheet, ActivityIndicator } from "react-native";
 import DrawingCanvas from "./DrawingCanvas";
 import ClimbingHoldOverlay from "./ClimbingHoldOverlay";
-import { HOLD_SELECTION } from "@/constants/holdSelection";
+import { HOLD_SELECTION, AnnotationsData, ClimbingHold, IPath, ChangeLogEntry } from "@/types/annotationTypes";
 import { getFittedImageRect } from "@/utils/imageUtils";
-import { ActivityIndicator } from "react-native";
 import Zoomable from "@/components/ui/Zoomable";
 import { useTheme } from "@/constants/theme";
-
-export interface ClimbingHold {
-  coordinates: number[];
-  holdSelectionState: HOLD_SELECTION;
-}
-
-export interface Segment {
-  x: number;
-  y: number;
-}
-
-export interface IPath {
-  segments: Segment[];
-  color?: string;
-}
-
-interface AnnotationsData {
-  climbingHolds: ClimbingHold[];
-  drawingPaths: IPath[];
-}
-
-type ChangeType = "ADD_PATH" | "UPDATE_HOLD_STATE";
-
-interface ChangeLogEntry {
-  type: ChangeType;
-  data: any;
-}
+import { useRouteStore, Route } from "@/storage/routeStore";
 
 interface RouteImageProps {
-  imageURI: string;
   interactable?: boolean;
-  dataJSON?: string;
-  dataURL?: string;
   style?: ViewStyle;
-  
   imageProps?: Partial<ImageProps>;
+  climbingHoldOverlayProps?: Partial<{ showUnselectedHolds: boolean }>;
+  drawingCanvasProps?: Partial<{ canDraw?: boolean; color?: string }>;
+  mode?: 'create' | 'view'; // Explicit mode selection
 
-  climbingHoldOverlayProps?: Partial<{
-    showUnselectedHolds: boolean;
-  }>;
-
-  drawingCanvasProps?: Partial<{
-    canDraw?: boolean;
-    color?: string;
-  }>;
+  // Props for viewing mode
+  routeData?: Route; // Pass route data directly for viewing
 }
 
 export interface RouteImageRef {
   undo: () => void;
-  exportAnnotationJSON: () => string;
-  loadAnnotationJSON: (json: string) => void;
   loadPredictedClimbingHolds: (climbingHolds: ClimbingHold[]) => void;
 }
 
-const getStyles = (colors: any) => {
-  return StyleSheet.create({
-    imageContainer: {
-      flex: 1,
-      position: 'relative',
-      overflow: 'hidden',
-    },
-    fullOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-    },
-    loadingOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-  });
-};
+const getStyles = (colors: any) => StyleSheet.create({
+  imageContainer: { flex: 1, position: "relative", overflow: "hidden" },
+  fullOverlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
+  loadingOverlay: { flex: 1, justifyContent: "center", alignItems: "center" },
+});
 
 const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   {
-    imageURI,
-    interactable = false,
-    dataJSON = "",
-    dataURL = "",
-    style,
-    imageProps = {},
-    climbingHoldOverlayProps = {},
+    interactable = false, 
+    style, 
+    imageProps = {}, 
+    climbingHoldOverlayProps = {}, 
     drawingCanvasProps = {},
+    routeData: externalRouteData,
+    mode = 'view'
   },
   ref
 ) => {
   const { colors, global } = useTheme();
+  const { data: storeRouteData, updateData } = useRouteStore();
   const styles = getStyles(colors);
-  const [annotationData, setAnnotationData] = useState<AnnotationsData>({
-    climbingHolds: [],
-    drawingPaths: [],
-  });
-
-  const [changeHistory, setChangeHistory] = useState<ChangeLogEntry[]>([]);
 
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null);
-
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [annotationsLoaded, setAnnotationsLoaded] = useState(false);
 
-  useEffect(() => {
-    Image.getSize(imageURI, (width, height) => {
-      setImageSize({ width, height });
-    });
-  }, [imageURI]);
+  // Determine data source based on mode
+  const isCreateMode = mode === 'create';
+  const currentRouteData = isCreateMode ? storeRouteData : externalRouteData;
 
   const onContainerLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     setContainerSize({ width, height });
   };
 
-  const fittedImage = useMemo(() => {
-    if (!imageSize || !containerSize) return null;
+  useEffect(() => {
+    Image.getSize(currentRouteData?.imageUri, (width, height) => setImageSize({ width, height }));
+  }, [currentRouteData?.imageUri]);
 
+  const fittedImage = useCallback(() => {
+    if (!imageSize || !containerSize) return null;
     return getFittedImageRect({
       containerWidth: containerSize.width,
       containerHeight: containerSize.height,
@@ -139,188 +80,106 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
       imageHeight: imageSize.height,
       resizeMode: imageProps.resizeMode as ImageResizeMode,
     });
-  }, [imageSize, containerSize]);
+  }, [imageSize, containerSize, imageProps.resizeMode]);
+
+  const updateAnnotations = (newAnnotations: Partial<AnnotationsData>, historyEntry?: ChangeLogEntry) => {
+    if (!isCreateMode) return;
+
+    const updated: AnnotationsData = {
+      climbingHolds: newAnnotations.climbingHolds ?? currentRouteData.annotations.climbingHolds,
+      drawingPaths: newAnnotations.drawingPaths ?? currentRouteData.annotations.drawingPaths,
+      history: [...currentRouteData.annotations.history, historyEntry].filter(Boolean),
+    };
+
+    updateData({ annotations: updated });
+  };
 
   const addDrawingPath = (newPath: IPath) => {
-    setAnnotationData((prev) => ({
-      ...prev,
-      drawingPaths: [...prev.drawingPaths, newPath],
-    }));
-
-    setChangeHistory((prev) => [
-      ...prev,
-      { type: "ADD_PATH", data: [] },
-    ]);
+    // Only allow drawing in interactive mode
+    if (!interactable) return;
+    updateAnnotations({ drawingPaths: [...currentRouteData.annotations.drawingPaths, newPath] }, { type: "ADD_PATH", data: [] });
   };
 
   const updateClimbingHold = (index: number, newState: HOLD_SELECTION, prevState: HOLD_SELECTION) => {
-    setAnnotationData((prev) => {
-      const updatedHolds = [...prev.climbingHolds];
-  
-      if (updatedHolds[index]) {
-        updatedHolds[index] = {
-          ...updatedHolds[index],
-          holdSelectionState: newState,
-        };
-      }
-  
-      setChangeHistory((prevHistory) => [
-        ...prevHistory,
-        {
-          type: "UPDATE_HOLD_STATE",
-          data: { index, prevState },
-        },
-      ]);
-  
-      return {
-        ...prev,
-        climbingHolds: updatedHolds,
-      };
-    });
+    // Only allow hold updates in interactive mode
+    if (!interactable) return;
+    const updatedHolds = [...currentRouteData.annotations.climbingHolds];
+    if (updatedHolds[index]) updatedHolds[index] = { ...updatedHolds[index], holdSelectionState: newState };
+    updateAnnotations({ climbingHolds: updatedHolds }, { type: "UPDATE_HOLD_STATE", data: { index, prevState } });
   };
 
   const undo = () => {
-    if (changeHistory.length === 0) return;
-  
-    const lastChange = changeHistory[changeHistory.length - 1];
-  
-    switch (lastChange.type) {
-      case "ADD_PATH": {
-        setAnnotationData((prev) => ({
-          ...prev,
-          drawingPaths: prev.drawingPaths.slice(0, -1),
-        }));
-        break;
-      }
-      case "UPDATE_HOLD_STATE": {
-        const { index, prevState } = lastChange.data;
+    if (!interactable || !isCreateMode) return;
+    
+    const history = currentRouteData.annotations.history;
+    if (!history.length) return;
 
-        setAnnotationData((prev) => {
-          const updatedHolds = [...prev.climbingHolds];
-          if (updatedHolds[index]) {
-            // Revert to previous state if stored, or UNSELECTED if not
-            updatedHolds[index] = {
-              ...updatedHolds[index],
-              holdSelectionState: prevState ?? HOLD_SELECTION.UNSELECTED,
-            };
-          }
-
-          return {
-            ...prev,
-            climbingHolds: updatedHolds,
-          };
-        });
-        break;
-      }
-    }
-  
-    setChangeHistory(changeHistory.slice(0, -1));
-  };
-
-  const exportAnnotationJSON = () => {
-    const exportData = {
-      annotations: annotationData,
-      history: changeHistory,
+    const lastChange = history[history.length - 1];
+    const updatedAnnotations: AnnotationsData = {
+      climbingHolds: [...currentRouteData.annotations.climbingHolds],
+      drawingPaths: [...currentRouteData.annotations.drawingPaths],
+      history: history.slice(0, -1),
     };
-    return JSON.stringify(exportData, null);
-  };
 
-  const loadAnnotationJSON = (json: string) => {
-    try {
-      const parsed = JSON.parse(json);
-
-      if (parsed.annotations && parsed.history) {
-        setAnnotationData(parsed.annotations);
-        setChangeHistory(parsed.history);
-      } else {
-        console.warn("Invalid annotation JSON format");
-      }
-
-      setAnnotationsLoaded(true);
-    } catch (err) {
-      console.error("Failed to load annotation JSON:", err);
+    switch (lastChange.type) {
+      case "ADD_PATH":
+        updatedAnnotations.drawingPaths.pop();
+        break;
+      case "UPDATE_HOLD_STATE":
+        const { index, prevState } = lastChange.data;
+        if (updatedAnnotations.climbingHolds[index]) {
+          updatedAnnotations.climbingHolds[index].holdSelectionState = prevState ?? HOLD_SELECTION.UNSELECTED;
+        }
+        break;
     }
+
+    updateData({ annotations: updatedAnnotations });
   };
 
   const loadPredictedClimbingHolds = (climbingHolds: ClimbingHold[]) => {
-    setAnnotationData((prev) => ({
-      ...prev,
-      climbingHolds,
-    }));
+    updateAnnotations({ climbingHolds });
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (dataJSON) {
-          loadAnnotationJSON(dataJSON);
-        } else if (dataURL) {
-          const response = await fetch(dataURL);
-          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-          
-          const jsonText = await response.text();
-          loadAnnotationJSON(jsonText);
-        }
-        setAnnotationsLoaded(true);
-      } catch (err) {
-        console.error("Failed to load annotation data:", err);
-        setAnnotationsLoaded(false);
-      }
-    };
-  
-    if (!dataJSON && !dataURL) {
-      setAnnotationsLoaded(true);  // No data to load
-      return;
-    }
-  
-    loadData();
-  }, [dataJSON, dataURL]);
-
-  useImperativeHandle(ref, () => ({
-    undo,
-    exportAnnotationJSON,
-    loadAnnotationJSON,
-    loadPredictedClimbingHolds,
-  }));
+  useImperativeHandle(ref, () => ({ undo, loadPredictedClimbingHolds }));
 
   return (
     <Zoomable style={global.centerItemsContainer}>
       <View style={[style, styles.imageContainer]} onLayout={onContainerLayout}>
         <Image
-          source={{ uri: imageURI }}
+          source={{ uri: currentRouteData?.imageUri }}
           onLoad={() => setImageLoaded(true)}
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             width: containerSize?.width,
             height: containerSize?.height,
-            opacity: (imageLoaded && annotationsLoaded) ? 1 : 0,  // Hide it until both images and annotations are loaded
+            opacity: imageLoaded ? 1 : 0,
           }}
           {...imageProps}
         />
-        
-        {(!imageLoaded || !annotationsLoaded) && (
+
+        {!imageLoaded && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         )}
-    
-        {(imageLoaded && annotationsLoaded) && fittedImage != null && (
+
+        {imageLoaded && fittedImage() && (
           <>
             <ClimbingHoldOverlay
-              data={annotationData.climbingHolds}
+              data={currentRouteData.annotations.climbingHolds}
               onHoldStateChange={updateClimbingHold}
-              fittedImageRect={fittedImage}
-              interactable={interactable}
+              fittedImageRect={fittedImage()}
+              interactable={interactable && isCreateMode}
               {...climbingHoldOverlayProps}
               style={styles.fullOverlay}
             />
             <DrawingCanvas
-              data={annotationData.drawingPaths}
+              data={currentRouteData.annotations.drawingPaths}
               onAddPath={addDrawingPath}
-              fittedImageRect={fittedImage}
-              interactable={interactable}
+              fittedImageRect={fittedImage()}
+              interactable={interactable && isCreateMode}
               {...drawingCanvasProps}
               style={styles.fullOverlay}
             />

@@ -1,11 +1,4 @@
-export interface Route {
-  id: string;
-  imageUrl: string;
-  annotationsUrl: string;
-  name: string;
-  description: string;
-  difficulty: string;
-}
+import { AnnotationsData } from "@/types/annotationTypes"
 
 export interface Location {
   id: string;
@@ -20,18 +13,12 @@ export interface Gym {
   location: string; // separate from a gym location, this is the real world location of the gym
 }
 
-export interface Template {
-  id: string;
-  imageUrl: string;
-  annotationsUrl: string;
-}
-
 export interface CreateRouteData {
   name: string;
   description: string;
   difficulty: string;
   imageUri?: string | null;
-  annotationsJSON?: string | null;
+  annotations?: AnnotationsData | null;
   locationId?: string;
 }
 

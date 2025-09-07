@@ -1,15 +1,21 @@
 import { createStore } from "./genericStore"
+import { AnnotationsData } from "@/types/annotationTypes";
 
-interface Route {
+export interface Route {
   imageUri: string;
-  annotations: string;
+  annotations: AnnotationsData;
 }
 
 const defaultRoute: Route = {
   imageUri: '',
-  annotations: '',
+  annotations: {
+    climbingHolds: [],
+    drawingPaths: [],
+    history: []
+  }
 };
 
+// Route store should only be used for route creation (where there is only one route and it needs to persist across pages)
 export const RouteStore = createStore({
   storageKey: 'route_data',
   defaultValue: defaultRoute,

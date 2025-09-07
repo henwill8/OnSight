@@ -1,20 +1,22 @@
 import { useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
-import config from '@/config';
 import { getFileType } from '@/utils/fileUtils';
-import { fetchWithTimeout, pollJobStatus } from '@/utils/apiServices';
+import { useApi } from '@/hooks/utils/useApi';
+import { useRouteStore } from '@/storage/routeStore';
+import { pollJobStatus } from '@/utils/apiServices';
 import { API_PATHS } from "@/constants/paths";
-import { HOLD_SELECTION } from '@/constants/holdSelection';
+import { HOLD_SELECTION } from '@/constants/annotationTypes';
 import { calculatePolygonArea } from '@/utils/geometricUtils';
 import { ClimbingHold } from '@/components/RouteImage/RouteImage';
 
 interface ImagePredictionServiceProps {
   setDataReceived: (data: boolean) => void;
   setImageDimensions: (dimensions: { width: number; height: number; } | null) => void;
-  routeAnnotationRef: React.MutableRefObject<any>;
 }
 
-export const useImagePredictionService = ({ setDataReceived, setImageDimensions, routeAnnotationRef }: ImagePredictionServiceProps) => {
+export const useImagePredictionService = ({ setDataReceived, setImageDimensions }: ImagePredictionServiceProps) => {
+  const { callApi } = useApi();
+  const { updateData } = useRouteStore();
 
   const handleError = useCallback((message: string) => {
     console.error(message);
@@ -35,10 +37,13 @@ export const useImagePredictionService = ({ setDataReceived, setImageDimensions,
       }))
       .sort((a: ClimbingHold, b: ClimbingHold) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
 
+    // Convert climbing holds to JSON format for storage
+    const annotationsJSON = JSON.stringify(predictedClimbingHolds);
+
     setDataReceived(true);
     setImageDimensions(results.imageSize);
-    routeAnnotationRef.current?.loadPredictedClimbingHolds(predictedClimbingHolds);
-  }, [setDataReceived, setImageDimensions, routeAnnotationRef]);
+    updateData({ annotations: annotationsJSON });
+  }, [setDataReceived, setImageDimensions, updateData]);
 
   const handleJobError = useCallback((statusData: any) => {
     handleError(`Job failed: ${statusData.error}`);
@@ -64,29 +69,24 @@ export const useImagePredictionService = ({ setDataReceived, setImageDimensions,
     }
 
     try {
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.PREDICT, {
+      const data = await callApi<{ jobId: string }>(API_PATHS.PREDICT, {
         method: "POST",
         body: formData,
-      }, 10000);
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        handleError(`Server error: ${response.status}, ${data.message}`);
-        return;
-      }
+        timeout: 10000,
+      });
 
       if (!data.jobId) {
         handleError("Unexpected response format: No jobId received");
         return;
       }
 
+      // Start polling for job status
       pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError, 10000);
 
     } catch (error: any) {
       handleError(`Error uploading image: ${error.message}`);
     }
-  }, [handleError, handleJobDone, handleJobError, fetchWithTimeout, pollJobStatus]);
+  }, [callApi, handleError, handleJobDone, handleJobError]);
 
   return {
     sendImageToServer,

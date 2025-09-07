@@ -7,9 +7,10 @@ import RouteImage from '@/components/RouteImage/RouteImage';
 
 import { useGymStore } from '@/storage/gymStore';
 import { useLocationStore } from '@/storage/locationStore';
+import { Route } from '@/storage/routeStore';
 import { useRoutesData } from '@/hooks/routes/useRoutesData';
 import { useTheme } from '@/constants/theme';
-import { Route, Location, BreadcrumbItem } from '@/types';
+import { Location, BreadcrumbItem } from '@/types';
 
 const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: any) => {
   return StyleSheet.create({

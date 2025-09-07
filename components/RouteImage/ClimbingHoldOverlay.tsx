@@ -1,7 +1,7 @@
 import React, { useReducer, useMemo, useRef } from "react";
 import { Svg, Rect, Mask, Path, Defs } from "react-native-svg";
 import { View, ViewStyle } from "react-native";
-import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
+import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/annotationTypes";
 import { ClimbingHold } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/imageUtils";
 import { useTouchHandler } from "@/hooks/utils/useTouchHandler";

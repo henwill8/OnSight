@@ -2,9 +2,9 @@ import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import RouteImage, { RouteImageRef, ClimbingHold } from "@/components/RouteImage/RouteImage";
+import RouteImage, { RouteImageRef } from "@/components/RouteImage/RouteImage";
 import { useTheme } from '@/constants/theme';
-import { HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
+import { HOLD_SELECTION_COLORS } from '@/types/annotationTypes';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
 import LoadingModal from '@/components/ui/LoadingModal';
@@ -71,8 +71,6 @@ const RouteImageCreator: React.FC = () => {
     dataReceived,
     showUnselectedHolds,
     selectedColor,
-    routeAnnotationRef,
-    handleToggleBoundingBoxes,
     handleColorSelect,
     handleExport,
     handleUndo,
@@ -115,13 +113,11 @@ const RouteImageCreator: React.FC = () => {
       {/* Image Canvas */}
       {imageDimensions && (
         <RouteImage
-          ref={routeAnnotationRef}
           style={{
             borderRadius: sizes.borderRadius,
             width: imageDimensions.width * scaleX,
             height: imageDimensions.height * scaleY,
           }}
-          imageURI={imageUri || ""}
           interactable={true}
           climbingHoldOverlayProps={{
             showUnselectedHolds: showUnselectedHolds,
@@ -130,6 +126,7 @@ const RouteImageCreator: React.FC = () => {
             canDraw: selectedColor != null,
             color: selectedColor || "black"
           }}
+          mode={"create"}
         />
       )}
 
