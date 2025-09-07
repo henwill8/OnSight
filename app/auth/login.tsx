@@ -73,7 +73,7 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.replace("/auth/register")}>
+        <TouchableOpacity onPress={() => router.replace("/auth/register")} style={{ alignSelf: 'center' }}>
           <Text style={[globalStyles.link, { textAlign: "center" }]}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>
