@@ -2,8 +2,13 @@ import { useState, useCallback, Dispatch, SetStateAction } from "react";
 import { Alert } from "react-native";
 import { API_PATHS } from '@/constants/paths';
 import { getSecureItem } from '@/utils/secureStorageUtils';
-import { callApi } from '@/utils/api';
+import { useApi } from '@/hooks/utils/useApi';
 import { Template } from '@/types';
+
+interface RouteData {
+  imageUri: string | null;
+  annotations: string | null;
+}
 
 interface UseRouteTemplatesReturn {
   templates: Template[];
@@ -11,7 +16,7 @@ interface UseRouteTemplatesReturn {
   setShowTemplates: Dispatch<SetStateAction<boolean>>;
   loadingTemplates: boolean;
   handleFetchTemplates: (locationId: string | null) => Promise<void>;
-  handleTemplateSelect: (template: Template, setRouteData: (imageUri: string | null, annotations: string | null) => Promise<void>, navigateToCreator: () => void) => void;
+  handleTemplateSelect: (template: Template, setRouteData: (data: RouteData) => void, navigateToCreator: () => void) => void;
   handleShowTemplates: (locationId: string | null) => void;
 }
 
@@ -19,6 +24,7 @@ export const useRouteTemplates = (): UseRouteTemplatesReturn => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const { callApi } = useApi();
 
   const handleFetchTemplates = useCallback(async (locationId: string | null) => {
     if (!locationId) return;
@@ -84,8 +90,11 @@ export const useRouteTemplates = (): UseRouteTemplatesReturn => {
     }
   }, []);
 
-  const handleTemplateSelect = useCallback((template: Template, setRouteData: (imageUri: string | null, annotations: string | null) => Promise<void>, navigateToCreator: () => void) => {
-    setRouteData(template.imageUrl, template.annotationsUrl);
+  const handleTemplateSelect = useCallback((template: Template, setRouteData: (data: RouteData) => void, navigateToCreator: () => void) => {
+    setRouteData({
+      imageUri: template.imageUrl,
+      annotations: template.annotationsUrl
+    });
     navigateToCreator();
     setShowTemplates(false);
   }, []);

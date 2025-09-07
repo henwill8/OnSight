@@ -4,7 +4,7 @@ import { View, ViewStyle } from "react-native";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
 import { ClimbingHold } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/imageUtils";
-import { useTouchHandler } from "../../hooks/utils/useTouchHandler";
+import { useTouchHandler } from "@/hooks/utils/useTouchHandler";
 import { simplifyPolygon, createSmoothPath, pointInPolygon } from "@/utils/geometricUtils";
 import { useTheme } from "@/constants/theme";
 
@@ -17,7 +17,7 @@ interface ClimbingHoldOverlayProps {
   style?: ViewStyle;
   simplifyTolerance?: number;
   smoothingFactor?: number;
-  clickThreshold?: number;
+  clickTimeThreshold?: number;
 }
 
 const SELECTION_VALUES = Object.values(HOLD_SELECTION);
@@ -29,9 +29,9 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   interactable = true,
   onHoldStateChange,
   style,
-  simplifyTolerance = sizes.simplifyTolerance,
+  simplifyTolerance = 4.0,
   smoothingFactor = 0.5,
-  clickThreshold = sizes.clickThreshold,
+  clickTimeThreshold = 200,
 }) => {
   const { colors, sizes } = useTheme();
   const [, forceUpdate] = useReducer(x => x + 1, 0);
@@ -86,8 +86,6 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   // Touch handling state
   const touchStartTime = useRef<number | null>(null);
   const touchActive = useRef(false);
-
-  const clickTimeThreshold = sizes.clickTimeThreshold;
 
   const onTouchStart = () => {
     if (touchActive.current) return;

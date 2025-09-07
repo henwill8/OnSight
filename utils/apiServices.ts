@@ -23,7 +23,7 @@ export const fetchWithTimeout = async (
       clearTimeout(timer);
 
       if (response.status === 401 || response.status === 403) {
-        console.warn(`[fetchWithTimeout] Unauthorized (${response.status}), redirecting to /auth/login`);
+        console.warn(`[fetchWithTimeout] Unauthorized (${response.status})`);
         if (handleUnauthorized) {
           handleUnauthorized(response);
         }

@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { callApi } from "@/utils/api";
+import { useApi } from "@/hooks/utils/useApi";
 import { API_PATHS } from "@/constants/paths";
 
 export const useAuthRedirect = () => {
   const router = useRouter();
+  const pathname = usePathname();
+  const { callApi } = useApi();
 
   const checkAuth = async () => {
     console.log("Checking auth...")
@@ -16,7 +18,9 @@ export const useAuthRedirect = () => {
       router.replace("/(tabs)/home");
     } catch (error) {
       console.error("Auth check failed:", error);
-      router.replace("/auth/login");
+      if (pathname !== "/auth/login") {
+        router.replace("/auth/login");
+      }
     }
   }
 

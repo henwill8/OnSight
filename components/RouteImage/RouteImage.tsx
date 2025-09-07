@@ -103,7 +103,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   },
   ref
 ) => {
-  const { colors } = useTheme();
+  const { colors, global } = useTheme();
   const styles = getStyles(colors);
   const [annotationData, setAnnotationData] = useState<AnnotationsData>({
     climbingHolds: [],
@@ -284,7 +284,7 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   }));
 
   return (
-    <Zoomable style={{ flex: 1 }}>
+    <Zoomable style={global.centerItemsContainer}>
       <View style={[style, styles.imageContainer]} onLayout={onContainerLayout}>
         <Image
           source={{ uri: imageURI }}

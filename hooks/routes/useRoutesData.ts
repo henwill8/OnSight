@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_PATHS } from '../../constants/paths';
-import { callApi } from '../../utils/api';
+import { useApi } from '@/hooks/utils/useApi';
 
 export const useRoutesData = <R, L, B>(gymId: string | null, locationId: string | null) => {
+  const { callApi } = useApi();
   const [routes, setRoutes] = useState<R[]>([]);
   const [childLocations, setChildLocations] = useState<L[]>([]);
   const [breadcrumb, setBreadcrumb] = useState<B[]>([]);

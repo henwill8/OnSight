@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import { COLORS } from '@/constants/theme';
 import { GymProvider } from '@/storage/gymStore';
 import { LocationProvider } from '@/storage/locationStore';
+import { RouteStoreProvider } from '@/storage/routeStore';
 
 export { useColorScheme } from 'react-native';
 
@@ -51,17 +52,19 @@ function RootLayoutNav() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GymProvider>
         <LocationProvider>
-          <StatusBar 
-            backgroundColor={COLORS.backgroundSecondary} // For Android
-            barStyle="light-content"  // Light text/icons for both platforms
-            translucent={false}       // Ensures background color is solid
-          />
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-            <Stack.Screen name="auth/register" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
+          <RouteStoreProvider>
+            <StatusBar 
+              backgroundColor={COLORS.backgroundSecondary} // For Android
+              barStyle="light-content"  // Light text/icons for both platforms
+              translucent={false}       // Ensures background color is solid
+            />
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+          </RouteStoreProvider>
         </LocationProvider>
       </GymProvider>
     </GestureHandlerRootView>

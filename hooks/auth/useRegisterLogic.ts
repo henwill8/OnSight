@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { callApi } from "../../utils/api";
+import { useApi } from "@/hooks/utils/useApi";
 import { API_PATHS } from "@/constants/paths";
 
 export const useRegisterLogic = () => {
   const router = useRouter();
+  const { callApi } = useApi();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

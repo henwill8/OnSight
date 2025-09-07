@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { API_PATHS } from '../../constants/paths';
 import { Gym } from '../../types';
-import { callApi } from '../../utils/api';
+import { useApi } from '@/hooks/utils/useApi';
 import { useGymStore } from '@/storage/gymStore';
 
 export const useChooseGymLogic = () => {
-
+  const { callApi } = useApi();
   const [gyms, setGyms] = useState<Gym[]>([]);
   const [newGymName, setNewGymName] = useState('');
   const [newGymLocation, setNewGymLocation] = useState('');
   const [loading, setLoading] = useState(false);
-  const { state: gymStoreState, setGym, updateGym } = useGymStore();
+  const { state: gymStoreState, setData: setGym, updateData: updateGym } = useGymStore();
 
   useEffect(() => {
     fetchGyms();

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useEffect, useCallback } from "react";
+import React, { useLayoutEffect, useCallback, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -10,9 +10,9 @@ import {
   ScrollView,
   Image,
   Modal,
+  ActivityIndicator
 } from "react-native";
-import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useRouter, useNavigation } from "expo-router";
 
 import { useTheme } from "@/constants/theme";
 
@@ -22,10 +22,13 @@ import RouteImage from "@/components/RouteImage/RouteImage";
 // Services
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Template, SaveRouteRequest } from '@/types';
-import { useImageSelection } from '@/hooks/routes/useImageSelection';
 import { useRouteTemplates } from '@/hooks/routes/useRouteTemplates';
 import { useRouteForm } from '@/hooks/routes/useRouteForm';
 import { useRouteSubmission } from '@/hooks/routes/useRouteSubmission';
+import { useGymStore } from '@/storage/gymStore';
+import { useLocationStore } from '@/storage/locationStore';
+import { useRouteStore } from '@/storage/routeStore';
+import { useImagePicker } from '@/hooks/utils/useImagePicker';
 
 const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
   return StyleSheet.create({
@@ -199,55 +202,59 @@ const CreateRouteScreen = () => {
   const { colors, sizes, spacing, global, font } = useTheme();
   const styles = getStyles(colors, sizes, spacing, font);
 
-  const { locationId: locationIdParam } = useLocalSearchParams();
+  const { state: gymState } = useGymStore();
+  const gymData = gymState.data;
+
+  const { state: locationState } = useLocationStore();
+  const locationData = locationState.data;
 
   // Composed Hooks
-  const { imageUri, setImageUri, annotationsData, setAnnotationsData, exportedUri, annotationsJSON, handleImagePick: imageSelectionHandleImagePick, setRouteData } = useImageSelection();
+  const { routeData, setRouteData, resetRouteData, updateImageUri } = useRouteStore();
+  const { pickImage } = useImagePicker();
   const { templates, showTemplates, setShowTemplates, loadingTemplates, handleFetchTemplates, handleTemplateSelect: templateHandleTemplateSelect, handleShowTemplates: templateHandleShowTemplates } = useRouteTemplates();
-  const { name, setName, description, setDescription, difficulty, setDifficulty, canSubmit } = useRouteForm(imageUri);
+  const { name, setName, description, setDescription, difficulty, setDifficulty, canSubmit } = useRouteForm(routeData.imageUri);
   const { loading, handleSubmit: submitHandleSubmit } = useRouteSubmission();
 
-  const [locationId, setLocationId] = useState<string>("");
-  const [gymName, setGymName] = useState<string>("");
+  // Reset route data when component mounts (starting a new route)
+  useEffect(() => {
+    resetRouteData();
+  }, [resetRouteData]);
 
   // Handlers that compose the new hooks
   const handleImagePick = useCallback(async (useCamera: boolean) => {
-    await imageSelectionHandleImagePick(useCamera, () => router.push("/routes/routeImageCreator"));
-  }, [imageSelectionHandleImagePick, router]);
+    const result = await pickImage(useCamera);
+    if (result.success && result.uri) {
+      updateImageUri(result.uri || null);
+      router.push("/routes/routeImageCreator");
+    }
+  }, [pickImage, updateImageUri, router]);
 
   const handleTemplateSelect = useCallback((template: Template) => {
-    templateHandleTemplateSelect(template, setRouteData, () => router.push("/routes/routeImageCreator"));
-  }, [templateHandleTemplateSelect, setRouteData, router]);
+    setRouteData({
+      imageUri: template.imageUrl,
+      annotations: template.annotationsUrl
+    });
+    router.push("/routes/routeImageCreator");
+  }, [setRouteData, router]);
 
   const handleSubmit = useCallback(async () => {
     const submissionData: SaveRouteRequest = {
       name,
       description,
       difficulty,
-      imageUri,
-      annotationsJSON,
-      locationId: locationId || undefined,
+      imageUri: routeData.imageUri,
+      annotationsJSON: routeData.annotations,
+      locationId: locationData.id || undefined,
     };
     await submitHandleSubmit(submissionData, () => {
       router.back();
       router.setParams({ shouldReload: "true" }); // shouldReload needs to be a string for setParams
     });
-  }, [name, description, difficulty, imageUri, annotationsJSON, locationId, submitHandleSubmit, router]);
+  }, [name, description, difficulty, routeData.imageUri, routeData.annotations, locationData.id, submitHandleSubmit, router]);
 
   const handleShowTemplates = useCallback(() => {
-    templateHandleShowTemplates(locationIdParam as string || ""); // Use the composed handleShowTemplates
-  }, [templateHandleShowTemplates, locationIdParam]);
-
-  useEffect(() => {
-    setLocationId((locationIdParam || "") as string);
-  }, [locationIdParam]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (exportedUri) setImageUri(exportedUri as string);
-      if (annotationsJSON) setAnnotationsData(annotationsJSON as string);
-    }, [exportedUri, annotationsJSON, setImageUri, setAnnotationsData])
-  );
+    templateHandleShowTemplates(locationData.id as string || ""); // Use the composed handleShowTemplates
+  }, [templateHandleShowTemplates, locationData.id]);
 
   // Effects
   useLayoutEffect(() => {
@@ -256,8 +263,7 @@ const CreateRouteScreen = () => {
       headerStyle: { backgroundColor: colors.backgroundPrimary },
       headerTintColor: "white",
     });
-    setGymName(gymName); 
-  }, [navigation, colors.backgroundPrimary, gymName, setGymName]);
+  }, [navigation, colors.backgroundPrimary]);
 
   // Render methods
   const renderTemplateItem = ({ item }: { item: Template }) => (
@@ -312,7 +318,7 @@ const CreateRouteScreen = () => {
       contentContainerStyle={styles.container} 
       style={styles.scrollView}
     >
-      <Text style={styles.title}>{gymName}</Text>
+      <Text style={styles.title}>{gymData.name}</Text>
 
       {/* Options Section */}
       <View style={styles.optionsContainer}>
@@ -345,11 +351,11 @@ const CreateRouteScreen = () => {
       {renderTemplateModal()}
 
       {/* Image Preview */}
-      {imageUri && (
+      {routeData.imageUri && (
         <RouteImage 
           style={styles.imagePreview} 
-          imageURI={imageUri} 
-          dataJSON={annotationsData || ""} 
+          imageURI={routeData.imageUri} 
+          dataJSON={routeData.annotations || ""} 
           interactable={false} 
         />
       )}

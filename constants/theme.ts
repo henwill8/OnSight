@@ -45,9 +45,7 @@ export const SIZES = {
   imagePreviewHeight: 400,
   listItemHeight: 80,
   strokeWidth: 4,
-  minDrawingDistance: 10,
-  simplifyTolerance: 4.0,
-  clickTimeThreshold: 200,
+  minDrawingDistance: 10, // TODO: remove all the vars that ai mistakingly put here
   zoomMax: 10.0,
   zoomMin: 0.5,
   zoomStep: 0.5,

@@ -14,7 +14,7 @@ import { FittedImageRectOutput } from "@/utils/imageUtils";
  * @param onDrawEnd Callback function triggered when a drawing gesture ends.
  * @returns An object containing `eventHandlers` for the component and `pointerEvents` CSS style.
  */
-export const crossPlatformTouchHandler = (
+export const useTouchHandler = (
   interactable: boolean,
   fittedImageRect: FittedImageRectOutput,
   onDrawStart: (point: { x: number; y: number }) => void,

@@ -54,11 +54,8 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const { shouldReload } = useLocalSearchParams();
 
-  const { state: gymState, updateGym } = useGymStore();
-  const gymData = gymState.data;
-
-  const { state: locationState, updateLocation } = useLocationStore();
-  const locationData = locationState.data;
+  const { data: gymData } = useGymStore();
+  const { data: locationData, updateData: updateLocation } = useLocationStore();
 
   const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData<Route, Location, BreadcrumbItem>(gymData.id ? gymData.id : null, locationData.id);
 

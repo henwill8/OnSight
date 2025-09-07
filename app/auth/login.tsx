@@ -5,8 +5,6 @@ import LoadingModal from '@/components/ui/LoadingModal';
 import { useLoginLogic } from '@/hooks/auth/useLoginLogic';
 import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
 import { useCallback, useEffect } from "react";
-import { API_PATHS } from "@/constants/paths";
-import { callApi } from "@/utils/api";
 
 
 const getStyles = (colors: any, global: any, font: any) => {
@@ -60,9 +58,9 @@ export default function LoginScreen() {
 
   const { checkAuth } = useAuthRedirect();
 
-  useCallback(() => {
+  useFocusEffect(() => {
     checkAuth();
-  }, [])
+  })
 
   return (
     <View style={styles.container}>

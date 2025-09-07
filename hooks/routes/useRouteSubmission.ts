@@ -3,7 +3,7 @@ import { Alert, Platform } from "react-native";
 import { getFileType } from '@/utils/fileUtils';
 import { API_PATHS } from '@/constants/paths';
 import { getSecureItem } from '@/utils/secureStorageUtils';
-import { callApi } from '@/utils/api';
+import { useApi } from '@/hooks/utils/useApi';
 import { SaveRouteRequest } from '@/types';
 
 interface RouteSubmissionData {
@@ -22,6 +22,7 @@ interface UseRouteSubmissionReturn {
 
 export const useRouteSubmission = (): UseRouteSubmissionReturn => {
   const [loading, setLoading] = useState(false);
+  const { callApi } = useApi();
 
   const handleSubmit = useCallback(async (data: RouteSubmissionData, navigateBackAndReload: () => void) => {
     if (!data.imageUri || !data.annotationsJSON) {

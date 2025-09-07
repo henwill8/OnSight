@@ -59,8 +59,7 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
 
 const ChooseGym: React.FC = () => {
   const { colors, sizes, spacing, font } = useTheme();
-  const { state, updateGym } = useGymStore();
-  const gymData = state.data;
+  const { data: gymData } = useGymStore();
 
   const {
     gyms,

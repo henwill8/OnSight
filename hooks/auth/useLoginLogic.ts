@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { callApi } from "../../utils/api";
+import { useApi } from "@/hooks/utils/useApi";
 import { API_PATHS } from "@/constants/paths";
 
 const landingPage = "/(tabs)/home";
 
 export const useLoginLogic = () => {
   const router = useRouter();
+  const { callApi } = useApi();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

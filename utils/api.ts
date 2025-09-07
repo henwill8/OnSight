@@ -35,6 +35,16 @@ export const callApi = async <T>(path: string, apiConfig?: ApiConfig): Promise<T
     );
 
     if (!response.ok) {
+      // Handle unauthorized responses specifically
+      if (response.status === 401 || response.status === 403) {
+        const error = new Error(JSON.stringify({ 
+          messages: [`Unauthorized access (${response.status})`],
+          status: response.status 
+        }));
+        (error as any).status = response.status;
+        throw error;
+      }
+
       const contentType = response.headers.get('Content-Type');
       if (contentType && contentType.includes('application/json')) {
         const errorData = await response.json();

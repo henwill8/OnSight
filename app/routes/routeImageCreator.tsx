@@ -8,6 +8,7 @@ import { HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
 import LoadingModal from '@/components/ui/LoadingModal';
+import { useRouteStore } from '@/storage/routeStore';
 
 const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: any) => {
   return StyleSheet.create({
