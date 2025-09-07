@@ -9,7 +9,7 @@ import 'react-native-reanimated';
 import { COLORS } from '@/constants/theme';
 import { GymProvider } from '@/storage/gymStore';
 import { LocationProvider } from '@/storage/locationStore';
-import { RouteStoreProvider } from '@/storage/routeStore';
+import { RouteProvider } from '@/storage/routeStore';
 
 export { useColorScheme } from 'react-native';
 
@@ -52,7 +52,7 @@ function RootLayoutNav() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GymProvider>
         <LocationProvider>
-          <RouteStoreProvider>
+          <RouteProvider>
             <StatusBar 
               backgroundColor={COLORS.backgroundSecondary} // For Android
               barStyle="light-content"  // Light text/icons for both platforms
@@ -64,7 +64,7 @@ function RootLayoutNav() {
               <Stack.Screen name="auth/register" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             </Stack>
-          </RouteStoreProvider>
+          </RouteProvider>
         </LocationProvider>
       </GymProvider>
     </GestureHandlerRootView>

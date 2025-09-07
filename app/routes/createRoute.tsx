@@ -82,7 +82,7 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
       textAlign: 'center',
       marginVertical: spacing.sm,
     },
-  
+
     // Modal Styles
     modalOverlay: {
       flex: 1,
@@ -141,7 +141,7 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
       height: 150,
       borderRadius: sizes.borderRadius,
     },
-  
+
     // Form Styles
     formContainer: {
       marginVertical: spacing.md,
@@ -166,7 +166,7 @@ const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
       borderRadius: sizes.borderRadius,
       resizeMode: 'cover',
     },
-  
+
     // Submit Styles
     submitButton: {
       backgroundColor: colors.success,
@@ -202,14 +202,10 @@ const CreateRouteScreen = () => {
   const { colors, sizes, spacing, global, font } = useTheme();
   const styles = getStyles(colors, sizes, spacing, font);
 
-  const { state: gymState } = useGymStore();
-  const gymData = gymState.data;
+  const { data: gymData } = useGymStore();
+  const { data: locationData } = useLocationStore();
+  const { data: routeData, setData: setRouteData, clearData: resetRouteData, updateData: updateRouteData } = useRouteStore();
 
-  const { state: locationState } = useLocationStore();
-  const locationData = locationState.data;
-
-  // Composed Hooks
-  const { routeData, setRouteData, resetRouteData, updateImageUri } = useRouteStore();
   const { pickImage } = useImagePicker();
   const { templates, showTemplates, setShowTemplates, loadingTemplates, handleFetchTemplates, handleTemplateSelect: templateHandleTemplateSelect, handleShowTemplates: templateHandleShowTemplates } = useRouteTemplates();
   const { name, setName, description, setDescription, difficulty, setDifficulty, canSubmit } = useRouteForm(routeData.imageUri);
@@ -218,16 +214,16 @@ const CreateRouteScreen = () => {
   // Reset route data when component mounts (starting a new route)
   useEffect(() => {
     resetRouteData();
-  }, [resetRouteData]);
+  }, []);
 
   // Handlers that compose the new hooks
   const handleImagePick = useCallback(async (useCamera: boolean) => {
     const result = await pickImage(useCamera);
     if (result.success && result.uri) {
-      updateImageUri(result.uri || null);
+      updateRouteData({ imageUri: result.uri || '' });
       router.push("/routes/routeImageCreator");
     }
-  }, [pickImage, updateImageUri, router]);
+  }, [pickImage, updateRouteData, router]);
 
   const handleTemplateSelect = useCallback((template: Template) => {
     setRouteData({
@@ -318,7 +314,7 @@ const CreateRouteScreen = () => {
       contentContainerStyle={styles.container} 
       style={styles.scrollView}
     >
-      <Text style={styles.title}>{gymData.name}</Text>
+      <Text style={styles.title}>{gymData.name || 'Create Route'}</Text>
 
       {/* Options Section */}
       <View style={styles.optionsContainer}>

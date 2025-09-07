@@ -11,7 +11,7 @@ export const useChooseGymLogic = () => {
   const [newGymName, setNewGymName] = useState('');
   const [newGymLocation, setNewGymLocation] = useState('');
   const [loading, setLoading] = useState(false);
-  const { state: gymStoreState, setData: setGym, updateData: updateGym } = useGymStore();
+  const { data: gymData, setData: setGym, updateData: updateGym } = useGymStore();
 
   useEffect(() => {
     fetchGyms();
@@ -39,7 +39,7 @@ export const useChooseGymLogic = () => {
 
     setLoading(true);
     try {
-      const response = await callApi<{ message?: string }>(API_PATHS.CREATE_GYM, {
+      await callApi<{ message?: string }>(API_PATHS.CREATE_GYM, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: { name: newGymName, location: newGymLocation },

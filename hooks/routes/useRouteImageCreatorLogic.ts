@@ -7,7 +7,7 @@ import { useRouteStore } from '@/storage/routeStore';
 
 export const useRouteImageCreatorLogic = () => {
   const navigation = useNavigation();
-  const { routeData, updateAnnotations } = useRouteStore();
+  const { data: routeData, updateData: updateRouteData } = useRouteStore();
 
   const [dataReceived, setDataReceived] = useState(false); // Whether data has been received
   const [showUnselectedHolds, setShowUnselectedHolds] = useState<boolean>(false); // Show bounding boxes state
@@ -67,7 +67,7 @@ export const useRouteImageCreatorLogic = () => {
     setShowUnselectedHolds(false);
 
     try {
-      updateAnnotations(routeAnnotationRef.current?.exportAnnotationJSON() || null);
+      updateRouteData({ annotations: routeAnnotationRef.current?.exportAnnotationJSON() || null });
 
       navigation.goBack(); // Go back to previous screen
     } catch (error) {

@@ -9,171 +9,10 @@ import { AntDesign, Feather } from '@expo/vector-icons';
 import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
 import LoadingModal from '@/components/ui/LoadingModal';
 import { useRouteStore } from '@/storage/routeStore';
+import { G } from 'react-native-svg';
 
 const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: any) => {
   return StyleSheet.create({
-    scrollView: {
-      backgroundColor: colors.backgroundPrimary,
-    },
-    container: {
-      flexGrow: 1,
-      padding: spacing.md,
-      paddingTop: spacing.lg + spacing.xs,
-    },
-    title: {
-      fontSize: font.h3,
-      fontWeight: 'bold',
-      marginBottom: spacing.lg + spacing.xs,
-      color: colors.textPrimary,
-      textAlign: 'center',
-    },
-    optionsContainer: {
-      flexDirection: 'column',
-      width: '100%',
-      marginBottom: spacing.md,
-      paddingHorizontal: spacing.sm,
-    },
-    imageButtonsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      width: '100%',
-    },
-    halfButton: {
-      flex: 0.48,
-    },
-    button: {
-      backgroundColor: colors.primary,
-      borderRadius: sizes.borderRadius,
-      padding: spacing.md,
-      alignItems: 'center',
-    },
-    buttonDisabled: {
-      opacity: 0.5,
-    },
-    buttonText: {
-      color: colors.textPrimary,
-      fontSize: font.body,
-      fontWeight: '600',
-    },
-    orText: {
-      color: colors.textPrimary,
-      fontSize: font.body,
-      fontWeight: '600',
-      textAlign: 'center',
-      marginVertical: spacing.sm,
-    },
-  
-    // Modal Styles
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      justifyContent: 'flex-end',
-    },
-    modalContent: {
-      backgroundColor: colors.backgroundPrimary,
-      borderTopLeftRadius: sizes.borderRadius,
-      borderTopRightRadius: sizes.borderRadius,
-      paddingBottom: spacing.md,
-      height: '80%',
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    modalTitle: {
-      fontSize: font.h4,
-      fontWeight: '600',
-      color: colors.textPrimary,
-    },
-    closeButton: {
-      fontSize: font.h3,
-      color: colors.textSecondary,
-      padding: spacing.xs,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    emptyMessage: {
-      textAlign: 'center',
-      marginTop: spacing.md,
-      color: colors.textSecondary,
-      fontSize: font.body,
-    },
-    templateGrid: {
-      padding: spacing.sm,
-    },
-    templateItem: {
-      flex: 1,
-      margin: spacing.xs,
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: sizes.borderRadius,
-      padding: spacing.sm,
-      alignItems: 'center',
-    },
-    templateImage: {
-      width: '100%',
-      height: 150,
-      borderRadius: sizes.borderRadius,
-    },
-  
-    // Form Styles
-    formContainer: {
-      marginVertical: spacing.md,
-    },
-    textInput: {
-      borderWidth: 1,
-      marginBottom: spacing.md,
-      padding: spacing.sm + spacing.xs,
-      color: colors.textPrimary,
-      borderColor: colors.border,
-      borderRadius: sizes.borderRadius,
-      backgroundColor: colors.backgroundSecondary,
-      fontSize: font.body,
-    },
-    multilineInput: {
-      minHeight: 80,
-      textAlignVertical: 'top',
-    },
-    imagePreview: {
-      width: '100%',
-      height: 400,
-      marginBottom: spacing.md,
-      borderRadius: sizes.borderRadius,
-      resizeMode: 'cover',
-    },
-  
-    // Submit Styles
-    submitButton: {
-      backgroundColor: colors.success,
-      padding: spacing.md,
-      borderRadius: sizes.borderRadius,
-      alignItems: 'center',
-      marginTop: spacing.sm,
-    },
-    submitButtonDisabled: {
-      backgroundColor: colors.disabled,
-    },
-    submitButtonText: {
-      color: colors.textPrimary,
-      fontSize: font.body,
-      fontWeight: '600',
-    },
-    submitButtonTextDisabled: {
-      color: colors.textSecondary,
-    },
-    incompleteMessage: {
-      color: colors.error,
-      fontSize: font.caption,
-      fontWeight: '500',
-      marginTop: spacing.sm,
-      textAlign: 'center',
-    },
     sidebar: {
       position: "absolute",
       right: spacing.md,
@@ -222,7 +61,7 @@ const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: an
 };
 
 const RouteImageCreator: React.FC = () => {
-  const { colors, sizes, shadows, font, spacing } = useTheme();
+  const { colors, sizes, shadows, font, spacing, global } = useTheme();
   const {
     imageUri,
     annotations,
@@ -252,7 +91,7 @@ const RouteImageCreator: React.FC = () => {
   const styles = getStyles(colors, sizes, shadows, font, spacing);
 
   return (
-    <View style={styles.container}>
+    <View style={[global.centerItemsContainer, { alignItems: "center" }]}>
 
       {/* Right Sidebar for Color Selection */}
       <View style={styles.sidebar}>
