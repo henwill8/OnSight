@@ -93,9 +93,14 @@ const HomeScreen = () => {
 
   const handleRoutePress = (route: RouteInfo) => {
     const { route: routeData, ...otherParams } = route;
-    router.navigate('/routes/routeDetail');
-    router.setParams({ routeParams: encodeURIComponent(JSON.stringify(otherParams)) });
     setRoute(route.route);
+    router.push({
+      pathname: '/routes/routeDetail',
+      params: {
+        routeParams: encodeURIComponent(JSON.stringify(otherParams)), // TODO: dont pass in all params, just what is needed
+      },
+    });
+    console.log("handle route press", route.route)
   };
 
   const handleAddRoute = () => {

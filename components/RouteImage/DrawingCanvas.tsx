@@ -77,8 +77,8 @@ const DrawingCanvas: React.FC<DrawProps> = ({
 
     if (currentPath) {
       currentPath.segments.push({ 
-        x: (point.x), 
-        y: (point.y)
+        x: point.x, 
+        y: point.y
       });
       forceUpdate();
     }

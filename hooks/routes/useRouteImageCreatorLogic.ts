@@ -54,7 +54,7 @@ export const useRouteImageCreatorLogic = (routeImageRef: React.RefObject<RouteIm
 
   const handleUndo = useCallback(() => {
     routeImageRef.current.undo();
-  }, [updateRouteData]);
+  }, []);
 
   return {
     imageUri: routeData.imageUri,

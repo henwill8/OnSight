@@ -39,7 +39,7 @@ export const useRouteSubmission = (): UseRouteSubmissionReturn => {
       formData.append("locationId", data.locationId || "");
       formData.append("annotations", JSON.stringify(routeData.annotations || {}));
 
-      console.log(routeData)
+      console.log("submitting", routeData)
 
       // Handle image file
       if (!routeData.imageUri) {
@@ -76,7 +76,7 @@ export const useRouteSubmission = (): UseRouteSubmissionReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [routeData, gymData, callApi]);
 
   return {
     loading,

@@ -24,6 +24,7 @@ export interface CreateRouteData {
 }
 
 export interface SaveRouteRequest extends CreateRouteData {}
+
 export interface RouteInfo {
   id: string;
   name?: string;

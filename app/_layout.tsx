@@ -10,6 +10,7 @@ import { COLORS } from '@/constants/theme';
 import { GymProvider } from '@/storage/gymStore';
 import { LocationProvider } from '@/storage/locationStore';
 import { RouteProvider } from '@/storage/routeStore';
+import { UserInfoProvider } from '@/storage/userInfoStore';
 
 export { useColorScheme } from 'react-native';
 
@@ -46,24 +47,24 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  // const colorScheme = useColorScheme();
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GymProvider>
         <LocationProvider>
           <RouteProvider>
-            <StatusBar 
-              backgroundColor={COLORS.backgroundSecondary} // For Android
-              barStyle="light-content"  // Light text/icons for both platforms
-              translucent={false}       // Ensures background color is solid
-            />
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false, presentation: 'modal' }} />
-              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/register" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
+            <UserInfoProvider>
+              <StatusBar 
+                backgroundColor={COLORS.backgroundSecondary} // For Android
+                barStyle="light-content"  // Light text/icons for both platforms
+                translucent={false}       // Ensures background color is solid
+              />
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false, presentation: 'modal' }} />
+                <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+            </UserInfoProvider>
           </RouteProvider>
         </LocationProvider>
       </GymProvider>

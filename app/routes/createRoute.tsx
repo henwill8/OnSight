@@ -212,7 +212,6 @@ const CreateRouteScreen = () => {
 
   // Reset route data when component mounts (starting a new route)
   useEffect(() => {
-    console.log("resetting route data")
     resetRouteData();
   }, []);
   

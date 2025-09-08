@@ -68,6 +68,8 @@ interface StoreProviderProps {
 
 export function createStore<T>(config: StoreConfig<T>) {
   const { storageKey, defaultValue, contextName } = config;
+
+  console.log(`[Store Created]: ${contextName} (storageKey: ${storageKey})`);
   
   const StoreContext = createContext<StoreContextType<T> | undefined>(undefined);
   

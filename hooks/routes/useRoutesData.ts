@@ -38,20 +38,10 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
     const routes = await Promise.all(
       routesToProcess.map(async (route: any) => {
         try {
-          const imageRes = await callApi<Response>(route.imageUrl, { skipJsonParse: true });
-          const annotationsRes = await callApi<Response>(route.annotationsUrl, { skipJsonParse: true });
-
-          const { url: imageUrl } = await imageRes.json();
-          let annotationsUrl = '';
-          if (annotationsRes.ok) {
-            const { url } = await annotationsRes.json();
-            annotationsUrl = url;
-          }
-
-          const annotations: AnnotationsData = await loadAnnotations(annotationsUrl)
+          const annotations: AnnotationsData = await loadAnnotations(route.annotationsUrl)
 
           const processedRoute: Route = {
-            imageUri: imageUrl,
+            imageUri: route.imageUrl,
             annotations: annotations || null
           };
 

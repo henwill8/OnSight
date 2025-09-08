@@ -99,8 +99,6 @@ const RouteDetail = () => {
     );
   }
 
-  console.log(scaledImageDimensions)
-
   return (
     <View style={global.container}>
       <View style={styles.imageContainer}>

@@ -43,37 +43,19 @@ export const useRouteTemplates = (): UseRouteTemplatesReturn => {
       // Process templates to get signed URLs
       const templatesWithSignedUrls = await Promise.all(
         data.templates.map(async (template: any) => {
-          try {
-            const imageRes = await callApi<Response>(template.imageUrl, { skipJsonParse: true });
-            const annotationsRes = await callApi<Response>(template.annotationsUrl, { skipJsonParse: true });
-  
-            const { url: imageUrl } = await imageRes.json();
-            let annotationsUrl = '';
-            if (annotationsRes.ok) {
-              const { url } = await annotationsRes.json();
-              annotationsUrl = url;
-            }
-  
-            const annotations: AnnotationsData = await loadAnnotations(annotationsUrl)
+          try {  
+            const annotations: AnnotationsData = await loadAnnotations(template.annotationsUrl)
   
             const processedRoute: Route = {
-              imageUri: imageUrl,
-              annotations: annotations || {
-                climbingHolds: [],
-                drawingPaths: [],
-                history: []
-              }
+              imageUri: template.imageUrl,
+              annotations: annotations || null
             };
   
             return { ...template, route: processedRoute };
           } catch (err) {
             const dummyRoute: Route = {
               imageUri: '',
-              annotations: {
-                climbingHolds: [],
-                drawingPaths: [],
-                history: []
-              }
+              annotations: null
             };
   
             return { };

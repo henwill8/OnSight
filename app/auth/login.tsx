@@ -6,7 +6,6 @@ import { useLoginLogic } from '@/hooks/auth/useLoginLogic';
 import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
 import { useCallback, useEffect } from "react";
 
-
 const getStyles = (colors: any, global: any, font: any) => {
   return StyleSheet.create({
     container: {
@@ -68,7 +67,7 @@ export default function LoginScreen() {
       <View style={styles.innerContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username or Email"
+          placeholder="Email"
           placeholderTextColor={colors.textSecondary}
           value={email}
           onChangeText={setEmail}

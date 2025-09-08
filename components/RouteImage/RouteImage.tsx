@@ -61,8 +61,6 @@ const RouteImage: ForwardRefRenderFunction<RouteImageRef, RouteImageProps> = (
   const isCreateMode = mode === 'create';
   const currentRouteData = externalRouteData ? externalRouteData : storeRouteData;
 
-  console.log(currentRouteData)
-
   const onContainerLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     setContainerSize({ width, height });

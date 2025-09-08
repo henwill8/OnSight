@@ -51,8 +51,10 @@ const getStyles = (colors: any, global: any, font: any) => {
 export default function RegisterScreen() {
   const { colors, global, font } = useTheme();
   const {
-    username,
-    setUsername,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
     email,
     setEmail,
     password,
@@ -70,10 +72,17 @@ export default function RegisterScreen() {
       <View style={styles.innerContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username"
+          placeholder="First Name"
           placeholderTextColor={colors.textSecondary}
-          value={username}
-          onChangeText={setUsername}
+          value={firstName}
+          onChangeText={setFirstName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Last Name"
+          placeholderTextColor={colors.textSecondary}
+          value={lastName}
+          onChangeText={setLastName}
         />
         <TextInput
           style={styles.input}

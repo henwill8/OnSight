@@ -3,28 +3,31 @@ import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useApi } from "@/hooks/utils/useApi";
 import { API_PATHS } from "@/constants/paths";
+import { useUserInfoStore, UserInfo } from "@/storage/userInfoStore";
 
 const landingPage = "/(tabs)/home";
 
 export const useLoginLogic = () => {
   const router = useRouter();
   const { callApi } = useApi();
-  const [username, setUsername] = useState("");
+  const { setData: setUserInfo } = useUserInfoStore();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    console.log("Attempting login for user:", username);
+    console.log("Attempting login for user:", email);
     setLoading(true);
 
     try {
-
-      await callApi(API_PATHS.LOGIN, {
+      const result = await callApi<{ user: UserInfo }>(API_PATHS.LOGIN, {
         method: "POST",
-        body: { username, password },
+        body: { email, password },
       });
 
-      console.log("Login successful for user:", username);
+      setUserInfo(result.user)
+
+      console.log("Login successful for user:", email);
       router.replace(landingPage);
 
     } catch (error: any) {
@@ -35,8 +38,8 @@ export const useLoginLogic = () => {
   };
 
   return {
-    email: username,
-    setEmail: setUsername,
+    email,
+    setEmail,
     password,
     setPassword,
     loading,
