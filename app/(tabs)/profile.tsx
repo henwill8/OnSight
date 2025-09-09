@@ -1,26 +1,68 @@
 import { View, Text, StyleSheet, Touchable, TouchableOpacity, Image } from 'react-native';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
 
 
 
 export default function ProfileScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const [profileName, setProfileName] = useState('Kameron Springer');
+  const [bioText, setBioText] = useState('');
+  const [profileImage, setProfileImage] = useState(require('../../assets/images/logo-no-text.jpeg'));
+  
+  useEffect(() => {
+    // Load bio data from storage
+    loadBioFromStorage();
+    
+    // Update profile name if params are passed from edit profile (only once on mount)
+    if (params.username) {
+      setProfileName(Array.isArray(params.username) ? params.username[0] : params.username);
+    }
+    if (params.bio) {
+      setBioText(Array.isArray(params.bio) ? params.bio[0] : params.bio);
+    }
+  }, []); // Only run once on mount
+
+  const loadBioFromStorage = async () => {
+    try {
+      const savedBio = await SecureStore.getItemAsync('bio');
+      const savedProfileImageUri = await SecureStore.getItemAsync('profileImageUri');
+      
+      if (savedBio) {
+        setBioText(savedBio);
+      }
+      if (savedProfileImageUri) {
+        setProfileImage({ uri: savedProfileImageUri });
+      }
+    } catch (error) {
+      console.log('Error loading bio from storage:', error);
+    }
+  };
+
+  // Refresh bio data whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadBioFromStorage();
+    }, [])
+  );
+  
   return (
     <View style={globalStyles.container}>
-      <TouchableOpacity style={styles.profileButton}>
-        <Image source={require('../../assets/images/logo-no-text.jpeg')} 
-        style={{
-          width: 120,
-          height: 120,
-          borderRadius: 60,
-          position: 'absolute',
-          top: 15,
-          }}
-        />
-      </TouchableOpacity>
-      <Text style={[styles.titleText, styles.profileName]}>Kameron Springer</Text>
-      <Text style={styles.gymText}>Contact Climbing</Text>
+      <Image source={profileImage} 
+      style={styles.profileImage} />
+      <Text style={[styles.profileName]}>{profileName}</Text>
+      <Text style={styles.gymText}>{bioText}</Text>
       <Text style={styles.friendText}>100 friends</Text>
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity style={styles.editButton} onPress={() => router.push({
+          pathname: '/edit-profile',
+          params: {
+            currentUsername: profileName,
+            currentBio: bioText
+          }
+        })}>
           <Text style={styles.editButtonText}>✏️ Edit Profile</Text>
         </TouchableOpacity>
       <TouchableOpacity style={styles.sortByButton}>
@@ -51,23 +93,15 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleText: {
-    fontSize: 20,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    color: COLORS.textPrimary
-  },
  
-  profileButton: {
+  profileImage: {
     width: 120,
     height: 120,
     position: 'absolute',
     top: 5,
     left: '50%',
     marginLeft: -170,
-    justifyContent: 'center',
     borderRadius: 60,
-    alignItems: 'center',
   },
 
   profileName: {
@@ -77,6 +111,8 @@ const styles = StyleSheet.create({
     marginLeft: -50,
     width: 250,
     textAlign: 'center',
+    color: "white",
+    fontWeight: 'bold',
     fontSize: 24
   },
 
@@ -136,11 +172,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
     borderRadius: 24,
     width: 110,
-    height: 40,
+    height: 35,
     position: 'absolute',
-    top: 175,
+    top: 230,
     left: '50%',
-    marginLeft: -160,
+    marginLeft: 70,
     justifyContent: 'center',
   },
 
