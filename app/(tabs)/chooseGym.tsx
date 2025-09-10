@@ -1,185 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, FlatList, TextInput, Alert, TouchableOpacity } from 'react-native';
-import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
-import { StyleSheet } from 'react-native';
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
-import config from '@/config';
-import LoadingModal from '@/components/ui/LoadingModal';  // Import LoadingModal
-import { fetchWithTimeout } from "@/utils/api";  // Import fetchWithTimeout
-import { API_PATHS } from "@/constants/paths";  // Import API paths
+import { View, Text, FlatList, TextInput, Alert, TouchableOpacity, StyleSheet } from 'react-native';
+import { useGymStore } from '@/storage/gymStore';
+import { useTheme } from '@/constants/theme';
+import { useChooseGymLogic } from '@/hooks/gyms/useChooseGymLogic';
+import { Gym } from '@/types';
+import LoadingModal from '@/components/ui/LoadingModal';
+
+const getStyles = (colors: any, sizes: any, spacing: any, font: any) => {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: spacing.md,
+      backgroundColor: colors.backgroundPrimary,
+    },
+    textInput: {
+      borderWidth: 1,
+      marginBottom: spacing.md,
+      padding: spacing.sm,
+      backgroundColor: colors.backgroundSecondary,
+      color: colors.textPrimary,
+      borderRadius: sizes.borderRadius,
+      fontSize: font.body,
+    },
+    button: {
+      padding: spacing.sm,
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: sizes.borderRadius,
+    },
+    buttonText: {
+      fontSize: font.body,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    currentGymText: {
+      fontSize: font.h3,
+      fontWeight: '500',
+      textAlign: 'center',
+      marginVertical: spacing.xl,
+      color: colors.textPrimary,
+    },
+    availableGymsTitle: {
+      fontSize: font.h4,
+      marginBottom: spacing.sm,
+      color: colors.textPrimary,
+    },
+    gymItem: {
+      padding: spacing.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    gymText: {
+      fontSize: font.body,
+      color: colors.textPrimary,
+    },
+  });
+};
 
 const ChooseGym: React.FC = () => {
-  const [gyms, setGyms] = useState<any[]>([]);
-  const [newGymName, setNewGymName] = useState('');
-  const [newGymLocation, setNewGymLocation] = useState('');
-  const [currentGymName, setCurrentGymName] = useState<string>('');
-  const [loading, setLoading] = useState(false);  // State to track loading
+  const { colors, sizes, spacing, font } = useTheme();
+  const { data: gymData } = useGymStore();
 
-  useEffect(() => {
-    fetchGyms();
-    fetchCurrentGymName();
-  }, []);
+  const {
+    gyms,
+    newGymName,
+    setNewGymName,
+    newGymLocation,
+    setNewGymLocation,
+    loading,
+    handleCreateGym,
+    handleSelectGym,
+  } = useChooseGymLogic();
 
-  const fetchGyms = async () => {
-    setLoading(true);  // Start loading
-    try {
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.LIST_GYMS, {
-        method: 'GET',
-      }, 5000);  // Timeout set to 5 seconds
+  const styles = getStyles(colors, sizes, spacing, font);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setGyms(data.gyms);
-      } else {
-        Alert.alert('Error', 'Failed to fetch gyms');
-      }
-    } catch (error) {
-      console.error('Error fetching gyms:', error);
-      Alert.alert('Error', 'Failed to fetch gyms');
-    } finally {
-      setLoading(false);  // Stop loading
-    }
-  };
-
-  const fetchCurrentGymName = async () => {
-    const currentGymName = await getSecureItem("gymName");
-    setCurrentGymName(currentGymName || "");
-  };
-
-  const handleCreateGym = async () => {
-    if (!newGymName || !newGymLocation) {
-      Alert.alert('Error', 'Please provide both name and location for the gym');
-      return;
-    }
-
-    setLoading(true);  // Start loading
-    try {
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.CREATE_GYM, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newGymName,
-          location: newGymLocation,
-        }),
-      }, 5000);  // Timeout set to 5 seconds
-
-      if (response.ok) {
-        const data = await response.json();
-        Alert.alert('Success', 'Gym created successfully!');
-        setNewGymName('');
-        setNewGymLocation('');
-        fetchGyms();  // Refresh the list after creating a gym
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to create gym');
-      }
-    } catch (error) {
-      console.error('Error creating gym:', error);
-      Alert.alert('Error', 'Failed to create gym');
-    } finally {
-      setLoading(false);  // Stop loading
-    }
-  };
-
-  const renderGymItem = ({ item }: { item: any }) => {
-    const handlePress = async () => {
-      try {
-        await setSecureItem("gymId", item.id);
-        await setSecureItem("gymName", item.name);
-        setCurrentGymName(item.name);
-        console.log(`Gym ID ${item.id} selected.`);
-      } catch (error) {
-        console.error("Error saving gym ID:", error);
-      }
-    };
-
+  const renderGymItem = ({ item }: { item: Gym }) => {
     return (
-      <TouchableOpacity onPress={handlePress}>
-        <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: COLORS.textPrimary }}>
-          <Text style={styles.text}>{item.name}</Text>
-          <Text style={{ color: COLORS.textSecondary }}>{item.location}</Text>
+      <TouchableOpacity onPress={() => handleSelectGym(item)}>
+        <View style={styles.gymItem}>
+          <Text style={styles.gymText}>{item.name || 'No name'}</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: font.caption }}>{item.location || 'No location'}</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={globalStyles.container}>
-      {/* Form to create a new gym */}
+    <View style={styles.container}>
+      {/* New Gym Form */}
       <TextInput
         value={newGymName}
         onChangeText={setNewGymName}
         placeholder="Gym Name"
-        placeholderTextColor={COLORS.textSecondary}
+        placeholderTextColor={colors.textSecondary}
         style={styles.textInput}
       />
-
       <TextInput
         value={newGymLocation}
         onChangeText={setNewGymLocation}
         placeholder="Gym Location"
-        placeholderTextColor={COLORS.textSecondary}
+        placeholderTextColor={colors.textSecondary}
         style={styles.textInput}
       />
-
-      <TouchableOpacity style={styles.button} onPress={() => handleCreateGym()}>
+      <TouchableOpacity style={styles.button} onPress={handleCreateGym}>
         <Text style={styles.buttonText}>Create Gym</Text>
       </TouchableOpacity>
 
-      {/* Display the name of the current gym */}
-      {currentGymName ? (
-        <Text style={[styles.text, { marginVertical: 30, textAlign: "center", fontWeight: 500, fontSize: 22 }]}>
-          Current Gym: {currentGymName}
-        </Text>
-      ) : (
-        <Text style={[styles.text, { marginVertical: 30 }]}>
-          No gym selected.
-        </Text>
-      )}
+      {/* Current Gym */}
+      <Text style={styles.currentGymText}>
+        {gymData.name ? `Current Gym: ${gymData.name}` : 'No gym selected.'}
+      </Text>
 
-      <Text style={{ fontSize: 20, marginBottom: 10, color: COLORS.textPrimary }}>Available Gyms</Text>
-
-      {/* List of gyms */}
+      {/* Available Gyms */}
+      <Text style={styles.availableGymsTitle}>Available Gyms</Text>
       <FlatList
         data={gyms}
         renderItem={renderGymItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
       />
 
-      {/* Loading Modal */}
-      <LoadingModal visible={loading} message=''/>
+      {/* Loading */}
+      <LoadingModal visible={loading} message="" />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  textInput: {
-    borderWidth: 1,
-    marginBottom: 15,
-    padding: 10,
-    color: COLORS.textPrimary,
-    borderColor: COLORS.border,
-    borderRadius: SIZES.borderRadius,
-    backgroundColor: COLORS.backgroundSecondary,
-  },
-  text: {
-    fontSize: 18,
-    color: COLORS.textPrimary
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    padding: 13,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
 
 export default ChooseGym;

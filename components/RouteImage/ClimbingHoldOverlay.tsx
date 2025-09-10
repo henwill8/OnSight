@@ -1,11 +1,11 @@
 import React, { useReducer, useMemo, useRef } from "react";
 import { Svg, Rect, Mask, Path, Defs } from "react-native-svg";
 import { View, ViewStyle } from "react-native";
-import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from "@/constants/holdSelection";
-import { ClimbingHold } from "./RouteImage";
-import { FittedImageRectOutput } from "@/utils/ImageUtils";
-import { crossPlatformTouchHandler } from "@/utils/touchHandler";
+import { HOLD_SELECTION, HOLD_SELECTION_COLORS, ClimbingHold } from "@/types/annotationTypes";
+import { FittedImageRectOutput } from "@/utils/imageUtils";
+import { useTouchHandler } from "@/hooks/utils/useTouchHandler";
 import { simplifyPolygon, createSmoothPath, pointInPolygon } from "@/utils/geometricUtils";
+import { useTheme } from "@/constants/theme";
 
 interface ClimbingHoldOverlayProps {
   data: ClimbingHold[];
@@ -16,7 +16,7 @@ interface ClimbingHoldOverlayProps {
   style?: ViewStyle;
   simplifyTolerance?: number;
   smoothingFactor?: number;
-  clickThreshold?: number;
+  clickTimeThreshold?: number;
 }
 
 const SELECTION_VALUES = Object.values(HOLD_SELECTION);
@@ -30,8 +30,9 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   style,
   simplifyTolerance = 4.0,
   smoothingFactor = 0.5,
-  clickThreshold = 5,
+  clickTimeThreshold = 200,
 }) => {
+  const { colors, sizes } = useTheme();
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
   // Generate unique mask ID for this instance
@@ -85,8 +86,6 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   const touchStartTime = useRef<number | null>(null);
   const touchActive = useRef(false);
 
-  const clickTimeThreshold = 200;
-
   const onTouchStart = () => {
     if (touchActive.current) return;
 
@@ -118,7 +117,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
   };
 
   // Apply cross-platform touch handling
-  const { eventHandlers, pointerEvents } = crossPlatformTouchHandler(
+  const { eventHandlers, pointerEvents } = useTouchHandler(
     interactable,
     fittedImageRect,
     onTouchStart,
@@ -178,7 +177,7 @@ const ClimbingHoldOverlay: React.FC<ClimbingHoldOverlayProps> = ({
               d={pathData}
               fill="none"
               stroke={strokeColor}
-              strokeWidth={4 * scaleX}
+              strokeWidth={sizes.strokeWidth * scaleX}
               strokeLinejoin="round"
               strokeLinecap="round"
             />

@@ -17,11 +17,13 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/cli": "latest",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/stack": "^7.1.2",
     "@shopify/react-native-skia": "v2.0.0-next.4",
     "axios": "^1.8.4",
+    "expo": "^53.0.0",
     "expo-blur": "~14.1.4",
     "expo-build-properties": "~0.14.6",
     "expo-dev-client": "~5.1.8",
@@ -55,14 +57,15 @@
     "react-native-web": "^0.20.0",
     "react-native-zoomable-view": "git+https://github.com/henwill8/react-native-zoomable-view.git",
     "react-zoom-pan-pinch": "^3.7.0",
-    "serve": "^14.2.4"
+    "serve": "^14.2.4",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",
     "@types/mime-types": "^2.1.4",
     "@types/react": "~19.0.10",
     "@types/react-test-renderer": "^18.3.0",
-    "expo": "^53.0.22",
+    "babel-plugin-transform-import-meta": "^2.3.3",
     "jest-expo": "~53.0.5",
     "typescript": "~5.8.3"
   },

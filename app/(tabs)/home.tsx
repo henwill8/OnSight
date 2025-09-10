@@ -1,422 +1,181 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { setSecureItem, getSecureItem } from '@/utils/secureStorage';
-import { useFocusEffect } from '@react-navigation/native';
-import { useRouter, useNavigation, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-
-// Local imports
-import config from '@/config';
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
-import { fetchWithTimeout } from '@/utils/api';
-import { API_PATHS } from "@/constants/paths";
 import RouteImage from '@/components/RouteImage/RouteImage';
 
-// Types
-export interface Route {
-  id: string;
-  name: string;
-  description: string;
-  difficulty: number;
-  imageUrl: string;
-  annotationsUrl: string;
-}
+import { useGymStore } from '@/storage/gymStore';
+import { useLocationStore } from '@/storage/locationStore';
+import { Route, useRouteStore } from '@/storage/routeStore';
+import { useRoutesData } from '@/hooks/routes/useRoutesData';
+import { RouteInfo } from '@/types';
+import { useTheme } from '@/constants/theme';
 
-export interface Location {
-  id: string;
-  name: string;
-}
+const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: any) => {
+  return StyleSheet.create({
+    breadcrumbContainer: { flexDirection: 'row', marginVertical: spacing.sm },
+    breadcrumbGroup: { flexDirection: 'row', alignItems: 'center' },
+    breadcrumbItem: { fontSize: font.body, marginHorizontal: spacing.xs, color: colors.textPrimary },
+    breadcrumbSeparator: { fontSize: font.body, marginHorizontal: spacing.xs },
+    childLocationCard: { padding: spacing.sm, marginRight: spacing.md, borderRadius: sizes.borderRadius, justifyContent: 'center', alignItems: 'center' },
+    childLocationName: { fontSize: font.body, color: colors.textPrimary },
+    routeCard: { flexDirection: 'row', marginBottom: spacing.md, padding: spacing.md, borderRadius: sizes.borderRadius, backgroundColor: colors.backgroundSecondary },
+    routeImage: { width: 80, height: 80, borderRadius: sizes.borderRadius, marginRight: spacing.md },
+    routeInfo: { flex: 1, color: colors.textSecondary },
+    routeName: { fontSize: font.h5, fontWeight: '500', color: colors.textSecondary },
+    routeDescription: { fontSize: font.caption, marginTop: spacing.xs, color: colors.textSecondary },
+    routeDifficulty: {
+      fontSize: font.caption,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
+    addButton: { 
+      position: 'absolute',
+      right: spacing.md,
+      bottom: spacing.lg,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      shadowColor: shadows.medium.shadowColor,
+      elevation: shadows.medium.elevation,
+    },
+    noGymSelectedText: {
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    noRoutesFoundText: {
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+};
 
 const HomeScreen = () => {
-  // State management
-  const [routes, setRoutes] = useState<Route[]>([]);
-  const [childLocations, setChildLocations] = useState<Location[]>([]);
-  const [breadcrumb, setBreadcrumb] = useState<Location[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [gymId, setGymId] = useState<string | null>(null);
-  const [locationId, setLocationId] = useState<string | null>(null);
-  const [gymIdLoading, setGymIdLoading] = useState<boolean>(true);
-  const [currentGymName, setCurrentGymName] = useState<string>('');
-
+  const { colors, sizes, shadows, spacing, global, font } = useTheme();
   const router = useRouter();
   const navigation = useNavigation();
-
   const { shouldReload } = useLocalSearchParams();
 
-  useFocusEffect(() => {
-    const loadGymData = async () => {
-      await fetchCurrentGymName();
-      await loadGymId();
-    };
+  const { data: gymData } = useGymStore();
+  const { data: locationData, updateData: updateLocation } = useLocationStore();
+  const { updateData: setRoute } = useRouteStore();
 
-    loadGymData();
-  });
+  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData(gymData.id ? gymData.id : null, locationData.id);
 
-  // Helper functions for data fetching
-  const fetchCurrentGymName = async () => {
-    const currentGymName = await getSecureItem("gymName");
-    setCurrentGymName(currentGymName || "");
-    console.log("Current gym name:", currentGymName);
-  };
+  const styles = getStyles(colors, sizes, shadows, spacing, font);
 
-  const loadGymId = async () => {
-    const id = await getSecureItem('gymId');
-    console.log(id, gymId);
-    setGymId(id);
-    setGymIdLoading(false);
-  };
-
-  useEffect(() => {
-    if (currentGymName) {
-      navigation.setOptions({ headerTitle: currentGymName ? currentGymName : "No Gym Selected" });
-    }
-  }, [currentGymName, navigation]);
-  
-  // Data fetching effects (fetch on gymId change or when shouldReload is true)
-  useEffect(() => {
-    if (gymId !== null) {
-      console.log("Gym ID loaded:", gymId);
-      fetchData();
-    }
-  }, [gymId, locationId]);
-
-  useEffect(() => {
-    if (shouldReload) {
-      fetchData();
-
-      router.setParams({ shouldReload: 0 }) // Reset shouldReload after data fetch
-    }
-  }, [shouldReload]);
-
-  const fetchData = async () => {
-    if (gymId) {
-      console.log("Fetching data for gymId:", gymId, "and locationId:", locationId);
-
-      setLoading(true);
-      try {
-        await Promise.all([fetchRoutes(), fetchChildLocations(), fetchBreadcrumb()]);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setRoutes([]);
-        setChildLocations([]);
-      } finally {
-        setLoading(false);
+  useFocusEffect( 
+    React.useCallback(() => {
+      if (gymData.name) {
+        navigation.setOptions({ headerTitle: gymData.name });
+      } else {
+        navigation.setOptions({ headerTitle: "No Gym Selected" });
       }
-    }
-  };
 
-  // Specific data fetching functions
-  const fetchRoutes = async () => {
-    const routesUrl = `${config.API_URL}${API_PATHS.GET_ROUTES}?gymId=${gymId}${locationId ? `&locationId=${locationId}` : ""}`;
-    const routesRes = await fetch(routesUrl);
-    
-    if (!routesRes.ok) throw new Error('Failed to fetch routes');
-    const routeData = await routesRes.json();
+      if (shouldReload) {
+        refetch();
+        router.setParams({ shouldReload: undefined });
+      }
+    }, [gymData.name, navigation, shouldReload, refetch, router])
+  );
 
-    const routesWithSignedUrls = await Promise.all(
-      routeData.map(async (route: any) => {
-        try {
-          const imageUrlRes = await fetchWithTimeout(route.imageUrl, { 
-            method: 'GET', 
-            headers: { 'Content-Type': 'application/json' } 
-          });
-          
-          const annotationsUrlRes = await fetchWithTimeout(route.annotationsUrl, { 
-            method: 'GET', 
-            headers: { 'Content-Type': 'application/json' } 
-          });
-
-          const { url: imageUrl } = await imageUrlRes.json();
-          let annotationsUrl = "";
-
-          if (annotationsUrlRes.ok) {
-            const { url } = await annotationsUrlRes.json();
-            annotationsUrl = url;
-          }
-
-          return { ...route, imageUrl, annotationsUrl };
-        } catch (err) {
-          console.error(`Error getting signed URL for route: ${route.imageUrl}`, err);
-          return { ...route, signedImageUrl: null };
-        }
-      })
+  if (!gymData.name) {
+    return (
+      <View style={global.centerItemsContainer}>
+        <Text style={styles.noGymSelectedText}>No gym selected. Please select a gym.</Text>
+      </View>
     );
-    
-    setRoutes(routesWithSignedUrls);
-  };
+  }
 
-  const fetchChildLocations = async () => {
-    const childUrl = `${config.API_URL}${API_PATHS.GET_CHILD_LOCATIONS(gymId || "")}${locationId ? `?parentId=${locationId}` : ""}`;
-    const childRes = await fetch(childUrl);
-    
-    if (!childRes.ok) throw new Error('Failed to fetch child locations');
-    const childData = await childRes.json();
-    
-    setChildLocations(childData.locations || []);
-  };
-
-  const fetchBreadcrumb = async () => {
-    if (!locationId) {
-      setBreadcrumb([]);
-      return;
-    }
-    
-    const breadcrumbUrl = `${config.API_URL}${API_PATHS.GET_LOCATION_ANCESTRY(locationId)}`;
-    const breadcrumbRes = await fetch(breadcrumbUrl);
-    
-    if (!breadcrumbRes.ok) throw new Error('Failed to fetch breadcrumb');
-    const breadcrumbData = await breadcrumbRes.json();
-    
-    setBreadcrumb(breadcrumbData.ancestry || []);
-  };
-
-  // Event handlers
-  const handleRoutePress = (route: Route) => {
-    router.push('/routes/routeDetail');
-    router.setParams({ route: encodeURIComponent(JSON.stringify(route)) });
-  };
-
-  const handleLocationPress = (location: Location) => {
-    setLocationId(location.id);
-  };
-
-  const handleBreadcrumbPress = (locationIndex: number) => {
-    if (locationIndex === -1) {
-      setLocationId(null); // back to gym root
-    } else {
-      setLocationId(breadcrumb[locationIndex].id);
-    }
+  const handleRoutePress = (route: RouteInfo) => {
+    const { route: routeData, ...otherParams } = route;
+    setRoute(route.route);
+    router.push({
+      pathname: '/routes/routeDetail',
+      params: {
+        routeParams: encodeURIComponent(JSON.stringify(otherParams)), // TODO: dont pass in all params, just what is needed
+      },
+    });
+    console.log("handle route press", route.route)
   };
 
   const handleAddRoute = () => {
     router.push('/routes/createRoute');
-    router.setParams({ locationId: locationId });
+    router.setParams({ locationId: locationData.id });
   };
 
-  // Render components
-  const renderBreadcrumb = () => (
-    <ScrollView 
-      horizontal 
-      showsHorizontalScrollIndicator={false} 
-      style={styles.breadcrumbContainer}
-      contentContainerStyle={styles.breadcrumbContent}
-    >
-      <TouchableOpacity onPress={() => handleBreadcrumbPress(-1)}>
-        <Text style={styles.breadcrumbItem}>Home</Text>
-      </TouchableOpacity>
-      {breadcrumb.map((loc, idx) => (
-        <View key={loc.id} style={styles.breadcrumbGroup}>
-          <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
-          <TouchableOpacity onPress={() => handleBreadcrumbPress(idx)}>
-            <Text style={styles.breadcrumbItem}>{loc.name}</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
-    </ScrollView>
-  );
-
-  const renderChildLocations = () => {
-    if (childLocations.length === 0)
-      return;
-
-    return (
-      <View style={styles.childLocationsContainer}>
-      <FlatList
-        data={childLocations}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.childLocationCard}
-            onPress={() => handleLocationPress(item)}
-          >
-            <Text style={styles.childLocationName}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
-    );
-  };
-
-  const renderRoutes = () => {
-    if (routes.length === 0) {
-      return (
-        <View style={styles.emptyRoutesContainer}>
-          <Text style={styles.emptyText}>No routes found for this location</Text>
-        </View>
-      );
-    }
-
-    return (
-      <FlatList
-        data={routes}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.routeCard} onPress={() => handleRoutePress(item)}>
-            <RouteImage
-              imageURI={item.imageUrl}
-              dataURL={item.annotationsUrl}
-              style={styles.routeImage}
-              imageProps={{ resizeMode: "cover" }}
-            />
-            <View style={styles.routeInfo}>
-              <Text style={styles.routeName}>{item.name || 'No Name'}</Text>
-              <Text style={styles.routeDescription}>{item.description || 'No Description'}</Text>
-              <Text style={styles.routeDifficulty}>Difficulty: {item.difficulty}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    );
-  };
-
-  // Main render
   return (
-    <View style={globalStyles.container}>
-      {!currentGymName && (
-        <View style={styles.emptyRoutesContainer}>
-          <Text style={styles.emptyText}>No gym selected. Please select a gym to view routes.</Text>
+    <View style={global.centerItemsContainer}>
+      {/* Breadcrumb */}
+      <ScrollView horizontal style={styles.breadcrumbContainer}>
+        <TouchableOpacity onPress={() => updateLocation({ id: '' })}>
+          <Text style={styles.breadcrumbItem}>Home</Text>
+        </TouchableOpacity>
+        {breadcrumb.map((loc, idx) => (
+          <View key={loc.id} style={styles.breadcrumbGroup}>
+            <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
+            <TouchableOpacity onPress={() => updateLocation({ id: loc.id })}>
+              <Text style={styles.breadcrumbItem}>{loc.name}</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Child Locations */}
+      {childLocations.length > 0 && (
+        <FlatList
+          data={childLocations}
+          keyExtractor={(item) => item.id}
+          horizontal
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.childLocationCard}
+              onPress={() => updateLocation({ id: '' })}
+            >
+              <Text style={styles.childLocationName}>{item.name}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
+      {/* Routes */}
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.primary} />
+      ) : routes.length > 0 ? (
+        <FlatList
+          data={routes}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: route, index }: { item: RouteInfo, index: number }) => (
+            <TouchableOpacity onPress={() => handleRoutePress(route)} style={styles.routeCard}>
+              <RouteImage mode='view' routeData={route.route} style={styles.routeImage} />
+              <View style={styles.routeInfo}>
+                <Text style={styles.routeName}>{route.name || 'No Name'}</Text>
+                <Text style={styles.routeDescription}>
+                  {route.description || 'No Description'}
+                </Text>
+                <Text style={styles.routeDifficulty}>Difficulty: {route.difficulty}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      ) : (
+        <View style={{ flex: 1 }}>
+          <Text style={styles.noRoutesFoundText}>No routes found</Text>
         </View>
       )}
 
-      {currentGymName && (
-        <>
-          {loading || gymIdLoading ? (
-            <ActivityIndicator size="large" color="#06d6a0" />
-          ) : (
-            <View style={{ flex: 1 }}>
-              {/* Breadcrumb Navigation */}
-              {renderBreadcrumb()}
-
-              {/* Child Locations */}
-              {renderChildLocations()}
-
-              {/* Routes */}
-              {renderRoutes()}
-            </View>
-          )}
-
-          <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
-            <AntDesign name="plus" size={32} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-        </>
-      )}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={handleAddRoute}
+      >
+        <AntDesign name="plus" size={32} color={colors.textPrimary} />
+      </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  emptyRoutesContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#999',
-  },
-  breadcrumbContainer: {
-    flexDirection: 'row',
-    marginVertical: 10,
-    paddingHorizontal: 10,
-    maxHeight: 30,
-  },
-  breadcrumbContent: {
-    alignItems: 'center',
-    height: 30,
-  },
-  breadcrumbGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 30,
-  },
-  breadcrumbItem: {
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    marginHorizontal: 5,
-  },
-  breadcrumbSeparator: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    marginHorizontal: 2,
-    lineHeight: 20,
-  },
-  childLocationsContainer: {
-    height: 50,
-    marginBottom: 10,
-  },
-  childLocationCard: {
-    padding: 10,
-    backgroundColor: COLORS.primary,
-    marginRight: 10,
-    marginBottom: 10,
-    borderRadius: 8,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  childLocationName: {
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    lineHeight: 20,
-  },
-  routeCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.backgroundSecondary,
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: SIZES.borderRadius,
-    elevation: SHADOWS.elevation,
-    shadowColor: SHADOWS.shadowColor,
-    shadowOffset: SHADOWS.shadowOffset,
-    shadowOpacity: SHADOWS.shadowOpacity,
-    shadowRadius: SHADOWS.shadowRadius,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  routeImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  routeInfo: {
-    flex: 1,
-  },
-  routeName: {
-    fontSize: 17,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-  },
-  routeDescription: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  routeDifficulty: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 6,
-  },
-  addButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30,
-    backgroundColor: COLORS.primary,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-});
 
 export default HomeScreen;
