@@ -1,4 +1,4 @@
-import { getFileType } from '@/utils/fileUtils';
+import { getFileType } from '@/utils/FileUtils';
 import { Platform } from 'react-native';
 import config from '@/config';
 import { API_PATHS } from '@/constants/paths';

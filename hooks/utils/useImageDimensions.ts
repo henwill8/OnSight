@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { calculateOptimalImageDimensions } from '@/utils/imageUtils';
+import { calculateOptimalImageDimensions } from '@/utils/ImageUtils';
 
 interface ImageSize {
   width: number;

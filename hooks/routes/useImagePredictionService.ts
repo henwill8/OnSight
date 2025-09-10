@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
-import { getFileType } from '@/utils/fileUtils';
+import { getFileType } from '@/utils/FileUtils';
 import { useApi } from '@/hooks/utils/useApi';
 import { useRouteStore } from '@/storage/routeStore';
 import { pollJobStatus } from '@/utils/apiServices';

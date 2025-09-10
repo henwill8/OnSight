@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
-import { resizeImageToMaxDimension } from "@/utils/imageUtils";
+import { resizeImageToMaxDimension } from "@/utils/ImageUtils";
 
 export interface ImagePickerResult {
   success: boolean;

@@ -2,7 +2,7 @@ import React, { useReducer, useMemo, useRef } from "react";
 import { Svg, Rect, Mask, Path, Defs } from "react-native-svg";
 import { View, ViewStyle } from "react-native";
 import { HOLD_SELECTION, HOLD_SELECTION_COLORS, ClimbingHold } from "@/types/annotationTypes";
-import { FittedImageRectOutput } from "@/utils/imageUtils";
+import { FittedImageRectOutput } from "@/utils/ImageUtils";
 import { useTouchHandler } from "@/hooks/utils/useTouchHandler";
 import { simplifyPolygon, createSmoothPath, pointInPolygon } from "@/utils/geometricUtils";
 import { useTheme } from "@/constants/theme";

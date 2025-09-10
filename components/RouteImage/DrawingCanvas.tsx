@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { Svg, Path } from "react-native-svg";
 import { IPath, Segment } from "./RouteImage";
-import { FittedImageRectOutput } from "@/utils/imageUtils";
+import { FittedImageRectOutput } from "@/utils/ImageUtils";
 import { useTouchHandler } from "@/hooks/utils/useTouchHandler";
 
 export interface DrawProps {

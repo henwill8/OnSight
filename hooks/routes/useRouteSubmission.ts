@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Alert, Platform } from "react-native";
-import { getFileType } from '@/utils/fileUtils';
+import { getFileType } from '@/utils/FileUtils';
 import { API_PATHS } from '@/constants/paths';
 import { getSecureItem } from '@/utils/secureStorageUtils';
 import { useApi } from '@/hooks/utils/useApi';

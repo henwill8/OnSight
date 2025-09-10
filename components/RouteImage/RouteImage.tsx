@@ -10,7 +10,7 @@ import { View, ViewStyle, LayoutChangeEvent, Image, ImageProps, ImageResizeMode,
 import DrawingCanvas from "./DrawingCanvas";
 import ClimbingHoldOverlay from "./ClimbingHoldOverlay";
 import { HOLD_SELECTION, AnnotationsData, ClimbingHold, IPath, ChangeLogEntry } from "@/types/annotationTypes";
-import { getFittedImageRect } from "@/utils/imageUtils";
+import { getFittedImageRect } from "@/utils/ImageUtils";
 import Zoomable from "@/components/ui/Zoomable";
 import { useTheme } from "@/constants/theme";
 import { useRouteStore, Route } from "@/storage/routeStore";

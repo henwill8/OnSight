@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { API_PATHS } from '../../constants/paths';
 import { Gym } from '../../types';
-import { useApi } from '@/hooks/utils/useApi';
+import { useApi } from '../utils/useApi';
 import { useGymStore } from '@/storage/gymStore';
 
 export const useChooseGymLogic = () => {
