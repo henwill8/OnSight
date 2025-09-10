@@ -33,10 +33,6 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
       marginHorizontal: spacing.xs, 
       color: colors.textPrimary 
     },
-    breadcrumbSeparator: { 
-      fontSize: font.body, 
-      marginHorizontal: spacing.xs 
-    },
     childLocationsContainer: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
@@ -217,7 +213,7 @@ const HomeScreen = () => {
               </TouchableOpacity>
               {breadcrumb.map((loc, idx) => (
                 <View key={loc?.id} style={styles.breadcrumbGroup}>
-                  <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
+                  <Text style={styles.breadcrumbItem}>{'>'}</Text>
                   <TouchableOpacity onPress={() => updateLocation({ id: loc?.id })}>
                     <Text style={styles.breadcrumbItem}>{loc?.name}</Text>
                   </TouchableOpacity>
