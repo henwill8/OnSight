@@ -14,21 +14,102 @@ import { useTheme } from '@/constants/theme';
 
 const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: any) => {
   return StyleSheet.create({
-    breadcrumbContainer: { flexDirection: 'row', marginVertical: spacing.sm },
-    breadcrumbGroup: { flexDirection: 'row', alignItems: 'center' },
-    breadcrumbItem: { fontSize: font.body, marginHorizontal: spacing.xs, color: colors.textPrimary },
-    breadcrumbSeparator: { fontSize: font.body, marginHorizontal: spacing.xs },
-    childLocationCard: { padding: spacing.sm, marginRight: spacing.md, borderRadius: sizes.borderRadius, justifyContent: 'center', alignItems: 'center' },
-    childLocationName: { fontSize: font.body, color: colors.textPrimary },
-    routeCard: { flexDirection: 'row', marginBottom: spacing.md, padding: spacing.md, borderRadius: sizes.borderRadius, backgroundColor: colors.backgroundSecondary },
-    routeImage: { width: 80, height: 80, borderRadius: sizes.borderRadius, marginRight: spacing.md },
-    routeInfo: { flex: 1, color: colors.textSecondary },
-    routeName: { fontSize: font.h5, fontWeight: '500', color: colors.textSecondary },
-    routeDescription: { fontSize: font.caption, marginTop: spacing.xs, color: colors.textSecondary },
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundPrimary,
+    },
+    contentContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+    },
+    breadcrumbContainer: { 
+      flexDirection: 'row', 
+      marginVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      maxHeight: 20
+    },
+    breadcrumbGroup: { 
+      flexDirection: 'row', 
+      alignItems: 'center' 
+    },
+    breadcrumbItem: { 
+      fontSize: font.body, 
+      marginHorizontal: spacing.xs, 
+      color: colors.textPrimary 
+    },
+    breadcrumbSeparator: { 
+      fontSize: font.body, 
+      marginHorizontal: spacing.xs 
+    },
+    childLocationsContainer: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      maxHeight: 60,
+    },
+    childLocationCard: { 
+      padding: spacing.sm, 
+      marginRight: spacing.md, 
+      borderRadius: sizes.borderRadius, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      backgroundColor: colors.backgroundSecondary,
+    },
+    childLocationName: { 
+      fontSize: font.body, 
+      color: colors.textPrimary 
+    },
+    routesContainer: {
+      flex: 1,
+    },
+    routesList: {
+      paddingHorizontal: spacing.md,
+    },
+    routeCard: { 
+      flexDirection: 'row', 
+      marginBottom: spacing.md, 
+      padding: spacing.md, 
+      borderRadius: sizes.borderRadius, 
+      backgroundColor: colors.backgroundSecondary 
+    },
+    routeImage: { 
+      width: 80, 
+      height: 80, 
+      borderRadius: sizes.borderRadius, 
+      marginRight: spacing.md 
+    },
+    routeInfo: { 
+      flex: 1, 
+      color: colors.textSecondary 
+    },
+    routeName: { 
+      fontSize: font.h5, 
+      fontWeight: '500', 
+      color: colors.textPrimary 
+    },
+    routeDescription: { 
+      fontSize: font.caption, 
+      marginTop: spacing.xs, 
+      color: colors.textSecondary 
+    },
     routeDifficulty: {
       fontSize: font.caption,
       color: colors.textSecondary,
       marginTop: 6,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    noRoutesContainer: {
+      paddingTop: spacing.xl,
+      alignItems: 'center',
     },
     addButton: { 
       position: 'absolute',
@@ -46,10 +127,12 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
     noGymSelectedText: {
       color: colors.textPrimary,
       textAlign: 'center',
+      fontSize: font.body,
     },
     noRoutesFoundText: {
       color: colors.textSecondary,
       textAlign: 'center',
+      fontSize: font.body,
     },
   });
 };
@@ -85,7 +168,7 @@ const HomeScreen = () => {
 
   if (!gymData.name) {
     return (
-      <View style={global.centerItemsContainer}>
+      <View style={styles.centerContainer}>
         <Text style={styles.noGymSelectedText}>No gym selected. Please select a gym.</Text>
       </View>
     );
@@ -109,9 +192,13 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={global.centerItemsContainer}>
+    <View style={styles.container}>
       {/* Breadcrumb */}
-      <ScrollView horizontal style={styles.breadcrumbContainer}>
+      <ScrollView 
+        horizontal 
+        style={styles.breadcrumbContainer} 
+        showsHorizontalScrollIndicator={false}
+      >
         <TouchableOpacity onPress={() => updateLocation({ id: '' })}>
           <Text style={styles.breadcrumbItem}>Home</Text>
         </TouchableOpacity>
@@ -127,46 +214,55 @@ const HomeScreen = () => {
 
       {/* Child Locations */}
       {childLocations.length > 0 && (
-        <FlatList
-          data={childLocations}
-          keyExtractor={(item) => item.id}
-          horizontal
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.childLocationCard}
-              onPress={() => updateLocation({ id: '' })}
-            >
-              <Text style={styles.childLocationName}>{item.name}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      )}
-
-      {/* Routes */}
-      {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} />
-      ) : routes.length > 0 ? (
-        <FlatList
-          data={routes}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item: route, index }: { item: RouteInfo, index: number }) => (
-            <TouchableOpacity onPress={() => handleRoutePress(route)} style={styles.routeCard}>
-              <RouteImage mode='view' routeData={route.route} style={styles.routeImage} />
-              <View style={styles.routeInfo}>
-                <Text style={styles.routeName}>{route.name || 'No Name'}</Text>
-                <Text style={styles.routeDescription}>
-                  {route.description || 'No Description'}
-                </Text>
-                <Text style={styles.routeDifficulty}>Difficulty: {route.difficulty}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      ) : (
-        <View style={{ flex: 1 }}>
-          <Text style={styles.noRoutesFoundText}>No routes found</Text>
+        <View style={styles.childLocationsContainer}>
+          <FlatList
+            data={childLocations}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.childLocationCard}
+                onPress={() => updateLocation({ id: item.id })}
+              >
+                <Text style={styles.childLocationName}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
         </View>
       )}
+
+      {/* Routes Section */}
+      <View style={styles.routesContainer}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : routes.length > 0 ? (
+          <FlatList
+            data={routes}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.routesList}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item: route, index }: { item: RouteInfo, index: number }) => (
+              <TouchableOpacity onPress={() => handleRoutePress(route)} style={styles.routeCard}>
+                <RouteImage mode='view' routeData={route.route} style={styles.routeImage} />
+                <View style={styles.routeInfo}>
+                  <Text style={styles.routeName}>{route.name || 'No Name'}</Text>
+                  <Text style={styles.routeDescription}>
+                    {route.description || 'No Description'}
+                  </Text>
+                  <Text style={styles.routeDifficulty}>Difficulty: {route.difficulty}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        ) : (
+          <View style={styles.noRoutesContainer}>
+            <Text style={styles.noRoutesFoundText}>No routes found</Text>
+          </View>
+        )}
+      </View>
 
       <TouchableOpacity
         style={styles.addButton}

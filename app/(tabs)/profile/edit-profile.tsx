@@ -17,7 +17,7 @@ export default function EditProfileScreen() {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [profileImage, setProfileImage] = useState(require('../assets/images/logo-no-text.jpeg'));
+  const [profileImage, setProfileImage] = useState(require('@/assets/images/logo-no-text.jpeg'));
 
   useEffect(() => {
     // Load saved data only once when component mounts
@@ -228,7 +228,7 @@ export default function EditProfileScreen() {
           />
           <View style={styles.editButtonOverlay}>
             <Image 
-              source={require('../assets/images/edit button.png')} 
+              source={require('@/assets/images/edit button.png')} 
               style={styles.editButtonIcon}
             />
           </View>

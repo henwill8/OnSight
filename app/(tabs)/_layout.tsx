@@ -68,11 +68,18 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="profile"
+          name="profile/profile"
           options={{ 
             title: 'Profile', 
-            tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} style={styles.tabBarIcon} />,
-            href: null
+            tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} style={styles.tabBarIcon} />
+          }}
+        />
+
+        // Should not be navigable from tab bar
+        <Tabs.Screen
+          name="profile/edit-profile"
+          options={{
+            href: null,
           }}
         />
       </Tabs>

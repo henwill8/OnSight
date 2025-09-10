@@ -4,12 +4,16 @@ export interface UserInfo {
   id: string;
   firstName: string;
   lastName: string;
+  profilePictureKey: string;
+  bio: string;
 }
 
 const defaultUserInfo: UserInfo = {
   id: '',
   firstName: '',
-  lastName: ''
+  lastName: '',
+  profilePictureKey: '',
+  bio: '',
 };
 
 export const UserInfoStore = createStore({
