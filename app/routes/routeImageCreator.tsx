@@ -2,221 +2,99 @@ import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from
 import { Alert, Text, ActivityIndicator, Modal, View, Image, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import RouteImage, { RouteImageRef, ClimbingHold } from "@/components/RouteImage/RouteImage";
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
-import { HOLD_SELECTION, HOLD_SELECTION_COLORS } from '@/constants/holdSelection';
-import config from '@/config';
-import { getFileType } from '@/utils/FileUtils';
-import LoadingModal from '@/components/ui/LoadingModal';
-import { fetchWithTimeout, pollJobStatus } from '@/utils/api';
-import { API_PATHS } from "@/constants/paths";
+import RouteImage, { RouteImageRef } from "@/components/RouteImage/RouteImage";
+import { useTheme } from '@/constants/theme';
+import { HOLD_SELECTION_COLORS } from '@/types/annotationTypes';
 import { AntDesign, Feather } from '@expo/vector-icons';
+import { useRouteImageCreatorLogic } from '@/hooks/routes/useRouteImageCreatorLogic';
+import LoadingModal from '@/components/ui/LoadingModal';
+import { G } from 'react-native-svg';
 
-type ImageSize = { width: number; height: number };
+const getStyles = (colors: any, sizes: any, shadows: any, font: any, spacing: any) => {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      position: 'relative',
+      backgroundColor: colors.backgroundPrimary
+    },
+    sidebar: {
+      position: "absolute",
+      right: spacing.md,
+      top: spacing.xxl,
+      backgroundColor: colors.backgroundSecondary,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      borderRadius: sizes.borderRadius,
+      alignItems: "center",
+      zIndex: 20,
+      shadowColor: shadows.medium.shadowColor,
+      elevation: shadows.medium.elevation,
+    },
+    sidebarButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 40 / 2,
+      marginVertical: spacing.xs,
+      borderWidth: 4,
+      borderColor: 'transparent',
+    },
+    sidebarUndo: {
+      width: 40,
+      height: 40,
+      borderRadius: 40 / 2,
+      marginTop: spacing.sm,
+      backgroundColor: colors.error,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    checkButton: {
+      position: "absolute",
+      bottom: spacing.lg,
+      right: `50%`,
+      transform: [{ translateX: spacing.lg }],
+      width: 50,
+      height: 50,
+      borderRadius: 50 / 2,
+      backgroundColor: colors.success,
+      justifyContent: "center",
+      alignItems: "center",
+      elevation: shadows.medium.elevation,
+      shadowColor: shadows.medium.shadowColor,
+    },
+  });
+};
 
 const RouteImageCreator: React.FC = () => {
-  const router = useRouter();
-  const navigation = useNavigation();
+  const { colors, sizes, shadows, font, spacing, global } = useTheme();
+  const routeImageRef = useRef<RouteImageRef>(null);
+  const {
+    imageUri,
+    annotations,
+    imageDimensions,
+    scaleX,
+    scaleY,
+    dataReceived,
+    showUnselectedHolds,
+    selectedColor,
+    handleColorSelect,
+    handleExport,
+    handleUndo,
+    handleError,
+    navigation,
+  } = useRouteImageCreatorLogic(routeImageRef);
 
-  const { imageUri } = useLocalSearchParams();
-  const imageUriString = Array.isArray(imageUri) ? imageUri[0] : imageUri;
-
-  const [imageDimensions, setImageDimensions] = useState<ImageSize | null>(null); // Image size
-  const [scaleX, setScaleX] = useState<number>(1); // Values used to scale the image to the screen size
-  const [scaleY, setScaleY] = useState<number>(1);
-
-  const [dataReceived, setDataReceived] = useState(false); // Whether data has been received
-  const [showUnselectedHolds, setShowUnselectedHolds] = useState<boolean>(false); // Show bounding boxes state
-  const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color selection state
-
-  const routeAnnotationRef = useRef<RouteImageRef>(null);
-  
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Create Route Image",
-      headerStyle: { backgroundColor: COLORS.backgroundSecondary },
+      headerStyle: { backgroundColor: colors.backgroundSecondary },
       headerTintColor: "white"
     });
-  }, [navigation]);
+  }, [navigation, colors.backgroundSecondary]);
 
-  useEffect(() => {
-    if (imageUriString) {
-      Image.getSize(imageUriString, (width, height) => {
-        setImageDimensions({ width, height });
-      });
-
-      sendImageToServer(imageUriString);
-    } else {
-      console.error("No imageUri provided");
-    }
-  }, [imageUriString]);
-
-  const handleToggleBoundingBoxes = () => {
-    setShowUnselectedHolds(prev => !prev);
-  };
-
-  const handleColorSelect = (color: string) => {
-    setSelectedColor(prevColor => {
-      const newColor = prevColor === color ? null : color; // Toggle selection
-      console.log(`Selected color changed to: ${newColor ?? "None"}`); // Log when color changes
-      return newColor;
-    });
-  };
-
-  const handleExport = async () => {
-    setShowUnselectedHolds(false);
-
-    try {  
-      router.back(); // Go back to previous screen
-      router.setParams({
-        exportedUri: encodeURIComponent(imageUriString || ""),
-        annotationsJSON: routeAnnotationRef.current?.exportAnnotationJSON()
-      });
-    } catch (error) {
-      console.error("Error exporting image: ", error);
-      Alert.alert("Export Failed", "There was an error exporting the image.");
-    }
-  };
-
-  const handleUndo = () => {
-    if(routeAnnotationRef.current) {
-      routeAnnotationRef.current.undo();
-    }
-  };
-
-  // Function to calculate the area of a polygon using the shoelace theorem
-  const calculatePolygonArea = (coordinates: number[]) => {
-    let area = 0;
-    const n = coordinates.length / 2; // Number of points in the polygon
-
-    for (let i = 0; i < n; i++) {
-      const x1 = coordinates[2 * i];
-      const y1 = coordinates[2 * i + 1];
-      const x2 = coordinates[2 * ((i + 1) % n)];
-      const y2 = coordinates[2 * ((i + 1) % n) + 1];
-
-      area += x1 * y2 - x2 * y1;
-    }
-
-    return Math.abs(area) / 2;
-  };
-
-  const handleJobDone = (statusData: any) => {
-    const results = statusData.result;
-    const predictions = results.predictions;
-  
-    console.log(`Received ${predictions.length} predictions`);
-  
-    // Map the received climbingHolds to a ClimbingHold list with a default value for hold selection state
-    const predictedClimbingHolds: ClimbingHold[] = predictions
-      .map((coordinates: any) => ({
-        coordinates: coordinates,
-        holdSelectionState: HOLD_SELECTION.UNSELECTED,
-      }))
-      .sort((a: ClimbingHold, b: ClimbingHold) => calculatePolygonArea(b.coordinates) - calculatePolygonArea(a.coordinates));
-    
-    setDataReceived(true);
-    setImageDimensions(results.imageSize);
-    routeAnnotationRef.current?.loadPredictedClimbingHolds(predictedClimbingHolds);
-  };
-
-  const handleJobError = (statusData: any) => {
-    handleError(`Job failed: ${statusData.error}`);
-  };
-
-  // Main function to send image to the server
-  const sendImageToServer = useCallback(async (uri: string) => {
-    console.log("Sending to server...");
-
-    const { extension, mimeType } = getFileType(uri);
-    const formData = new FormData();
-
-    if (Platform.OS === "web") {
-      // For web, fetch the file as a blob
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const file = new File([blob], `photo.${extension}`, { type: mimeType });
-      formData.append("image", file);
-    } else {
-      // For React Native
-      formData.append("image", {
-        uri,
-        name: `photo.${extension}`,
-        type: mimeType,
-      } as any);
-    }
-
-    try {
-      // Predictions can take a long variable amount of time so a job is created that the client pings
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.PREDICT, {
-        method: "POST",
-        body: formData,
-      }, 10000);
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        handleError(`Server error: ${response.status}, ${data.message}`);
-        return;
-      }
-  
-      if (!data.jobId) {
-        handleError("Unexpected response format: No jobId received");
-        return;
-      }
-  
-      pollJobStatus(data.jobId, 2000, handleJobDone, handleJobError, 10000);
-      
-    } catch (error: any) {
-      handleError(`Error uploading image: ${error.message}`);
-    }
-  }, []);
-
-  const handleError = (message: string) => {
-    console.error(message);
-    setDataReceived(true);
-    Alert.alert("Predictions Failed!", "Hold predictions failed, but you can still draw.");
-  };
-
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = Dimensions.get("window").height;
-
-  const insets = useSafeAreaInsets();
-
-  // Calculate available screen space
-  const calculateOptimalImageDimensions = useCallback(() => {
-    if (!imageDimensions) return null;
-    
-    const aspectRatio = imageDimensions.width / imageDimensions.height;
-    
-    // Account for UI elements and safe areas
-    const availableHeight = screenHeight - insets.top - insets.bottom - 220; // Subtract space for buttons
-    const availableWidth = screenWidth - insets.left - insets.right;
-    
-    // Try fitting by width first
-    let width = availableWidth;
-    let height = width / aspectRatio;
-    
-    // If height exceeds available space, fit by height instead
-    if (height > availableHeight) {
-      height = availableHeight;
-      width = height * aspectRatio;
-    }
-    
-    return { newScaleX: width / imageDimensions.width, newScaleY: height / imageDimensions.height };
-  }, [imageDimensions, screenWidth, screenHeight, insets]);
-  
-  useEffect(() => {
-    if (!imageDimensions) return;
-
-    const scaled = calculateOptimalImageDimensions();
-
-    setScaleX(scaled?.newScaleX || 1);
-    setScaleY(scaled?.newScaleY || 1);
-  }, [imageDimensions]);
+  const styles = getStyles(colors, sizes, shadows, font, spacing);
 
   return (
-    <View style={styles.container}>
+    <View style={[global.centerItemsContainer, { alignItems: "center" }]}>
 
       {/* Right Sidebar for Color Selection */}
       <View style={styles.sidebar}>
@@ -225,7 +103,7 @@ const RouteImageCreator: React.FC = () => {
             key={color}
             style={[
               styles.sidebarButton,
-              { borderColor: selectedColor === color ? "#fff" : "transparent", backgroundColor: color }
+              { borderColor: selectedColor === color ? "#000" : "transparent", backgroundColor: color }
             ]}
             onPress={() => handleColorSelect(color)}
           />
@@ -240,13 +118,12 @@ const RouteImageCreator: React.FC = () => {
       {/* Image Canvas */}
       {imageDimensions && (
         <RouteImage
-          ref={routeAnnotationRef}
+          ref={routeImageRef}
           style={{
-            borderRadius: SIZES.borderRadius,
+            borderRadius: sizes.borderRadius,
             width: imageDimensions.width * scaleX,
             height: imageDimensions.height * scaleY,
           }}
-          imageURI={imageUriString}
           interactable={true}
           climbingHoldOverlayProps={{
             showUnselectedHolds: showUnselectedHolds,
@@ -255,6 +132,7 @@ const RouteImageCreator: React.FC = () => {
             canDraw: selectedColor != null,
             color: selectedColor || "black"
           }}
+          mode={"create"}
         />
       )}
 
@@ -263,138 +141,12 @@ const RouteImageCreator: React.FC = () => {
         <AntDesign name="check" size={32} color="#fff" />
       </TouchableOpacity>
 
-      <LoadingModal visible={!dataReceived} message={"Detecting Climbing Holds...\n(may take up to 10 seconds)"}/>
+      <LoadingModal 
+        visible={!dataReceived} 
+        message={annotations ? "Loading Existing Annotations..." : "Detecting Climbing Holds...\n(may take up to 10 seconds)"}
+      />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.backgroundPrimary
-  },
-  colorSelectionContainer: {
-    flexDirection: "row",
-    position: "absolute",
-    top: 40,
-    alignSelf: "center",
-    zIndex: 10,
-    backgroundColor: "#ffffffaa",
-    padding: 8,
-    borderRadius: 10,
-  },
-  colorButton: {
-    width: 40,
-    height: 40,
-    marginHorizontal: 10,
-    borderRadius: 20,
-    borderColor: "black",
-  },
-  undoButton: {
-    backgroundColor: "#f44336",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-  undoButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  toggleButton: {
-    position: 'absolute',
-    bottom: 80,
-    width: '75%',
-    backgroundColor: '#2196F3',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    zIndex: 10,
-  },
-  toggleButtonText: {
-    color: COLORS.textPrimary,
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  exportButton: {
-    position: "absolute",
-    bottom: 20,
-    width: '75%',
-    backgroundColor: "#4CAF50",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    zIndex: 10,
-  },
-  exportButtonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  loaderContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#333",
-    padding: 20,
-    borderRadius: SIZES.borderRadius,
-  },
-  loadingText: {
-    color: "#fff",
-    marginTop: 10,
-    fontSize: 16,
-    textAlign: "center"
-  },
-  sidebar: {
-    position: "absolute",
-    right: 20,
-    top: 100,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 20,
-    alignItems: "center",
-    zIndex: 20,
-  },
-  sidebarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginVertical: 8,
-    borderWidth: 2,
-  },
-  sidebarUndo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginTop: 12,
-    backgroundColor: "#f44336",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkButton: {
-    position: "absolute",
-    bottom: 30,
-    right: "50%",
-    transform: [{ translateX: 30 }],
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#4CAF50",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-  },
-});
 
 export default RouteImageCreator;

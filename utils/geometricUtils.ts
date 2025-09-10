@@ -1,7 +1,25 @@
 /**
- * Simplify a polygon using the Ramer-Douglas-Peucker algorithm
+ * Calculates the area of a polygon using the shoelace theorem.
+ * Accepts a flat array of coordinates: [x1, y1, x2, y2, ...]
+ */
+export function calculatePolygonArea(coordinates: number[]): number {
+  let area = 0;
+  const n = coordinates.length / 2;
+  for (let i = 0; i < n; i++) {
+    const x1 = coordinates[2 * i];
+    const y1 = coordinates[2 * i + 1];
+    const x2 = coordinates[2 * ((i + 1) % n)];
+    const y2 = coordinates[2 * ((i + 1) % n) + 1];
+    area += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(area) / 2;
+}
+
+/**
+ * Simplify a polygon using the Ramer-Douglas-Peucker algorithm.
  * @param coords Flat array of [x1, y1, x2, y2, ...]
  * @param tolerance Higher values = more simplified
+ * @returns A new flat array of simplified coordinates.
  */
 export const simplifyPolygon = (coords: number[], tolerance: number): number[] => {
   if (coords.length <= 4) return coords;
@@ -12,7 +30,10 @@ export const simplifyPolygon = (coords: number[], tolerance: number): number[] =
 };
 
 /**
- * Create a smooth bezier curve SVG path from coordinate array
+ * Create a smooth bezier curve SVG path from a coordinate array.
+ * @param coords Flat array of [x1, y1, x2, y2, ...]
+ * @param smoothingFactor A factor to control the smoothness of the curve. Higher values mean more smoothing.
+ * @returns An SVG path string for a smooth bezier curve.
  */
 export const createSmoothPath = (coords: number[], smoothingFactor: number): string => {
   if (coords.length < 6) {
@@ -26,7 +47,10 @@ export const createSmoothPath = (coords: number[], smoothingFactor: number): str
 };
 
 /**
- * Point in polygon test for hit detection
+ * Performs a point-in-polygon test for hit detection.
+ * @param point The point to test, as a tuple [x, y].
+ * @param polygon A flat array of polygon coordinates: [x1, y1, x2, y2, ...].
+ * @returns True if the point is inside the polygon, false otherwise.
  */
 export const pointInPolygon = (point: [number, number], polygon: number[]): boolean => {
   const [x, y] = point;
@@ -48,7 +72,11 @@ export const pointInPolygon = (point: [number, number], polygon: number[]): bool
 };
 
 /**
- * Calculate perpendicular distance from a point to a line
+ * Calculates the perpendicular distance from a point to a line segment.
+ * @param point The coordinates of the point [x, y].
+ * @param lineStart The starting coordinates of the line segment [x1, y1].
+ * @param lineEnd The ending coordinates of the line segment [x2, y2].
+ * @returns The perpendicular distance from the point to the line segment.
  */
 export const perpendicularDistance = (
   point: number[], 
@@ -74,7 +102,11 @@ export const perpendicularDistance = (
   return Math.sqrt(ax * ax + ay * ay);
 };
 
-// Helper functions
+/**
+ * Converts a flat array of coordinates [x1, y1, x2, y2, ...] into an array of points [[x1, y1], [x2, y2], ...].
+ * @param coords The flat array of coordinates.
+ * @returns An array of point tuples.
+ */
 const coordsToPoints = (coords: number[]): number[][] => {
   const points: number[][] = [];
   for (let i = 0; i < coords.length; i += 2) {
@@ -83,12 +115,23 @@ const coordsToPoints = (coords: number[]): number[][] => {
   return points;
 };
 
+/**
+ * Converts an array of points [[x1, y1], [x2, y2], ...] into a flat array of coordinates [x1, y1, x2, y2, ...].
+ * @param points The array of point tuples.
+ * @returns A flat array of coordinates.
+ */
 const pointsToCoords = (points: number[][]): number[] => {
   const coords: number[] = [];
   points.forEach(p => coords.push(p[0], p[1]));
   return coords;
 };
 
+/**
+ * Recursively simplifies a list of points using the Ramer-Douglas-Peucker algorithm.
+ * @param points An array of point tuples [[x1, y1], [x2, y2], ...].
+ * @param tolerance The maximum allowed distance between the original curve and the simplified curve.
+ * @returns An array of simplified point tuples.
+ */
 const simplifyPointsRecursive = (points: number[][], tolerance: number): number[][] => {
   if (points.length <= 2) return points;
 
@@ -120,6 +163,11 @@ const simplifyPointsRecursive = (points: number[][], tolerance: number): number[
   return [firstPoint, lastPoint];
 };
 
+/**
+ * Creates a linear SVG path string from a flat array of coordinates.
+ * @param coords The flat array of coordinates: [x1, y1, x2, y2, ...].
+ * @returns An SVG path string with linear segments.
+ */
 const createLinearPath = (coords: number[]): string => {
   let path = `M ${coords[0]},${coords[1]}`;
   for (let i = 2; i < coords.length; i += 2) {
@@ -128,6 +176,11 @@ const createLinearPath = (coords: number[]): string => {
   return path;
 };
 
+/**
+ * Ensures a path represented by an array of points is closed by adding the first point to the end if necessary.
+ * @param points An array of point tuples [[x1, y1], [x2, y2], ...].
+ * @returns A new array of points, guaranteed to be closed.
+ */
 const ensureClosedPath = (points: number[][]): number[][] => {
   const first = points[0];
   const last = points[points.length - 1];
@@ -139,6 +192,13 @@ const ensureClosedPath = (points: number[][]): number[][] => {
   return points;
 };
 
+/**
+ * Creates a smooth Bezier curve SVG path string from an array of points.
+ * This function generates control points to create a smooth curve that passes through each given point.
+ * @param points An array of point tuples [[x1, y1], [x2, y2], ...].
+ * @param smoothingFactor A factor that controls the tension of the curve. A higher value results in a tighter curve.
+ * @returns An SVG path string for a smooth Bezier curve.
+ */
 const createBezierPath = (points: number[][], smoothingFactor: number): string => {
   let path = `M ${points[0][0]},${points[0][1]}`;
   
@@ -173,6 +233,11 @@ const createBezierPath = (points: number[][], smoothingFactor: number): string =
   return path;
 };
 
+/**
+ * Normalizes a 2D vector.
+ * @param vector The vector to normalize, as a tuple [x, y].
+ * @returns The normalized vector, or [0, 0] if the magnitude is zero.
+ */
 const normalizeVector = (vector: number[]): number[] => {
   const mag = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
   return mag ? [vector[0] / mag, vector[1] / mag] : [0, 0];

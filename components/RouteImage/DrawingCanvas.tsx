@@ -6,7 +6,7 @@ import {
 import { Svg, Path } from "react-native-svg";
 import { IPath, Segment } from "./RouteImage";
 import { FittedImageRectOutput } from "@/utils/ImageUtils";
-import { crossPlatformTouchHandler } from "@/utils/touchHandler";
+import { useTouchHandler } from "@/hooks/utils/useTouchHandler";
 
 export interface DrawProps {
   data: IPath[];
@@ -77,8 +77,8 @@ const DrawingCanvas: React.FC<DrawProps> = ({
 
     if (currentPath) {
       currentPath.segments.push({ 
-        x: (point.x), 
-        y: (point.y)
+        x: point.x, 
+        y: point.y
       });
       forceUpdate();
     }
@@ -97,7 +97,7 @@ const DrawingCanvas: React.FC<DrawProps> = ({
   };
 
   // Use the cross-platform touch handler
-  const { eventHandlers, pointerEvents } = crossPlatformTouchHandler(
+  const { eventHandlers, pointerEvents } = useTouchHandler(
     interactable && canDraw,
     fittedImageRect,
     onDrawStart,

@@ -1,55 +1,65 @@
-import React, { useState } from "react";
-import { useRouter } from "expo-router";
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
-import config from "@/config";
-import { COLORS, SHADOWS, SIZES, globalStyles } from '@/constants/theme';
-import { fetchWithTimeout } from "@/utils/api";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useTheme } from '@/constants/theme';
 import LoadingModal from '@/components/ui/LoadingModal';
-import { API_PATHS } from "@/constants/paths";
+import { useLoginLogic } from '@/hooks/auth/useLoginLogic';
+import { useAuthRedirect } from "@/hooks/auth/useAuthRedirect";
+import { useCallback, useEffect } from "react";
 
-const landingPage = "/(tabs)/home";
+const getStyles = (colors: any, global: any, font: any) => {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.backgroundPrimary,
+    },
+    innerContainer: {
+      width: "100%",
+    },
+    title: {
+      fontSize: font.h3,
+      fontWeight: "bold",
+      marginBottom: 20,
+      color: colors.textPrimary,
+    },
+    input: {
+      width: "100%",
+      padding: 10,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderRadius: 5,
+      borderColor: colors.border,
+      color: colors.textPrimary,
+      fontSize: font.body,
+    },
+    button: {
+      backgroundColor: colors.primary,
+      padding: 15,
+      borderRadius: 5,
+      width: "100%",
+      alignItems: "center",
+    },
+    buttonText: {
+      color: colors.textPrimary,
+      fontSize: font.body,
+      fontWeight: "bold",
+    },
+  });
+};
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // Track loading state
+  const { colors, global, font } = useTheme();
+  const { email, setEmail, password, setPassword, loading, handleLogin, router } = useLoginLogic();
 
-  const handleLogin = async () => {
-    console.log("Attempting login for user:", username);
-    setLoading(true); // Show loading modal
+  const styles = getStyles(colors, global, font);
 
-    try {
-      const response = await fetchWithTimeout(config.API_URL + API_PATHS.LOGIN, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      }, 5000);
+  const { checkAuth } = useAuthRedirect();
 
-      const contentType = response.headers.get("Content-Type");
-      if (!contentType || !contentType.includes("application/json")) {
-        console.error("Invalid response format:", contentType);
-        throw new Error("Invalid response format");
-      }
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("Login successful for user:", username);
-        router.replace(landingPage);
-      } else {
-        console.log("Login failed:", data.message || "Invalid username or password");
-        Alert.alert("Login Failed", data.message || "Invalid username or password");
-      }
-    } catch (error) {
-      console.error("Error logging in:", error);
-      Alert.alert("Error", "An error occurred while logging in");
-    } finally {
-      setLoading(false); // Hide loading modal
-    }
-  };
+  useFocusEffect(() => {
+    checkAuth();
+  })
 
   return (
     <View style={styles.container}>
@@ -57,15 +67,15 @@ export default function LoginScreen() {
       <View style={styles.innerContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username or Email"
-          placeholderTextColor="white"
-          value={username}
-          onChangeText={setUsername}
+          placeholder="Email"
+          placeholderTextColor={colors.textSecondary}
+          value={email}
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
-          placeholderTextColor="white"
+          placeholderTextColor={colors.textSecondary}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -74,7 +84,7 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/auth/register")}>
-          <Text style={[globalStyles.link, { textAlign: "center" }]}>Don't have an account? Register here</Text>
+          <Text style={[global.link, { textAlign: "center", fontSize: font.caption }]}>Don't have an account? Register here</Text>
         </TouchableOpacity>
       </View>
 
@@ -83,43 +93,3 @@ export default function LoginScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.backgroundPrimary,
-  },
-  innerContainer: {
-    width: "100%",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "white",
-  },
-  input: {
-    width: "100%",
-    padding: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderRadius: 5,
-    borderColor: "white",
-    color: "white",
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 15,
-    borderRadius: 5,
-    width: "100%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
