@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from 'expo-router';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
+import { Menu, IconButton, Provider as PaperProvider } from 'react-native-paper';
 import RouteImage from '@/components/RouteImage/RouteImage';
 
 import { useGymStore } from '@/storage/gymStore';
 import { useLocationStore } from '@/storage/locationStore';
-import { Route, useRouteStore } from '@/storage/routeStore';
+import { useRouteStore } from '@/storage/routeStore';
 import { useRoutesData } from '@/hooks/routes/useRoutesData';
 import { RouteInfo } from '@/types';
 import { useTheme } from '@/constants/theme';
@@ -18,15 +18,11 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
       flex: 1,
       backgroundColor: colors.backgroundPrimary,
     },
-    contentContainer: {
-      flex: 1,
-      paddingHorizontal: spacing.md,
-    },
     breadcrumbContainer: { 
       flexDirection: 'row', 
       marginVertical: spacing.sm,
       paddingHorizontal: spacing.md,
-      maxHeight: 20
+      alignItems: 'center',
     },
     breadcrumbGroup: { 
       flexDirection: 'row', 
@@ -57,6 +53,12 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
     childLocationName: { 
       fontSize: font.body, 
       color: colors.textPrimary 
+    },
+    controlRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
     },
     routesContainer: {
       flex: 1,
@@ -96,12 +98,6 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
       color: colors.textSecondary,
       marginTop: 6,
     },
-    centerContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: spacing.md,
-    },
     loadingContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -121,58 +117,72 @@ const getStyles = (colors: any, sizes: any, shadows: any, spacing: any, font: an
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: colors.primary,
-      shadowColor: shadows.medium.shadowColor,
-      elevation: shadows.medium.elevation,
-    },
-    noGymSelectedText: {
-      color: colors.textPrimary,
-      textAlign: 'center',
-      fontSize: font.body,
+      elevation: 4,
     },
     noRoutesFoundText: {
-      color: colors.textSecondary,
       textAlign: 'center',
       fontSize: font.body,
+      color: colors.textSecondary,
     },
+    rowLeft: { flexDirection: 'column', flex: 1 },
+    rowRight: { flexDirection: 'row', alignItems: 'center' },
   });
 };
 
 const HomeScreen = () => {
-  const { colors, sizes, shadows, spacing, global, font } = useTheme();
-  const router = useRouter();
+  const { colors, sizes, shadows, spacing, font } = useTheme();
   const navigation = useNavigation();
+  const router = useRouter();
   const { shouldReload } = useLocalSearchParams();
 
   const { data: gymData } = useGymStore();
   const { data: locationData, updateData: updateLocation } = useLocationStore();
   const { updateData: setRoute } = useRouteStore();
 
-  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData(gymData.id ? gymData.id : null, locationData.id);
+  const { routes, childLocations, breadcrumb, loading, refetch } = useRoutesData(
+    gymData?.id ? gymData?.id : null, 
+    locationData?.id
+  );
+
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<'name' | 'difficulty'>('name');
+
+  const [filterMenuVisible, setFilterMenuVisible] = useState(false);
+  const [sortMenuVisible, setSortMenuVisible] = useState(false);
 
   const styles = getStyles(colors, sizes, shadows, spacing, font);
 
   useFocusEffect( 
-    React.useCallback(() => {
-      if (gymData.name) {
-        navigation.setOptions({ headerTitle: gymData.name });
+    useCallback(() => {
+      if (gymData?.name) {
+        navigation.setOptions({ headerTitle: gymData?.name });
       } else {
         navigation.setOptions({ headerTitle: "No Gym Selected" });
       }
+    }, [navigation, gymData?.name])
+  )
 
+  useFocusEffect(
+    useCallback(() => {
       if (shouldReload) {
-        refetch();
-        router.setParams({ shouldReload: undefined });
+        // refetch routes when navigating back with shouldReload
+        refetch?.();
       }
-    }, [gymData.name, navigation, shouldReload, refetch, router])
-  );
+    }, [shouldReload, refetch])
+  )
 
-  if (!gymData.name) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.noGymSelectedText}>No gym selected. Please select a gym.</Text>
-      </View>
-    );
-  }
+  const filteredAndSortedRoutes = useMemo(() => {
+    let filtered = routes;
+    if (selectedDifficulty) {
+      filtered = routes.filter(r => r.difficulty === selectedDifficulty);
+    }
+    if (sortOption === 'name') {
+      filtered = filtered.sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
+    } else if (sortOption === 'difficulty') {
+      filtered = filtered.sort((a, b) => (a.difficulty || '').localeCompare(b.difficulty || ''));
+    }
+    return filtered;
+  }, [routes, selectedDifficulty, sortOption]);
 
   const handleRoutePress = (route: RouteInfo) => {
     const { route: routeData, ...otherParams } = route;
@@ -180,97 +190,162 @@ const HomeScreen = () => {
     router.push({
       pathname: '/routes/routeDetail',
       params: {
-        routeParams: encodeURIComponent(JSON.stringify(otherParams)), // TODO: dont pass in all params, just what is needed
+        routeParams: encodeURIComponent(JSON.stringify(otherParams)),
       },
     });
-    console.log("handle route press", route.route)
   };
 
   const handleAddRoute = () => {
     router.push('/routes/createRoute');
-    router.setParams({ locationId: locationData.id });
+    router.setParams({ locationId: locationData?.id });
   };
 
   return (
-    <View style={styles.container}>
-      {/* Breadcrumb */}
-      <ScrollView 
-        horizontal 
-        style={styles.breadcrumbContainer} 
-        showsHorizontalScrollIndicator={false}
-      >
-        <TouchableOpacity onPress={() => updateLocation({ id: '' })}>
-          <Text style={styles.breadcrumbItem}>Home</Text>
-        </TouchableOpacity>
-        {breadcrumb.map((loc, idx) => (
-          <View key={loc.id} style={styles.breadcrumbGroup}>
-            <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
-            <TouchableOpacity onPress={() => updateLocation({ id: loc.id })}>
-              <Text style={styles.breadcrumbItem}>{loc.name}</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Child Locations */}
-      {childLocations.length > 0 && (
-        <View style={styles.childLocationsContainer}>
-          <FlatList
-            data={childLocations}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.childLocationCard}
-                onPress={() => updateLocation({ id: item.id })}
-              >
-                <Text style={styles.childLocationName}>{item.name}</Text>
+    <PaperProvider>
+      <View style={styles.container}>
+        {/* Top Row: Breadcrumb + Child Locations (left), Filter/Sort (right) */}
+        <View style={styles.controlRow}>
+          <View style={styles.rowLeft}>
+            {/* Breadcrumb with Home */}
+            <ScrollView 
+              horizontal 
+              // style={styles.breadcrumbContainer} 
+              showsHorizontalScrollIndicator={false}
+            >
+              <TouchableOpacity onPress={() => updateLocation({ id: '' })}>
+                <Text style={styles.breadcrumbItem}>Home</Text>
               </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
-
-      {/* Routes Section */}
-      <View style={styles.routesContainer}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : routes.length > 0 ? (
-          <FlatList
-            data={routes}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.routesList}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item: route, index }: { item: RouteInfo, index: number }) => (
-              <TouchableOpacity onPress={() => handleRoutePress(route)} style={styles.routeCard}>
-                <RouteImage mode='view' routeData={route.route} style={styles.routeImage} />
-                <View style={styles.routeInfo}>
-                  <Text style={styles.routeName}>{route.name || 'No Name'}</Text>
-                  <Text style={styles.routeDescription}>
-                    {route.description || 'No Description'}
-                  </Text>
-                  <Text style={styles.routeDifficulty}>Difficulty: {route.difficulty}</Text>
+              {breadcrumb.map((loc, idx) => (
+                <View key={loc?.id} style={styles.breadcrumbGroup}>
+                  <Text style={styles.breadcrumbSeparator}>{'>'}</Text>
+                  <TouchableOpacity onPress={() => updateLocation({ id: loc?.id })}>
+                    <Text style={styles.breadcrumbItem}>{loc?.name}</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            )}
-          />
-        ) : (
-          <View style={styles.noRoutesContainer}>
-            <Text style={styles.noRoutesFoundText}>No routes found</Text>
-          </View>
-        )}
-      </View>
+              ))}
+            </ScrollView>
 
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={handleAddRoute}
-      >
-        <AntDesign name="plus" size={32} color={colors.textPrimary} />
-      </TouchableOpacity>
-    </View>
+            {/* Child Locations */}
+            {childLocations.length > 0 && (
+              <View style={styles.childLocationsContainer}>
+                <FlatList
+                  data={childLocations}
+                  keyExtractor={(item) => item?.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.childLocationCard}
+                      onPress={() => updateLocation({ id: item?.id })}
+                    >
+                      <Text style={styles.childLocationName}>{item?.name}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
+          </View>
+
+          {/* Right Side Controls */}
+          <View style={styles.rowRight}>
+            {/* Filter Menu */}
+            <Menu
+              visible={filterMenuVisible}
+              onDismiss={() => setFilterMenuVisible(false)}
+              anchor={
+                <IconButton
+                  icon="filter-variant"
+                  size={24}
+                  onPress={() => setFilterMenuVisible(true)}
+                />
+              }
+            >
+              {['Easy', 'Medium', 'Hard'].map(diff => (
+                <Menu.Item
+                  key={diff}
+                  onPress={() => {
+                    setSelectedDifficulty(diff);
+                    setFilterMenuVisible(false);
+                  }}
+                  title={diff}
+                />
+              ))}
+              {selectedDifficulty && (
+                <Menu.Item
+                  onPress={() => {
+                    setSelectedDifficulty(null);
+                    setFilterMenuVisible(false);
+                  }}
+                  title="Clear filter"
+                />
+              )}
+            </Menu>
+
+            {/* Sort Menu */}
+            <Menu
+              visible={sortMenuVisible}
+              onDismiss={() => setSortMenuVisible(false)}
+              anchor={
+                <IconButton
+                  icon="sort"
+                  size={24}
+                  onPress={() => setSortMenuVisible(true)}
+                />
+              }
+            >
+              {['name', 'difficulty'].map(option => (
+                <Menu.Item
+                  key={option}
+                  onPress={() => {
+                    setSortOption(option as any);
+                    setSortMenuVisible(false);
+                  }}
+                  title={`Sort by ${option}`}
+                />
+              ))}
+            </Menu>
+          </View>
+        </View>
+
+        {/* Routes Section */}
+        <View style={styles.routesContainer}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : filteredAndSortedRoutes.length > 0 ? (
+            <FlatList
+              data={filteredAndSortedRoutes}
+              keyExtractor={(item) => item?.id}
+              contentContainerStyle={styles.routesList}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item: route }) => (
+                <TouchableOpacity onPress={() => handleRoutePress(route)} style={styles.routeCard}>
+                  <RouteImage mode='view' routeData={route.route} style={styles.routeImage} />
+                  <View style={styles.routeInfo}>
+                    <Text style={styles.routeName}>{route?.name || 'No Name'}</Text>
+                    <Text style={styles.routeDescription}>
+                      {route.description || 'No Description'}
+                    </Text>
+                    <Text style={styles.routeDifficulty}>Difficulty: {route.difficulty}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <View style={styles.noRoutesContainer}>
+              <Text style={styles.noRoutesFoundText}>
+                {selectedDifficulty ? `No routes found for difficulty: ${selectedDifficulty}` : 'No routes found'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.addButton} onPress={handleAddRoute}>
+          <AntDesign name="plus" size={32} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </PaperProvider>
   );
 };
 

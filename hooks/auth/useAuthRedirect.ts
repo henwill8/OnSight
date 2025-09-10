@@ -17,7 +17,6 @@ export const useAuthRedirect = () => {
       );
       router.replace("/(tabs)/home");
     } catch (error) {
-      console.error("Auth check failed:", error);
       if (pathname !== "/auth/login") {
         router.replace("/auth/login");
       }

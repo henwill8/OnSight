@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useGymStore } from '@/storage/gymStore';
 import { useTheme } from '@/constants/theme';
-import { useChooseGymLogic } from '@/hooks/gyms/useChooseGymLogic';
+import { useChooseGymLogic } from '../../hooks/gyms/useChooseGymLogic';
 import { Gym } from '@/types';
 import LoadingModal from '@/components/ui/LoadingModal';
 

@@ -64,6 +64,7 @@ export const useRoutesData = (gymId: string | null, locationId: string | null) =
     const childUrl = `${API_PATHS.GET_CHILD_LOCATIONS(gymId || '')}${locationId ? `?parentId=${locationId}` : ''}`;
     const data = await callApi<{ locations: Location[] }>(childUrl, { method: "GET" });
     setChildLocations(data.locations || []);
+    console.log(data)
   };
 
   const fetchBreadcrumb = async () => {

@@ -16,8 +16,8 @@ export const useApi = () => {
   const pathname = usePathname();
 
   const handleUnauthorized = useCallback(() => {
-    console.log("Unauthorized access detected, redirecting to login");
     if (pathname !== "/auth/login") {
+      console.log("Unauthorized access detected, redirecting to login");
       router.replace("/auth/login");
     }
   }, [router]);
