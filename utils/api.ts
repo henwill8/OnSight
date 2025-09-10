@@ -64,7 +64,6 @@ export const callApi = async <T>(path: string, apiConfig?: ApiConfig): Promise<T
     const data = await response.json();
     return data as T;
   } catch (error: any) {
-    console.error(`API call to ${path} failed:`, error);
     let errorMessage = "An unexpected error occurred";
     try {
       const parsedError = JSON.parse(error.message);

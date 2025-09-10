@@ -57,9 +57,9 @@ export default function LoginScreen() {
 
   const { checkAuth } = useAuthRedirect();
 
-  useFocusEffect(() => {
-    checkAuth();
-  })
+  // useFocusEffect(() => {
+  //   checkAuth();
+  // })
 
   return (
     <View style={styles.container}>
