@@ -1,5 +1,5 @@
 // Set this variable to switch between dev and prod
-const ENV = "prod";  // Change this to "prod" when deploying to production
+const ENV = "dev";  // Change this to "prod" when deploying to production
 // TODO: this should all be moved to an env file
 
 const DEV_API_URL = "http://localhost:8000";  // Development server URL
