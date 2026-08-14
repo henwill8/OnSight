@@ -4,7 +4,7 @@ OnSight is a React Native app for managing and viewing climbing routes. Routes a
 
 The main part of the app is working with route images. When creating a route, users can upload an image of a climbing wall and send it to the backend for automatic hold detection. The detected holds are displayed over the image and can be edited manually if needed. The app also includes tools for drawing holds and adjusting the perspective of an image.
 
-The frontend uses React Native with Expo and TypeScript. Expo Router handles navigation, Zustand is used for shared state, and React Native Skia is used for displaying and editing hold overlays. API requests are made to the OnSight backend.
+The frontend uses React Native with Expo and TypeScript. Expo Router handles navigation, Zustand is used for shared state, and React Native Skia is used for displaying and editing hold overlays. API requests are made to the [OnSight Backend](https://github.com/henwill8/OnSightBackend).
 
 ## Setup
 
